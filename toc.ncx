@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8" standalone="no" ?>
+<!DOCTYPE ncx PUBLIC "-//NISO//DTD ncx 2005-1//EN" "http://www.daisy.org/z3986/2005/ncx-2005-1.dtd">
+<ncx xmlns="http://www.daisy.org/z3986/2005/ncx/" version="2005-1">
+<head>
+<meta content="ID:ISBN:9781449379278" name="dtb:uid"/>
+<meta content="4" name="dtb:depth"/>
+<meta content="0" name="dtb:totalPageCount"/>
+<meta content="0" name="dtb:maxPageNumber"/>
+</head>
+<docTitle><text>flex & bison</text></docTitle>
+<docAuthor><text>John Levine</text></docAuthor>
+<navMap><navPoint id="urn:orm:book:9780596805418:chapter:index.html" playOrder="1"><navLabel><text>flex &amp; bison</text></navLabel><content src="index.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:pr02.html" playOrder="2"><navLabel><text>Preface</text></navLabel><content src="pr02.xhtml"/><navPoint id="I_sect1_d1e169" playOrder="3"><navLabel><text>Scope of This Book</text></navLabel><content src="pr02.xhtml#I_sect1_d1e169"/></navPoint>
+<navPoint id="I_sect1_d1e213" playOrder="4"><navLabel><text>Conventions Used in This Book</text></navLabel><content src="pr02.xhtml#I_sect1_d1e213"/></navPoint>
+<navPoint id="I_sect1_d1e267" playOrder="5"><navLabel><text>Getting Flex and Bison</text></navLabel><content src="pr02.xhtml#I_sect1_d1e267"/></navPoint>
+<navPoint id="I_sect1_d1e323" playOrder="6"><navLabel><text>This Book’s Example Files</text></navLabel><content src="pr02.xhtml#I_sect1_d1e323"/></navPoint>
+<navPoint id="I_sect1_d1e338" playOrder="7"><navLabel><text>Using Code Examples</text></navLabel><content src="pr02.xhtml#I_sect1_d1e338"/></navPoint>
+<navPoint id="I_sect1_d1e353" playOrder="8"><navLabel><text>Safari® Books Online</text></navLabel><content src="pr02.xhtml#I_sect1_d1e353"/></navPoint>
+<navPoint id="I_sect1_d1e364" playOrder="9"><navLabel><text>How to Contact Us</text></navLabel><content src="pr02.xhtml#I_sect1_d1e364"/></navPoint>
+<navPoint id="I_sect1_d1e409" playOrder="10"><navLabel><text>Acknowledgments</text></navLabel><content src="pr02.xhtml#I_sect1_d1e409"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch01.html" playOrder="11"><navLabel><text>1. Introducing Flex and Bison</text></navLabel><content src="ch01.xhtml"/><navPoint id="I_sect11_d1e469" playOrder="12"><navLabel><text>Lexical Analysis and Parsing</text></navLabel><content src="ch01.xhtml#I_sect11_d1e469"/></navPoint>
+<navPoint id="I_sect11_d1e580" playOrder="13"><navLabel><text>Regular Expressions and Scanning</text></navLabel><content src="ch01.xhtml#I_sect11_d1e580"/><navPoint id="id538388" playOrder="14"><navLabel><text>Our First Flex Program</text></navLabel><content src="ch01.xhtml#id538388"/></navPoint>
+<navPoint id="id498465" playOrder="15"><navLabel><text>Programs in Plain Flex</text></navLabel><content src="ch01.xhtml#id498465"/></navPoint>
+<navPoint id="id475837" playOrder="16"><navLabel><text>Putting Flex and Bison Together</text></navLabel><content src="ch01.xhtml#id475837"/></navPoint>
+<navPoint id="id470841" playOrder="17"><navLabel><text>The Scanner as Coroutine</text></navLabel><content src="ch01.xhtml#id470841"/></navPoint>
+<navPoint id="id487687" playOrder="18"><navLabel><text>Tokens and Values</text></navLabel><content src="ch01.xhtml#id487687"/></navPoint>
+</navPoint>
+<navPoint id="I_sect11_d1e1038" playOrder="19"><navLabel><text>Grammars and Parsing</text></navLabel><content src="ch01.xhtml#I_sect11_d1e1038"/><navPoint id="id498884" playOrder="20"><navLabel><text>BNF Grammars</text></navLabel><content src="ch01.xhtml#id498884"/></navPoint>
+<navPoint id="id480816" playOrder="21"><navLabel><text>Bison’s Rule Input Language</text></navLabel><content src="ch01.xhtml#id480816"/></navPoint>
+<navPoint id="id440011" playOrder="22"><navLabel><text>Compiling Flex and Bison Programs Together</text></navLabel><content src="ch01.xhtml#id440011"/></navPoint>
+</navPoint>
+<navPoint id="I_sect11_d1e1333" playOrder="23"><navLabel><text>Ambiguous Grammars: Not Quite</text></navLabel><content src="ch01.xhtml#I_sect11_d1e1333"/></navPoint>
+<navPoint id="I_sect11_d1e1437" playOrder="24"><navLabel><text>Adding a Few More Rules</text></navLabel><content src="ch01.xhtml#I_sect11_d1e1437"/></navPoint>
+<navPoint id="I_sect11_d1e1488" playOrder="25"><navLabel><text>Flex and Bison vs. Handwritten Scanners and Parsers</text></navLabel><content src="ch01.xhtml#I_sect11_d1e1488"/></navPoint>
+<navPoint id="I_sect11_d1e1524" playOrder="26"><navLabel><text>Exercises</text></navLabel><content src="ch01.xhtml#I_sect11_d1e1524"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch02.html" playOrder="27"><navLabel><text>2. Using Flex</text></navLabel><content src="ch02.xhtml"/><navPoint id="I_sect12_d1e1592" playOrder="28"><navLabel><text>Regular Expressions</text></navLabel><content src="ch02.xhtml#I_sect12_d1e1592"/><navPoint id="id459236" playOrder="29"><navLabel><text>Regular Expression Examples</text></navLabel><content src="ch02.xhtml#id459236"/></navPoint>
+<navPoint id="id462906" playOrder="30"><navLabel><text>How Flex Handles Ambiguous Patterns</text></navLabel><content src="ch02.xhtml#id462906"/></navPoint>
+<navPoint id="id495057" playOrder="31"><navLabel><text>Context-Dependent Tokens</text></navLabel><content src="ch02.xhtml#id495057"/></navPoint>
+</navPoint>
+<navPoint id="I_sect12_d1e2070" playOrder="32"><navLabel><text>File I/O in Flex Scanners</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2070"/></navPoint>
+<navPoint id="I_sect12_d1e2206" playOrder="33"><navLabel><text>Reading Several Files</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2206"/></navPoint>
+<navPoint id="I_sect12_d1e2263" playOrder="34"><navLabel><text>The I/O Structure of a Flex Scanner</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2263"/><navPoint id="id498901" playOrder="35"><navLabel><text>Input to a Flex Scanner</text></navLabel><content src="ch02.xhtml#id498901"/></navPoint>
+<navPoint id="id498893" playOrder="36"><navLabel><text>Flex Scanner Output</text></navLabel><content src="ch02.xhtml#id498893"/></navPoint>
+</navPoint>
+<navPoint id="I_sect12_d1e2521" playOrder="37"><navLabel><text>Start States and Nested Input Files</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2521"/></navPoint>
+<navPoint id="I_sect12_d1e2748" playOrder="38"><navLabel><text>Symbol Tables and a Concordance Generator</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2748"/><navPoint id="id461220" playOrder="39"><navLabel><text>Managing Symbol Tables</text></navLabel><content src="ch02.xhtml#id461220"/></navPoint>
+<navPoint id="id461216" playOrder="40"><navLabel><text>Using a Symbol Table</text></navLabel><content src="ch02.xhtml#id461216"/></navPoint>
+</navPoint>
+<navPoint id="I_sect12_d1e2980" playOrder="41"><navLabel><text>C Language Cross-Reference</text></navLabel><content src="ch02.xhtml#I_sect12_d1e2980"/></navPoint>
+<navPoint id="I_sect12_d1e3323" playOrder="42"><navLabel><text>Exercises</text></navLabel><content src="ch02.xhtml#I_sect12_d1e3323"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch03.html" playOrder="43"><navLabel><text>3. Using Bison</text></navLabel><content src="ch03.xhtml"/><navPoint id="I_sect13_d1e3382" playOrder="44"><navLabel><text>How a Bison Parser Matches Its Input</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3382"/></navPoint>
+<navPoint id="I_sect13_d1e3475" playOrder="45"><navLabel><text>Shift/Reduce Parsing</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3475"/><navPoint id="id440144" playOrder="46"><navLabel><text>What Bison’s LALR(1) Parser Cannot Parse</text></navLabel><content src="ch03.xhtml#id440144"/></navPoint>
+</navPoint>
+<navPoint id="I_sect13_d1e3608" playOrder="47"><navLabel><text>A Bison Parser</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3608"/></navPoint>
+<navPoint id="I_sect13_d1e3649" playOrder="48"><navLabel><text>Abstract Syntax Trees</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3649"/></navPoint>
+<navPoint id="I_sect13_d1e3677" playOrder="49"><navLabel><text>An Improved Calculator That Creates ASTs</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3677"/><navPoint id="id468737" playOrder="50"><navLabel><text>Literal Character Tokens</text></navLabel><content src="ch03.xhtml#id468737"/></navPoint>
+<navPoint id="id548106" playOrder="51"><navLabel><text>Building the AST Calculator</text></navLabel><content src="ch03.xhtml#id548106"/></navPoint>
+</navPoint>
+<navPoint id="I_sect13_d1e3963" playOrder="52"><navLabel><text>Shift/Reduce Conflicts and Operator Precedence</text></navLabel><content src="ch03.xhtml#I_sect13_d1e3963"/><navPoint id="id457613" playOrder="53"><navLabel><text>When Not to Use Precedence Rules</text></navLabel><content src="ch03.xhtml#id457613"/></navPoint>
+</navPoint>
+<navPoint id="I_sect13_d1e4225" playOrder="54"><navLabel><text>An Advanced Calculator</text></navLabel><content src="ch03.xhtml#I_sect13_d1e4225"/><navPoint id="id548685" playOrder="55"><navLabel><text>Advanced Calculator Parser</text></navLabel><content src="ch03.xhtml#id548685"/></navPoint>
+<navPoint id="id439792" playOrder="56"><navLabel><text>Calculator Statement Syntax</text></navLabel><content src="ch03.xhtml#id439792"/></navPoint>
+<navPoint id="id456207" playOrder="57"><navLabel><text>Calculator Expression Syntax</text></navLabel><content src="ch03.xhtml#id456207"/></navPoint>
+<navPoint id="id457099" playOrder="58"><navLabel><text>Top-Level Calculator Grammar</text></navLabel><content src="ch03.xhtml#id457099"/></navPoint>
+<navPoint id="id502077" playOrder="59"><navLabel><text>Basic Parser Error Recovery</text></navLabel><content src="ch03.xhtml#id502077"/></navPoint>
+<navPoint id="id484495" playOrder="60"><navLabel><text>The Advanced Calculator Lexer</text></navLabel><content src="ch03.xhtml#id484495"/></navPoint>
+<navPoint id="id484497" playOrder="61"><navLabel><text>Reserved Words</text></navLabel><content src="ch03.xhtml#id484497"/></navPoint>
+<navPoint id="id469302" playOrder="62"><navLabel><text>Building and Interpreting ASTs</text></navLabel><content src="ch03.xhtml#id469302"/></navPoint>
+<navPoint id="id535023" playOrder="63"><navLabel><text>Evaluating Functions in the Calculator</text></navLabel><content src="ch03.xhtml#id535023"/></navPoint>
+<navPoint id="id457476" playOrder="64"><navLabel><text>User-Defined Functions</text></navLabel><content src="ch03.xhtml#id457476"/></navPoint>
+</navPoint>
+<navPoint id="I_sect13_d1e4741" playOrder="65"><navLabel><text>Using the Advanced Calculator</text></navLabel><content src="ch03.xhtml#I_sect13_d1e4741"/></navPoint>
+<navPoint id="I_sect13_d1e4783" playOrder="66"><navLabel><text>Exercises</text></navLabel><content src="ch03.xhtml#I_sect13_d1e4783"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch04.html" playOrder="67"><navLabel><text>4. Parsing SQL</text></navLabel><content src="ch04.xhtml"/><navPoint id="I_sect14_d1e4830" playOrder="68"><navLabel><text>A Quick Overview of SQL</text></navLabel><content src="ch04.xhtml#I_sect14_d1e4830"/><navPoint id="id518341" playOrder="69"><navLabel><text>Relational Databases</text></navLabel><content src="ch04.xhtml#id518341"/></navPoint>
+</navPoint>
+<navPoint id="I_sect14_d1e5117" playOrder="70"><navLabel><text>Manipulating Relations</text></navLabel><content src="ch04.xhtml#I_sect14_d1e5117"/></navPoint>
+<navPoint id="I_sect14_d1e5137" playOrder="71"><navLabel><text>Three Ways to Use SQL</text></navLabel><content src="ch04.xhtml#I_sect14_d1e5137"/></navPoint>
+<navPoint id="I_sect14_d1e5147" playOrder="72"><navLabel><text>SQL to RPN</text></navLabel><content src="ch04.xhtml#I_sect14_d1e5147"/></navPoint>
+<navPoint id="I_sect14_d1e5206" playOrder="73"><navLabel><text>The Lexer</text></navLabel><content src="ch04.xhtml#I_sect14_d1e5206"/><navPoint id="id458348" playOrder="74"><navLabel><text>Scanning SQL Keywords</text></navLabel><content src="ch04.xhtml#id458348"/></navPoint>
+<navPoint id="id493471" playOrder="75"><navLabel><text>Scanning Numbers</text></navLabel><content src="ch04.xhtml#id493471"/></navPoint>
+<navPoint id="id455171" playOrder="76"><navLabel><text>Scanning Operators and Punctuation</text></navLabel><content src="ch04.xhtml#id455171"/></navPoint>
+<navPoint id="id439394" playOrder="77"><navLabel><text>Scanning Functions and Names</text></navLabel><content src="ch04.xhtml#id439394"/></navPoint>
+<navPoint id="id439385" playOrder="78"><navLabel><text>Comments and Miscellany</text></navLabel><content src="ch04.xhtml#id439385"/></navPoint>
+</navPoint>
+<navPoint id="I_sect14_d1e5522" playOrder="79"><navLabel><text>The Parser</text></navLabel><content src="ch04.xhtml#I_sect14_d1e5522"/><navPoint id="id462881" playOrder="80"><navLabel><text>The Top-Level Parsing Rules</text></navLabel><content src="ch04.xhtml#id462881"/></navPoint>
+<navPoint id="id470456" playOrder="81"><navLabel><text>SQL Expressions</text></navLabel><content src="ch04.xhtml#id470456"/><navPoint id="id482723" playOrder="82"><navLabel><text>Functions</text></navLabel><content src="ch04.xhtml#id482723"/></navPoint>
+<navPoint id="id506633" playOrder="83"><navLabel><text>Other expressions</text></navLabel><content src="ch04.xhtml#id506633"/></navPoint>
+</navPoint>
+<navPoint id="id478979" playOrder="84"><navLabel><text>Select Statements</text></navLabel><content src="ch04.xhtml#id478979"/><navPoint id="id465408" playOrder="85"><navLabel><text>Select options and table references</text></navLabel><content src="ch04.xhtml#id465408"/></navPoint>
+<navPoint id="id535000" playOrder="86"><navLabel><text>SELECT table references</text></navLabel><content src="ch04.xhtml#id535000"/></navPoint>
+</navPoint>
+<navPoint id="id485221" playOrder="87"><navLabel><text>Delete Statement</text></navLabel><content src="ch04.xhtml#id485221"/></navPoint>
+<navPoint id="id471641" playOrder="88"><navLabel><text>Insert and Replace Statements</text></navLabel><content src="ch04.xhtml#id471641"/><navPoint id="id455965" playOrder="89"><navLabel><text>Replace statement</text></navLabel><content src="ch04.xhtml#id455965"/></navPoint>
+</navPoint>
+<navPoint id="id535283" playOrder="90"><navLabel><text>Update Statement</text></navLabel><content src="ch04.xhtml#id535283"/></navPoint>
+<navPoint id="id460776" playOrder="91"><navLabel><text>Create Database</text></navLabel><content src="ch04.xhtml#id460776"/></navPoint>
+<navPoint id="id495023" playOrder="92"><navLabel><text>Create Table</text></navLabel><content src="ch04.xhtml#id495023"/></navPoint>
+<navPoint id="id465314" playOrder="93"><navLabel><text>User Variables</text></navLabel><content src="ch04.xhtml#id465314"/></navPoint>
+<navPoint id="id496544" playOrder="94"><navLabel><text>The Parser Routines</text></navLabel><content src="ch04.xhtml#id496544"/></navPoint>
+</navPoint>
+<navPoint id="I_sect14_d1e6880" playOrder="95"><navLabel><text>The Makefile for the SQL Parser</text></navLabel><content src="ch04.xhtml#I_sect14_d1e6880"/></navPoint>
+<navPoint id="I_sect14_d1e6897" playOrder="96"><navLabel><text>Exercises</text></navLabel><content src="ch04.xhtml#I_sect14_d1e6897"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch05.html" playOrder="97"><navLabel><text>5. A Reference for Flex Specifications</text></navLabel><content src="ch05.xhtml"/><navPoint id="I_sect15_d1e6930" playOrder="98"><navLabel><text>Structure of a Flex Specification</text></navLabel><content src="ch05.xhtml#I_sect15_d1e6930"/><navPoint id="id487961" playOrder="99"><navLabel><text>Definition Section</text></navLabel><content src="ch05.xhtml#id487961"/></navPoint>
+<navPoint id="id536096" playOrder="100"><navLabel><text>Rules Section</text></navLabel><content src="ch05.xhtml#id536096"/></navPoint>
+<navPoint id="id495678" playOrder="101"><navLabel><text>User Subroutines</text></navLabel><content src="ch05.xhtml#id495678"/></navPoint>
+</navPoint>
+<navPoint id="begin" playOrder="102"><navLabel><text>BEGIN</text></navLabel><content src="ch05.xhtml#begin"/></navPoint>
+<navPoint id="I_sect15_d1e7107" playOrder="103"><navLabel><text>C++ Scanners</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7107"/></navPoint>
+<navPoint id="I_sect15_d1e7131" playOrder="104"><navLabel><text>Context Sensitivity</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7131"/><navPoint id="id469551" playOrder="105"><navLabel><text>Left Context</text></navLabel><content src="ch05.xhtml#id469551"/></navPoint>
+<navPoint id="id478943" playOrder="106"><navLabel><text>Right Context</text></navLabel><content src="ch05.xhtml#id478943"/></navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e7282" playOrder="107"><navLabel><text>Definitions (Substitutions)</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7282"/></navPoint>
+<navPoint id="I_sect15_d1e7320" playOrder="108"><navLabel><text>ECHO</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7320"/></navPoint>
+<navPoint id="I_sect15_d1e7362" playOrder="109"><navLabel><text>Input Management</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7362"/><navPoint id="stdiochain" playOrder="110"><navLabel><text>Stdio File Chaining</text></navLabel><content src="ch05.xhtml#stdiochain"/></navPoint>
+<navPoint id="id506614" playOrder="111"><navLabel><text>Input Buffers</text></navLabel><content src="ch05.xhtml#id506614"/></navPoint>
+<navPoint id="inputstrings" playOrder="112"><navLabel><text>Input from Strings</text></navLabel><content src="ch05.xhtml#inputstrings"/></navPoint>
+<navPoint id="id468084" playOrder="113"><navLabel><text>File Nesting</text></navLabel><content src="ch05.xhtml#id468084"/></navPoint>
+<navPoint id="id548089" playOrder="114"><navLabel><text>input()</text></navLabel><content src="ch05.xhtml#id548089"/></navPoint>
+<navPoint id="id438336" playOrder="115"><navLabel><text>YY_INPUT</text></navLabel><content src="ch05.xhtml#id438336"/></navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e7635" playOrder="116"><navLabel><text>Flex Library</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7635"/></navPoint>
+<navPoint id="I_sect15_d1e7675" playOrder="117"><navLabel><text>Interactive and Batch Scanners</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7675"/></navPoint>
+<navPoint id="yylineno" playOrder="118"><navLabel><text>Line Numbers and yylineno</text></navLabel><content src="ch05.xhtml#yylineno"/></navPoint>
+<navPoint id="I_sect15_d1e7734" playOrder="119"><navLabel><text>Literal Block</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7734"/></navPoint>
+<navPoint id="multilex" playOrder="120"><navLabel><text>Multiple Lexers in One Program</text></navLabel><content src="ch05.xhtml#multilex"/><navPoint id="id480323" playOrder="121"><navLabel><text>Combined Lexers</text></navLabel><content src="ch05.xhtml#id480323"/></navPoint>
+<navPoint id="id494438" playOrder="122"><navLabel><text>Multiple Lexers</text></navLabel><content src="ch05.xhtml#id494438"/></navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e7862" playOrder="123"><navLabel><text>Options When Building a Scanner</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7862"/></navPoint>
+<navPoint id="I_sect15_d1e7896" playOrder="124"><navLabel><text>Portability of Flex Lexers</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7896"/><navPoint id="id467021" playOrder="125"><navLabel><text>Porting Generated C Lexers</text></navLabel><content src="ch05.xhtml#id467021"/><navPoint id="id538202" playOrder="126"><navLabel><text>Buffer sizes</text></navLabel><content src="ch05.xhtml#id538202"/></navPoint>
+<navPoint id="id531978" playOrder="127"><navLabel><text>Character sets</text></navLabel><content src="ch05.xhtml#id531978"/></navPoint>
+</navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e7991" playOrder="128"><navLabel><text>Reentrant Scanners</text></navLabel><content src="ch05.xhtml#I_sect15_d1e7991"/><navPoint id="id491739" playOrder="129"><navLabel><text>Extra Data for Reentrant Scanners</text></navLabel><content src="ch05.xhtml#id491739"/></navPoint>
+<navPoint id="id479861" playOrder="130"><navLabel><text>Access to Reentrant Scanner Data</text></navLabel><content src="ch05.xhtml#id479861"/></navPoint>
+<navPoint id="id525196" playOrder="131"><navLabel><text>Reentrant Scanners, Nested Files, and Multiple Scanners</text></navLabel><content src="ch05.xhtml#id525196"/></navPoint>
+<navPoint id="id471039" playOrder="132"><navLabel><text>Using Reentrant Scanners with Bison</text></navLabel><content src="ch05.xhtml#id471039"/></navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e8304" playOrder="133"><navLabel><text>Regular Expression Syntax</text></navLabel><content src="ch05.xhtml#I_sect15_d1e8304"/><navPoint id="id501146" playOrder="134"><navLabel><text>Metacharacters</text></navLabel><content src="ch05.xhtml#id501146"/></navPoint>
+</navPoint>
+<navPoint id="I_sect15_d1e8807" playOrder="135"><navLabel><text>REJECT</text></navLabel><content src="ch05.xhtml#I_sect15_d1e8807"/></navPoint>
+<navPoint id="I_sect15_d1e8854" playOrder="136"><navLabel><text>Returning Values from yylex()</text></navLabel><content src="ch05.xhtml#I_sect15_d1e8854"/></navPoint>
+<navPoint id="startstates" playOrder="137"><navLabel><text>Start States</text></navLabel><content src="ch05.xhtml#startstates"/></navPoint>
+<navPoint id="I_sect15_d1e9001" playOrder="138"><navLabel><text>unput()</text></navLabel><content src="ch05.xhtml#I_sect15_d1e9001"/></navPoint>
+<navPoint id="I_sect15_d1e9045" playOrder="139"><navLabel><text>yyinput() yyunput()</text></navLabel><content src="ch05.xhtml#I_sect15_d1e9045"/></navPoint>
+<navPoint id="I_sect15_d1e9075" playOrder="140"><navLabel><text>yyleng</text></navLabel><content src="ch05.xhtml#I_sect15_d1e9075"/></navPoint>
+<navPoint id="yyless" playOrder="141"><navLabel><text>yyless()</text></navLabel><content src="ch05.xhtml#yyless"/></navPoint>
+<navPoint id="I_sect15_d1e9180" playOrder="142"><navLabel><text>yylex() and YY_DECL</text></navLabel><content src="ch05.xhtml#I_sect15_d1e9180"/></navPoint>
+<navPoint id="yymore" playOrder="143"><navLabel><text>yymore()</text></navLabel><content src="ch05.xhtml#yymore"/></navPoint>
+<navPoint id="yyrestart" playOrder="144"><navLabel><text>yyrestart()</text></navLabel><content src="ch05.xhtml#yyrestart"/></navPoint>
+<navPoint id="yyscan" playOrder="145"><navLabel><text>yy_scan_string and yy_scan_buffer</text></navLabel><content src="ch05.xhtml#yyscan"/></navPoint>
+<navPoint id="yyuseraction" playOrder="146"><navLabel><text>YY_USER_ACTION</text></navLabel><content src="ch05.xhtml#yyuseraction"/></navPoint>
+<navPoint id="yywrap" playOrder="147"><navLabel><text>yywrap()</text></navLabel><content src="ch05.xhtml#yywrap"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch06.html" playOrder="148"><navLabel><text>6. A Reference for Bison Specifications</text></navLabel><content src="ch06.xhtml"/><navPoint id="strucbisgram" playOrder="149"><navLabel><text>Structure of a Bison Grammar</text></navLabel><content src="ch06.xhtml#strucbisgram"/><navPoint id="id477591" playOrder="150"><navLabel><text>Symbols</text></navLabel><content src="ch06.xhtml#id477591"/></navPoint>
+<navPoint id="id470774" playOrder="151"><navLabel><text>Definition Section</text></navLabel><content src="ch06.xhtml#id470774"/></navPoint>
+<navPoint id="id497320" playOrder="152"><navLabel><text>Rules Section</text></navLabel><content src="ch06.xhtml#id497320"/></navPoint>
+<navPoint id="id501184" playOrder="153"><navLabel><text>User Subroutines Section</text></navLabel><content src="ch06.xhtml#id501184"/></navPoint>
+</navPoint>
+<navPoint id="actions" playOrder="154"><navLabel><text>Actions</text></navLabel><content src="ch06.xhtml#actions"/><navPoint id="embeddedact" playOrder="155"><navLabel><text>Embedded Actions</text></navLabel><content src="ch06.xhtml#embeddedact"/></navPoint>
+<navPoint id="id471751" playOrder="156"><navLabel><text>Symbol Types for Embedded Actions</text></navLabel><content src="ch06.xhtml#id471751"/></navPoint>
+</navPoint>
+<navPoint id="ambiguity" playOrder="157"><navLabel><text>Ambiguity and Conflicts</text></navLabel><content src="ch06.xhtml#ambiguity"/><navPoint id="id533541" playOrder="158"><navLabel><text>Types of Conflicts</text></navLabel><content src="ch06.xhtml#id533541"/></navPoint>
+<navPoint id="id533551" playOrder="159"><navLabel><text>Shift/Reduce Conflicts</text></navLabel><content src="ch06.xhtml#id533551"/></navPoint>
+<navPoint id="id534136" playOrder="160"><navLabel><text>Reduce/Reduce Conflicts</text></navLabel><content src="ch06.xhtml#id534136"/></navPoint>
+<navPoint id="id486090" playOrder="161"><navLabel><text>%expect</text></navLabel><content src="ch06.xhtml#id486090"/></navPoint>
+<navPoint id="id456200" playOrder="162"><navLabel><text>GLR Parsers</text></navLabel><content src="ch06.xhtml#id456200"/></navPoint>
+</navPoint>
+<navPoint id="bugsbis" playOrder="163"><navLabel><text>Bugs in Bison Programs</text></navLabel><content src="ch06.xhtml#bugsbis"/><navPoint id="id469067" playOrder="164"><navLabel><text>Infinite Recursion</text></navLabel><content src="ch06.xhtml#id469067"/></navPoint>
+<navPoint id="id484454" playOrder="165"><navLabel><text>Interchanging Precedence</text></navLabel><content src="ch06.xhtml#id484454"/></navPoint>
+<navPoint id="id491805" playOrder="166"><navLabel><text>Embedded Actions</text></navLabel><content src="ch06.xhtml#id491805"/></navPoint>
+</navPoint>
+<navPoint id="I_sect16_d1e9985" playOrder="167"><navLabel><text>C++ Parsers</text></navLabel><content src="ch06.xhtml#I_sect16_d1e9985"/></navPoint>
+<navPoint id="codeblocks" playOrder="168"><navLabel><text>%code Blocks</text></navLabel><content src="ch06.xhtml#codeblocks"/></navPoint>
+<navPoint id="I_sect16_d1e10114" playOrder="169"><navLabel><text>End Marker</text></navLabel><content src="ch06.xhtml#I_sect16_d1e10114"/></navPoint>
+<navPoint id="errortok" playOrder="170"><navLabel><text>Error Token and Error Recovery</text></navLabel><content src="ch06.xhtml#errortok"/><navPoint id="id458152" playOrder="171"><navLabel><text>%destructor</text></navLabel><content src="ch06.xhtml#id458152"/></navPoint>
+</navPoint>
+<navPoint id="inherit_attributes" playOrder="172"><navLabel><text>Inherited Attributes ($0)</text></navLabel><content src="ch06.xhtml#inherit_attributes"/><navPoint id="id531840" playOrder="173"><navLabel><text>Symbol Types for Inherited Attributes</text></navLabel><content src="ch06.xhtml#id531840"/></navPoint>
+</navPoint>
+<navPoint id="I_sect16_d1e10352" playOrder="174"><navLabel><text>%initial-action</text></navLabel><content src="ch06.xhtml#I_sect16_d1e10352"/></navPoint>
+<navPoint id="I_sect16_d1e10377" playOrder="175"><navLabel><text>Lexical Feedback</text></navLabel><content src="ch06.xhtml#I_sect16_d1e10377"/></navPoint>
+<navPoint id="literal" playOrder="176"><navLabel><text>Literal Block</text></navLabel><content src="ch06.xhtml#literal"/></navPoint>
+<navPoint id="literaltokens" playOrder="177"><navLabel><text>Literal Tokens</text></navLabel><content src="ch06.xhtml#literaltokens"/></navPoint>
+<navPoint id="locations" playOrder="178"><navLabel><text>Locations</text></navLabel><content src="ch06.xhtml#locations"/></navPoint>
+<navPoint id="parseparam" playOrder="179"><navLabel><text>%parse-param</text></navLabel><content src="ch06.xhtml#parseparam"/></navPoint>
+<navPoint id="I_sect16_d1e10586" playOrder="180"><navLabel><text>Portability of Bison Parsers</text></navLabel><content src="ch06.xhtml#I_sect16_d1e10586"/><navPoint id="id482271" playOrder="181"><navLabel><text>Porting Bison Grammars</text></navLabel><content src="ch06.xhtml#id482271"/></navPoint>
+<navPoint id="id479456" playOrder="182"><navLabel><text>Porting Generated C Parsers</text></navLabel><content src="ch06.xhtml#id479456"/></navPoint>
+<navPoint id="id479481" playOrder="183"><navLabel><text>Libraries</text></navLabel><content src="ch06.xhtml#id479481"/></navPoint>
+<navPoint id="id464476" playOrder="184"><navLabel><text>Character Codes</text></navLabel><content src="ch06.xhtml#id464476"/></navPoint>
+</navPoint>
+<navPoint id="precedence" playOrder="185"><navLabel><text>Precedence and Associativity Declarations</text></navLabel><content src="ch06.xhtml#precedence"/><navPoint id="id489081" playOrder="186"><navLabel><text>Precedence</text></navLabel><content src="ch06.xhtml#id489081"/></navPoint>
+<navPoint id="id470918" playOrder="187"><navLabel><text>Associativity</text></navLabel><content src="ch06.xhtml#id470918"/></navPoint>
+<navPoint id="id460160" playOrder="188"><navLabel><text>Precedence Declarations</text></navLabel><content src="ch06.xhtml#id460160"/></navPoint>
+<navPoint id="id499944" playOrder="189"><navLabel><text>Using Precedence and Associativity to Resolve Conflicts</text></navLabel><content src="ch06.xhtml#id499944"/></navPoint>
+<navPoint id="id468281" playOrder="190"><navLabel><text>Typical Uses of Precedence</text></navLabel><content src="ch06.xhtml#id468281"/></navPoint>
+</navPoint>
+<navPoint id="I_sect16_d1e10857" playOrder="191"><navLabel><text>Recursive Rules</text></navLabel><content src="ch06.xhtml#I_sect16_d1e10857"/><navPoint id="id467454" playOrder="192"><navLabel><text>Left and Right Recursion</text></navLabel><content src="ch06.xhtml#id467454"/></navPoint>
+</navPoint>
+<navPoint id="rules" playOrder="193"><navLabel><text>Rules</text></navLabel><content src="ch06.xhtml#rules"/></navPoint>
+<navPoint id="I_sect16_d1e11031" playOrder="194"><navLabel><text>Special Characters</text></navLabel><content src="ch06.xhtml#I_sect16_d1e11031"/></navPoint>
+<navPoint id="startdec" playOrder="195"><navLabel><text>%start Declaration</text></navLabel><content src="ch06.xhtml#startdec"/></navPoint>
+<navPoint id="symvals" playOrder="196"><navLabel><text>Symbol Values</text></navLabel><content src="ch06.xhtml#symvals"/><navPoint id="symtypes" playOrder="197"><navLabel><text>Declaring Symbol Types</text></navLabel><content src="ch06.xhtml#symtypes"/></navPoint>
+<navPoint id="id552279" playOrder="198"><navLabel><text>Explicit Symbol Types</text></navLabel><content src="ch06.xhtml#id552279"/></navPoint>
+</navPoint>
+<navPoint id="tokens" playOrder="199"><navLabel><text>Tokens</text></navLabel><content src="ch06.xhtml#tokens"/><navPoint id="id481822" playOrder="200"><navLabel><text>Token Numbers</text></navLabel><content src="ch06.xhtml#id481822"/></navPoint>
+<navPoint id="id481824" playOrder="201"><navLabel><text>Token Values</text></navLabel><content src="ch06.xhtml#id481824"/></navPoint>
+<navPoint id="typedec" playOrder="202"><navLabel><text>%type Declaration</text></navLabel><content src="ch06.xhtml#typedec"/></navPoint>
+<navPoint id="union" playOrder="203"><navLabel><text>%union Declaration</text></navLabel><content src="ch06.xhtml#union"/></navPoint>
+</navPoint>
+<navPoint id="multiparse" playOrder="204"><navLabel><text>Variant and Multiple Grammars</text></navLabel><content src="ch06.xhtml#multiparse"/><navPoint id="id481919" playOrder="205"><navLabel><text>Combined Parsers</text></navLabel><content src="ch06.xhtml#id481919"/></navPoint>
+</navPoint>
+<navPoint id="I_sect16_d1e11819" playOrder="206"><navLabel><text>Multiple Parsers</text></navLabel><content src="ch06.xhtml#I_sect16_d1e11819"/><navPoint id="id553657" playOrder="207"><navLabel><text>Using %name-prefix or the -p Flag</text></navLabel><content src="ch06.xhtml#id553657"/></navPoint>
+<navPoint id="id549638" playOrder="208"><navLabel><text>Lexers for Multiple Parsers</text></navLabel><content src="ch06.xhtml#id549638"/></navPoint>
+<navPoint id="id549679" playOrder="209"><navLabel><text>Pure Parsers</text></navLabel><content src="ch06.xhtml#id549679"/></navPoint>
+</navPoint>
+<navPoint id="I_sect16_d1e11970" playOrder="210"><navLabel><text>y.output Files</text></navLabel><content src="ch06.xhtml#I_sect16_d1e11970"/></navPoint>
+<navPoint id="I_sect16_d1e12044" playOrder="211"><navLabel><text>Bison Library</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12044"/><navPoint id="id483382" playOrder="212"><navLabel><text>main()</text></navLabel><content src="ch06.xhtml#id483382"/></navPoint>
+<navPoint id="yyerror" playOrder="213"><navLabel><text>yyerror()</text></navLabel><content src="ch06.xhtml#yyerror"/></navPoint>
+</navPoint>
+<navPoint id="yyabort" playOrder="214"><navLabel><text>YYABORT</text></navLabel><content src="ch06.xhtml#yyabort"/></navPoint>
+<navPoint id="yyaccept" playOrder="215"><navLabel><text>YYACCEPT</text></navLabel><content src="ch06.xhtml#yyaccept"/></navPoint>
+<navPoint id="I_sect16_d1e12163" playOrder="216"><navLabel><text>YYBACKUP</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12163"/></navPoint>
+<navPoint id="yyclearin" playOrder="217"><navLabel><text>yyclearin</text></navLabel><content src="ch06.xhtml#yyclearin"/></navPoint>
+<navPoint id="I_sect16_d1e12246" playOrder="218"><navLabel><text>yydebug and YYDEBUG</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12246"/><navPoint id="id511705" playOrder="219"><navLabel><text>YYDEBUG</text></navLabel><content src="ch06.xhtml#id511705"/></navPoint>
+<navPoint id="id499091" playOrder="220"><navLabel><text>yydebug</text></navLabel><content src="ch06.xhtml#id499091"/></navPoint>
+</navPoint>
+<navPoint id="yyerrok" playOrder="221"><navLabel><text>yyerrok</text></navLabel><content src="ch06.xhtml#yyerrok"/></navPoint>
+<navPoint id="I_sect16_d1e12322" playOrder="222"><navLabel><text>YYERROR</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12322"/></navPoint>
+<navPoint id="I_sect16_d1e12355" playOrder="223"><navLabel><text>yyerror()</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12355"/></navPoint>
+<navPoint id="I_sect16_d1e12399" playOrder="224"><navLabel><text>yyparse()</text></navLabel><content src="ch06.xhtml#I_sect16_d1e12399"/></navPoint>
+<navPoint id="yyrecovering" playOrder="225"><navLabel><text>YYRECOVERING()</text></navLabel><content src="ch06.xhtml#yyrecovering"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch07.html" playOrder="226"><navLabel><text>7. Ambiguities and Conflicts</text></navLabel><content src="ch07.xhtml"/><navPoint id="I_sect17_d1e12485" playOrder="227"><navLabel><text>The Pointer Model and Conflicts</text></navLabel><content src="ch07.xhtml#I_sect17_d1e12485"/></navPoint>
+<navPoint id="I_sect17_d1e12663" playOrder="228"><navLabel><text>Kinds of Conflicts</text></navLabel><content src="ch07.xhtml#I_sect17_d1e12663"/></navPoint>
+<navPoint id="I_sect17_d1e12794" playOrder="229"><navLabel><text>Parser States</text></navLabel><content src="ch07.xhtml#I_sect17_d1e12794"/></navPoint>
+<navPoint id="I_sect17_d1e12992" playOrder="230"><navLabel><text>Contents of name.output</text></navLabel><content src="ch07.xhtml#I_sect17_d1e12992"/></navPoint>
+<navPoint id="I_sect17_d1e13015" playOrder="231"><navLabel><text>Reduce/Reduce Conflicts</text></navLabel><content src="ch07.xhtml#I_sect17_d1e13015"/></navPoint>
+<navPoint id="I_sect17_d1e13142" playOrder="232"><navLabel><text>Shift/Reduce Conflicts</text></navLabel><content src="ch07.xhtml#I_sect17_d1e13142"/></navPoint>
+<navPoint id="I_sect17_d1e13352" playOrder="233"><navLabel><text>Review of Conflicts in name.output</text></navLabel><content src="ch07.xhtml#I_sect17_d1e13352"/></navPoint>
+<navPoint id="I_sect17_d1e13424" playOrder="234"><navLabel><text>Common Examples of Conflicts</text></navLabel><content src="ch07.xhtml#I_sect17_d1e13424"/><navPoint id="id471144" playOrder="235"><navLabel><text>Expression Grammars</text></navLabel><content src="ch07.xhtml#id471144"/></navPoint>
+<navPoint id="ifthenelse" playOrder="236"><navLabel><text>IF/THEN/ELSE</text></navLabel><content src="ch07.xhtml#ifthenelse"/></navPoint>
+<navPoint id="id466513" playOrder="237"><navLabel><text>Nested List Grammar</text></navLabel><content src="ch07.xhtml#id466513"/></navPoint>
+</navPoint>
+<navPoint id="I_sect17_d1e13706" playOrder="238"><navLabel><text>How Do You Fix the Conflict?</text></navLabel><content src="ch07.xhtml#I_sect17_d1e13706"/><navPoint id="id536760" playOrder="239"><navLabel><text>IF/THEN/ELSE (Shift/Reduce)</text></navLabel><content src="ch07.xhtml#id536760"/></navPoint>
+<navPoint id="id471222" playOrder="240"><navLabel><text>Loop Within a Loop (Shift/Reduce)</text></navLabel><content src="ch07.xhtml#id471222"/></navPoint>
+<navPoint id="id483219" playOrder="241"><navLabel><text>Expression Precedence (Shift/Reduce)</text></navLabel><content src="ch07.xhtml#id483219"/></navPoint>
+<navPoint id="id502192" playOrder="242"><navLabel><text>Limited Lookahead (Shift/Reduce or Reduce/Reduce)</text></navLabel><content src="ch07.xhtml#id502192"/></navPoint>
+<navPoint id="id502182" playOrder="243"><navLabel><text>Overlap of Alternatives (Reduce/Reduce)</text></navLabel><content src="ch07.xhtml#id502182"/></navPoint>
+</navPoint>
+<navPoint id="I_sect17_d1e14122" playOrder="244"><navLabel><text>Summary</text></navLabel><content src="ch07.xhtml#I_sect17_d1e14122"/></navPoint>
+<navPoint id="I_sect17_d1e14152" playOrder="245"><navLabel><text>Exercises</text></navLabel><content src="ch07.xhtml#I_sect17_d1e14152"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch08.html" playOrder="246"><navLabel><text>8. Error Reporting and Recovery</text></navLabel><content src="ch08.xhtml"/><navPoint id="I_sect18_d1e14189" playOrder="247"><navLabel><text>Error Reporting</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14189"/></navPoint>
+<navPoint id="I_sect18_d1e14294" playOrder="248"><navLabel><text>Locations</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14294"/><navPoint id="id548176" playOrder="249"><navLabel><text>Adding Locations to the Parser</text></navLabel><content src="ch08.xhtml#id548176"/></navPoint>
+<navPoint id="id557471" playOrder="250"><navLabel><text>Adding Locations to the Lexer</text></navLabel><content src="ch08.xhtml#id557471"/></navPoint>
+<navPoint id="locfile" playOrder="251"><navLabel><text>More Sophisticated Locations with Filenames</text></navLabel><content src="ch08.xhtml#locfile"/></navPoint>
+</navPoint>
+<navPoint id="I_sect18_d1e14626" playOrder="252"><navLabel><text>Error Recovery</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14626"/></navPoint>
+<navPoint id="I_sect18_d1e14638" playOrder="253"><navLabel><text>Bison Error Recovery</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14638"/><navPoint id="id530156" playOrder="254"><navLabel><text>Freeing Discarded Symbols</text></navLabel><content src="ch08.xhtml#id530156"/></navPoint>
+<navPoint id="id549121" playOrder="255"><navLabel><text>Error Recovery in Interactive Parsers</text></navLabel><content src="ch08.xhtml#id549121"/></navPoint>
+<navPoint id="id549123" playOrder="256"><navLabel><text>Where to Put Error Tokens</text></navLabel><content src="ch08.xhtml#id549123"/></navPoint>
+</navPoint>
+<navPoint id="I_sect18_d1e14806" playOrder="257"><navLabel><text>Compiler Error Recovery</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14806"/></navPoint>
+<navPoint id="I_sect18_d1e14823" playOrder="258"><navLabel><text>Exercises</text></navLabel><content src="ch08.xhtml#I_sect18_d1e14823"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ch09.html" playOrder="259"><navLabel><text>9. Advanced Flex and Bison</text></navLabel><content src="ch09.xhtml"/><navPoint id="pure" playOrder="260"><navLabel><text>Pure Scanners and Parsers</text></navLabel><content src="ch09.xhtml#pure"/><navPoint id="id501376" playOrder="261"><navLabel><text>Pure Scanners in Flex</text></navLabel><content src="ch09.xhtml#id501376"/></navPoint>
+<navPoint id="purebison" playOrder="262"><navLabel><text>Pure Parsers in Bison</text></navLabel><content src="ch09.xhtml#purebison"/></navPoint>
+<navPoint id="id557289" playOrder="263"><navLabel><text>Using Pure Scanners and Parsers Together</text></navLabel><content src="ch09.xhtml#id557289"/></navPoint>
+<navPoint id="id468590" playOrder="264"><navLabel><text>A Reentrant Calculator</text></navLabel><content src="ch09.xhtml#id468590"/></navPoint>
+</navPoint>
+<navPoint id="glr" playOrder="265"><navLabel><text>GLR Parsing</text></navLabel><content src="ch09.xhtml#glr"/><navPoint id="id679955" playOrder="266"><navLabel><text>GLR Version of the SQL Parser</text></navLabel><content src="ch09.xhtml#id679955"/></navPoint>
+</navPoint>
+<navPoint id="cxx" playOrder="267"><navLabel><text>C++ Parsers</text></navLabel><content src="ch09.xhtml#cxx"/><navPoint id="id698280" playOrder="268"><navLabel><text>A C++ Calculator</text></navLabel><content src="ch09.xhtml#id698280"/></navPoint>
+<navPoint id="id698376" playOrder="269"><navLabel><text>C++ Parser Naming</text></navLabel><content src="ch09.xhtml#id698376"/></navPoint>
+<navPoint id="id698483" playOrder="270"><navLabel><text>A C++ Parser</text></navLabel><content src="ch09.xhtml#id698483"/></navPoint>
+<navPoint id="id698488" playOrder="271"><navLabel><text>Interfacing a Scanner with a C++ Parser</text></navLabel><content src="ch09.xhtml#id698488"/></navPoint>
+<navPoint id="id699174" playOrder="272"><navLabel><text>Should You Write Your Parser in C++ ?</text></navLabel><content src="ch09.xhtml#id699174"/></navPoint>
+</navPoint>
+<navPoint id="I_sect19_d1e16067" playOrder="273"><navLabel><text>Exercises</text></navLabel><content src="ch09.xhtml#I_sect19_d1e16067"/></navPoint>
+</navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:apa.html" playOrder="274"><navLabel><text>A. SQL Parser Grammar and Cross-Reference</text></navLabel><content src="apa.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:go01.html" playOrder="275"><navLabel><text>Glossary</text></navLabel><content src="go01.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:ix01.html" playOrder="276"><navLabel><text>Index</text></navLabel><content src="ix01.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:author_bios.html" playOrder="277"><navLabel><text>About the Author</text></navLabel><content src="author_bios.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:co02.html" playOrder="278"><navLabel><text>Colophon</text></navLabel><content src="co02.xhtml"/></navPoint>
+<navPoint id="urn:orm:book:9780596805418:chapter:copyright.html" playOrder="279"><navLabel><text>Copyright</text></navLabel><content src="copyright.xhtml"/></navPoint>
+</navMap>
+</ncx>

@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="appendix" title="Appendix A. SQL Parser Grammar and Cross-Reference"><div class="titlepage"><div><div><h1 class="title"><a id="sqlref"/>Appendix A. SQL Parser Grammar and Cross-Reference</h1></div></div></div><p><a id="index-083W881SO8W" class="indexterm"/><a id="index-882I258RJ4I" class="indexterm"/>Since the grammar for the SQL parser in <a class="xref" href="ch04.xhtml" title="Chapter 4. Parsing SQL">Chapter 4</a> is so large, here’s a list of the rules in the order they
+    appear in the source file, as well as a cross-reference of each token and
+    nonterminal symbol with the rules where they appear. This cross-reference
+    is for the slightly extended version in <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a> that
+    includes error recovery rules.</p><p>The listing in <a class="xref" href="apa.xhtml#sqllist" title="Example A-1. SQL grammar listing">Example A-1</a> and the cross-references
+    in <a class="xref" href="apa.xhtml#sqltok" title="Example A-2. SQL grammar terminal symbol cross-reference">Example A-2</a> are extracted from the listing file <code class="literal">lpmysql.output</code> created when bison compiled the
+    grammar. The listing also includes a list of unused tokens, of which this
+    grammar has quite a few since it defines SQL keywords not used in the
+    subset we parse, and it includes the complete set of parser states and
+    shift and reduce actions. The entire listing is more than 10,000 lines
+    long, much too long to include in this book, but is invaluable for
+    reference when debugging a grammar.</p><div class="example"><a id="sqllist"/><p class="title">Example A-1. SQL grammar listing</p><div class="example-contents"><pre class="programlisting">    0 $accept: stmt_list $end
+
+    1 stmt_list: stmt ';'
+    2          | stmt_list stmt ';'
+    3          | error ';'
+    4          | stmt_list error ';'
+
+    5 stmt: select_stmt
+
+    6 select_stmt: SELECT select_opts select_expr_list
+    7            | SELECT select_opts select_expr_list FROM table_references opt_where 
+                   opt_groupby opt_having opt_orderby opt_limit opt_into_list
+
+    8 opt_where: /* empty */
+    9          | WHERE expr
+
+   10 opt_groupby: /* empty */
+   11            | GROUP BY groupby_list opt_with_rollup
+
+   12 groupby_list: expr opt_asc_desc
+   13             | groupby_list ',' expr opt_asc_desc
+
+   14 opt_asc_desc: /* empty */
+   15             | ASC
+   16             | DESC
+
+   17 opt_with_rollup: /* empty */
+   18                | WITH ROLLUP
+
+   19 opt_having: /* empty */
+   20           | HAVING expr
+
+   21 opt_orderby: /* empty */
+   22            | ORDER BY groupby_list
+
+   23 opt_limit: /* empty */
+   24          | LIMIT expr
+   25          | LIMIT expr ',' expr
+
+   26 opt_into_list: /* empty */
+   27              | INTO column_list
+
+   28 column_list: NAME
+   29            | STRING
+   30            | column_list ',' NAME
+   31            | column_list ',' STRING
+
+   32 select_opts: /* empty */
+   33            | select_opts ALL
+   34            | select_opts DISTINCT
+   35            | select_opts DISTINCTROW
+   36            | select_opts HIGH_PRIORITY
+   37            | select_opts STRAIGHT_JOIN
+   38            | select_opts SQL_SMALL_RESULT
+   39            | select_opts SQL_BIG_RESULT
+   40            | select_opts SQL_CALC_FOUND_ROWS
+
+   41 select_expr_list: select_expr
+   42                 | select_expr_list ',' select_expr
+   43                 | '*'
+
+   44 select_expr: expr opt_as_alias
+
+   45 table_references: table_reference
+   46                 | table_references ',' table_reference
+
+   47 table_reference: table_factor
+   48                | join_table
+
+   49 table_factor: NAME opt_as_alias index_hint
+   50             | NAME '.' NAME opt_as_alias index_hint
+   51             | table_subquery opt_as NAME
+   52             | '(' table_references ')'
+
+   53 opt_as: AS
+   54       | /* empty */
+
+   55 opt_as_alias: AS NAME
+   56             | NAME
+   57             | /* empty */
+
+   58 join_table: table_reference opt_inner_cross JOIN table_factor opt_join_condition
+   59           | table_reference STRAIGHT_JOIN table_factor
+   60           | table_reference STRAIGHT_JOIN table_factor ON expr
+   61           | table_reference left_or_right opt_outer JOIN table_factor 
+                    join_condition
+   62           | table_reference NATURAL opt_left_or_right_outer JOIN table_factor
+
+   63 opt_inner_cross: /* empty */
+   64                | INNER
+   65                | CROSS
+
+   66 opt_outer: /* empty */
+   67          | OUTER
+
+   68 left_or_right: LEFT
+   69              | RIGHT
+
+   70 opt_left_or_right_outer: LEFT opt_outer
+   71                        | RIGHT opt_outer
+   72                        | /* empty */
+
+   73 opt_join_condition: join_condition
+   74                   | /* empty */
+
+   75 join_condition: ON expr
+   76               | USING '(' column_list ')'
+
+   77 index_hint: USE KEY opt_for_join '(' index_list ')'
+   78           | IGNORE KEY opt_for_join '(' index_list ')'
+   79           | FORCE KEY opt_for_join '(' index_list ')'
+   80           | /* empty */
+
+   81 opt_for_join: FOR JOIN
+   82             | /* empty */
+
+   83 index_list: NAME
+   84           | index_list ',' NAME
+
+   85 table_subquery: '(' select_stmt ')'
+
+   86 stmt: delete_stmt
+
+   87 delete_stmt: DELETE delete_opts FROM NAME opt_where opt_orderby opt_limit
+
+   88 delete_opts: delete_opts LOW_PRIORITY
+   89            | delete_opts QUICK
+   90            | delete_opts IGNORE
+   91            | /* empty */
+
+   92 delete_stmt: DELETE delete_opts delete_list FROM table_references opt_where
+
+   93 delete_list: NAME opt_dot_star
+   94            | delete_list ',' NAME opt_dot_star
+
+   95 opt_dot_star: /* empty */
+   96             | '.' '*'
+
+   97 delete_stmt: DELETE delete_opts FROM delete_list USING table_references 
+      opt_where
+
+   98 stmt: insert_stmt
+
+   99 insert_stmt: INSERT insert_opts opt_into NAME opt_col_names VALUES 
+      insert_vals_list opt_ondupupdate
+
+  100 opt_ondupupdate: /* empty */
+  101                | ONDUPLICATE KEY UPDATE insert_asgn_list
+
+  102 insert_opts: /* empty */
+  103            | insert_opts LOW_PRIORITY
+  104            | insert_opts DELAYED
+  105            | insert_opts HIGH_PRIORITY
+  106            | insert_opts IGNORE
+
+  107 opt_into: INTO
+  108         | /* empty */
+
+  109 opt_col_names: /* empty */
+  110              | '(' column_list ')'
+
+  111 insert_vals_list: '(' insert_vals ')'
+  112                 | insert_vals_list ',' '(' insert_vals ')'
+
+  113 insert_vals: expr
+  114            | DEFAULT
+  115            | insert_vals ',' expr
+  116            | insert_vals ',' DEFAULT
+
+  117 insert_stmt: INSERT insert_opts opt_into NAME SET insert_asgn_list 
+                   opt_ondupupdate
+  118            | INSERT insert_opts opt_into NAME opt_col_names select_stmt 
+                   opt_ondupupdate
+
+  119 insert_asgn_list: NAME COMPARISON expr
+  120                 | NAME COMPARISON DEFAULT
+  121                 | insert_asgn_list ',' NAME COMPARISON expr
+  122                 | insert_asgn_list ',' NAME COMPARISON DEFAULT
+
+  123 stmt: replace_stmt
+
+  124 replace_stmt: REPLACE insert_opts opt_into NAME opt_col_names VALUES 
+      insert_vals_list opt_ondupupdate
+  125             | REPLACE insert_opts opt_into NAME SET insert_asgn_list 
+                    opt_ondupupdate
+  126             | REPLACE insert_opts opt_into NAME opt_col_names select_stmt 
+                    opt_ondupupdate
+
+  127 stmt: update_stmt
+
+  128 update_stmt: UPDATE update_opts table_references SET update_asgn_list opt_where 
+      opt_orderby opt_limit
+
+  129 update_opts: /* empty */
+  130            | insert_opts LOW_PRIORITY
+  131            | insert_opts IGNORE
+
+  132 update_asgn_list: NAME COMPARISON expr
+  133                 | NAME '.' NAME COMPARISON expr
+  134                 | update_asgn_list ',' NAME COMPARISON expr
+  135                 | update_asgn_list ',' NAME '.' NAME COMPARISON expr
+
+  136 stmt: create_database_stmt
+
+  137 create_database_stmt: CREATE DATABASE opt_if_not_exists NAME
+  138                     | CREATE SCHEMA opt_if_not_exists NAME
+
+  139 opt_if_not_exists: /* empty */
+  140                  | IF EXISTS
+
+  141 stmt: create_table_stmt
+
+  142 create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists 
+                           NAME '(' create_col_list ')'
+  143                  | CREATE opt_temporary TABLE opt_if_not_exists NAME '.' 
+                           NAME '(' create_col_list ')'
+  144                  | CREATE opt_temporary TABLE opt_if_not_exists 
+                           NAME '(' create_col_list ')' create_select_statement
+  145                  | CREATE opt_temporary TABLE opt_if_not_exists 
+                           NAME create_select_statement
+  146                  | CREATE opt_temporary TABLE opt_if_not_exists NAME '.' 
+                           NAME '(' create_col_list ')' create_select_statement
+  147                  | CREATE opt_temporary TABLE opt_if_not_exists NAME '.' 
+                           NAME create_select_statement
+
+  148 create_col_list: create_definition
+  149                | create_col_list ',' create_definition
+
+  150 $@1: /* empty */
+
+  151 create_definition: $@1 NAME data_type column_atts
+  152                  | PRIMARY KEY '(' column_list ')'
+  153                  | KEY '(' column_list ')'
+  154                  | INDEX '(' column_list ')'
+  155                  | FULLTEXT INDEX '(' column_list ')'
+  156                  | FULLTEXT KEY '(' column_list ')'
+
+  157 column_atts: /* empty */
+  158            | column_atts NOT NULLX
+  159            | column_atts NULLX
+  160            | column_atts DEFAULT STRING
+  161            | column_atts DEFAULT INTNUM
+  162            | column_atts DEFAULT APPROXNUM
+  163            | column_atts DEFAULT BOOL
+  164            | column_atts AUTO_INCREMENT
+  165            | column_atts UNIQUE '(' column_list ')'
+  166            | column_atts UNIQUE KEY
+  167            | column_atts PRIMARY KEY
+  168            | column_atts KEY
+  169            | column_atts COMMENT STRING
+
+  170 opt_length: /* empty */
+  171           | '(' INTNUM ')'
+  172           | '(' INTNUM ',' INTNUM ')'
+
+  173 opt_binary: /* empty */
+  174           | BINARY
+
+  175 opt_uz: /* empty */
+  176       | opt_uz UNSIGNED
+  177       | opt_uz ZEROFILL
+
+  178 opt_csc: /* empty */
+  179        | opt_csc CHAR SET STRING
+  180        | opt_csc COLLATE STRING
+
+  181 data_type: BIT opt_length
+  182          | TINYINT opt_length opt_uz
+  183          | SMALLINT opt_length opt_uz
+  184          | MEDIUMINT opt_length opt_uz
+  185          | INT opt_length opt_uz
+  186          | INTEGER opt_length opt_uz
+  187          | BIGINT opt_length opt_uz
+  188          | REAL opt_length opt_uz
+  189          | DOUBLE opt_length opt_uz
+  190          | FLOAT opt_length opt_uz
+  191          | DECIMAL opt_length opt_uz
+  192          | DATE
+  193          | TIME
+  194          | TIMESTAMP
+  195          | DATETIME
+  196          | YEAR
+  197          | CHAR opt_length opt_csc
+  198          | VARCHAR '(' INTNUM ')' opt_csc
+  199          | BINARY opt_length
+  200          | VARBINARY '(' INTNUM ')'
+  201          | TINYBLOB
+  202          | BLOB
+  203          | MEDIUMBLOB
+  204          | LONGBLOB
+  205          | TINYTEXT opt_binary opt_csc
+  206          | TEXT opt_binary opt_csc
+  207          | MEDIUMTEXT opt_binary opt_csc
+  208          | LONGTEXT opt_binary opt_csc
+  209          | ENUM '(' enum_list ')' opt_csc
+  210          | SET '(' enum_list ')' opt_csc
+
+  211 enum_list: STRING
+  212          | enum_list ',' STRING
+
+  213 create_select_statement: opt_ignore_replace opt_as select_stmt
+
+  214 opt_ignore_replace: /* empty */
+  215                   | IGNORE
+  216                   | REPLACE
+
+  217 opt_temporary: /* empty */
+  218              | TEMPORARY
+
+  219 stmt: set_stmt
+
+  220 set_stmt: SET set_list
+
+  221 set_list: set_expr
+  222         | set_list ',' set_expr
+
+  223 set_expr: USERVAR COMPARISON expr
+  224         | USERVAR ASSIGN expr
+
+  225 expr: NAME
+  226     | USERVAR
+  227     | NAME '.' NAME
+  228     | STRING
+  229     | INTNUM
+  230     | APPROXNUM
+  231     | BOOL
+  232     | expr '+' expr
+  233     | expr '-' expr
+  234     | expr '*' expr
+  235     | expr '/' expr
+  236     | expr '%' expr
+  237     | expr MOD expr
+  238     | '-' expr
+  239     | expr ANDOP expr
+  240     | expr OR expr
+  241     | expr XOR expr
+  242     | expr COMPARISON expr
+  243     | expr COMPARISON '(' select_stmt ')'
+  244     | expr COMPARISON ANY '(' select_stmt ')'
+  245     | expr COMPARISON SOME '(' select_stmt ')'
+  246     | expr COMPARISON ALL '(' select_stmt ')'
+  247     | expr '|' expr
+  248     | expr '&amp;' expr
+  249     | expr '^' expr
+  250     | expr SHIFT expr
+  251     | NOT expr
+  252     | '!' expr
+  253     | USERVAR ASSIGN expr
+  254     | expr IS NULLX
+  255     | expr IS NOT NULLX
+  256     | expr IS BOOL
+  257     | expr IS NOT BOOL
+  258     | expr BETWEEN expr AND expr
+
+  259 val_list: expr
+  260         | expr ',' val_list
+
+  261 opt_val_list: /* empty */
+  262             | val_list
+
+  263 expr: expr IN '(' val_list ')'
+  264     | expr NOT IN '(' val_list ')'
+  265     | expr IN '(' select_stmt ')'
+  266     | expr NOT IN '(' select_stmt ')'
+  267     | EXISTS '(' select_stmt ')'
+  268     | NAME '(' opt_val_list ')'
+  269     | FCOUNT '(' '*' ')'
+  270     | FCOUNT '(' expr ')'
+  271     | FSUBSTRING '(' val_list ')'
+  272     | FSUBSTRING '(' expr FROM expr ')'
+  273     | FSUBSTRING '(' expr FROM expr FOR expr ')'
+  274     | FTRIM '(' val_list ')'
+  275     | FTRIM '(' trim_ltb expr FROM val_list ')'
+
+  276 trim_ltb: LEADING
+  277         | TRAILING
+  278         | BOTH
+
+  279 expr: FDATE_ADD '(' expr ',' interval_exp ')'
+  280     | FDATE_SUB '(' expr ',' interval_exp ')'
+
+  281 interval_exp: INTERVAL expr DAY_HOUR
+  282             | INTERVAL expr DAY_MICROSECOND
+  283             | INTERVAL expr DAY_MINUTE
+  284             | INTERVAL expr DAY_SECOND
+  285             | INTERVAL expr YEAR_MONTH
+  286             | INTERVAL expr YEAR
+  287             | INTERVAL expr HOUR_MICROSECOND
+  288             | INTERVAL expr HOUR_MINUTE
+  289             | INTERVAL expr HOUR_SECOND
+
+  290 expr: CASE expr case_list END
+  291     | CASE expr case_list ELSE expr END
+  292     | CASE case_list END
+  293     | CASE case_list ELSE expr END
+
+  294 case_list: WHEN expr THEN expr
+  295          | case_list WHEN expr THEN expr
+
+  296 expr: expr LIKE expr
+  297     | expr NOT LIKE expr
+  298     | expr REGEXP expr
+  299     | expr NOT REGEXP expr
+  300     | CURRENT_TIMESTAMP
+  301     | CURRENT_DATE
+  302     | CURRENT_TIME
+  303     | BINARY expr
+</pre></div></div><div class="example"><a id="sqltok"/><p class="title">Example A-2. SQL grammar terminal symbol cross-reference</p><div class="example-contents"><pre class="programlisting">Terminals, with rules where they appear
+
+$end (0) 0
+'!' (33) 252
+'%' (37) 236
+'&amp;' (38) 248
+'(' (40) 52 76 77 78 79 85 110 111 112 142 143 144 146 152 153 154
+    155 156 165 171 172 198 200 209 210 243 244 245 246 263 264 265
+    266 267 268 269 270 271 272 273 274 275 279 280
+')' (41) 52 76 77 78 79 85 110 111 112 142 143 144 146 152 153 154
+    155 156 165 171 172 198 200 209 210 243 244 245 246 263 264 265
+    266 267 268 269 270 271 272 273 274 275 279 280
+'*' (42) 43 96 234 269
+'+' (43) 232
+',' (44) 13 25 30 31 42 46 84 94 112 115 116 121 122 134 135 149 172
+    212 222 260 279 280
+'-' (45) 233 238
+'.' (46) 50 96 133 135 143 146 147 227
+'/' (47) 235
+';' (59) 1 2 3 4
+'^' (94) 249
+'|' (124) 247
+error (256) 3 4
+NAME (258) 28 30 49 50 51 55 56 83 84 87 93 94 99 117 118 119 120 121
+    122 124 125 126 132 133 134 135 137 138 142 143 144 145 146 147
+    151 225 227 268
+STRING (259) 29 31 160 169 179 180 211 212 228
+INTNUM (260) 161 171 172 198 200 229
+BOOL (261) 163 231 256 257
+APPROXNUM (262) 162 230
+USERVAR (263) 223 224 226 253
+ASSIGN (264) 224 253
+OR (265) 240
+XOR (266) 241
+ANDOP (267) 239
+REGEXP (268) 298 299
+LIKE (269) 296 297
+IS (270) 254 255 256 257
+IN (271) 263 264 265 266
+NOT (272) 158 251 255 257 264 266 297 299
+BETWEEN (273) 258
+COMPARISON (274) 119 120 121 122 132 133 134 135 223 242 243 244 245
+    246
+SHIFT (275) 250
+MOD (276) 237
+UMINUS (277)
+ADD (278)
+ALL (279) 33 246
+ALTER (280)
+ANALYZE (281)
+AND (282) 258
+ANY (283) 244
+AS (284) 53 55
+ASC (285) 15
+AUTO_INCREMENT (286) 164
+BEFORE (287)
+BIGINT (288) 187
+BINARY (289) 174 199 303
+BIT (290) 181
+BLOB (291) 202
+BOTH (292) 278
+BY (293) 11 22
+CALL (294)
+CASCADE (295)
+CASE (296) 290 291 292 293
+CHANGE (297)
+CHAR (298) 179 197
+CHECK (299)
+COLLATE (300) 180
+COLUMN (301)
+COMMENT (302) 169
+CONDITION (303)
+CONSTRAINT (304)
+CONTINUE (305)
+CONVERT (306)
+CREATE (307) 137 138 142 143 144 145 146 147
+CROSS (308) 65
+CURRENT_DATE (309) 301
+CURRENT_TIME (310) 302
+CURRENT_TIMESTAMP (311) 300
+CURRENT_USER (312)
+CURSOR (313)
+DATABASE (314) 137
+DATABASES (315)
+DATE (316) 192
+DATETIME (317) 195
+DAY_HOUR (318) 281
+DAY_MICROSECOND (319) 282
+DAY_MINUTE (320) 283
+DAY_SECOND (321) 284
+DECIMAL (322) 191
+DECLARE (323)
+DEFAULT (324) 114 116 120 122 160 161 162 163
+DELAYED (325) 104
+DELETE (326) 87 92 97
+DESC (327) 16
+DESCRIBE (328)
+DETERMINISTIC (329)
+DISTINCT (330) 34
+DISTINCTROW (331) 35
+DIV (332)
+DOUBLE (333) 189
+DROP (334)
+DUAL (335)
+EACH (336)
+ELSE (337) 291 293
+ELSEIF (338)
+ENCLOSED (339)
+END (340) 290 291 292 293
+ENUM (341) 209
+ESCAPED (342)
+EXISTS (343) 140 267
+EXIT (344)
+EXPLAIN (345)
+FETCH (346)
+FLOAT (347) 190
+FOR (348) 81 273
+FORCE (349) 79
+FOREIGN (350)
+FROM (351) 7 87 92 97 272 273 275
+FULLTEXT (352) 155 156
+GRANT (353)
+GROUP (354) 11
+HAVING (355) 20
+HIGH_PRIORITY (356) 36 105
+HOUR_MICROSECOND (357) 287
+HOUR_MINUTE (358) 288
+HOUR_SECOND (359) 289
+IF (360) 140
+IGNORE (361) 78 90 106 131 215
+INDEX (362) 154 155
+INFILE (363)
+INNER (364) 64
+INOUT (365)
+INSENSITIVE (366)
+INSERT (367) 99 117 118
+INT (368) 185
+INTEGER (369) 186
+INTERVAL (370) 281 282 283 284 285 286 287 288 289
+INTO (371) 27 107
+ITERATE (372)
+JOIN (373) 58 61 62 81
+KEY (374) 77 78 79 101 152 153 156 166 167 168
+KEYS (375)
+KILL (376)
+LEADING (377) 276
+LEAVE (378)
+LEFT (379) 68 70
+LIMIT (380) 24 25
+LINES (381)
+LOAD (382)
+LOCALTIME (383)
+LOCALTIMESTAMP (384)
+LOCK (385)
+LONG (386)
+LONGBLOB (387) 204
+LONGTEXT (388) 208
+LOOP (389)
+LOW_PRIORITY (390) 88 103 130
+MATCH (391)
+MEDIUMBLOB (392) 203
+MEDIUMINT (393) 184
+MEDIUMTEXT (394) 207
+MINUTE_MICROSECOND (395)
+MINUTE_SECOND (396)
+MODIFIES (397)
+NATURAL (398) 62
+NO_WRITE_TO_BINLOG (399)
+NULLX (400) 158 159 254 255
+NUMBER (401)
+ON (402) 60 75
+ONDUPLICATE (403) 101
+OPTIMIZE (404)
+OPTION (405)
+OPTIONALLY (406)
+ORDER (407) 22
+OUT (408)
+OUTER (409) 67
+OUTFILE (410)
+PRECISION (411)
+PRIMARY (412) 152 167
+PROCEDURE (413)
+PURGE (414)
+QUICK (415) 89
+READ (416)
+READS (417)
+REAL (418) 188
+REFERENCES (419)
+RELEASE (420)
+RENAME (421)
+REPEAT (422)
+REPLACE (423) 124 125 126 216
+REQUIRE (424)
+RESTRICT (425)
+RETURN (426)
+REVOKE (427)
+RIGHT (428) 69 71
+ROLLUP (429) 18
+SCHEMA (430) 138
+SCHEMAS (431)
+SECOND_MICROSECOND (432)
+SELECT (433) 6 7
+SENSITIVE (434)
+SEPARATOR (435)
+SET (436) 117 125 128 179 210 220
+SHOW (437)
+SMALLINT (438) 183
+SOME (439) 245
+SONAME (440)
+SPATIAL (441)
+SPECIFIC (442)
+SQL (443)
+SQLEXCEPTION (444)
+SQLSTATE (445)
+SQLWARNING (446)
+SQL_BIG_RESULT (447) 39
+SQL_CALC_FOUND_ROWS (448) 40
+SQL_SMALL_RESULT (449) 38
+SSL (450)
+STARTING (451)
+STRAIGHT_JOIN (452) 37 59 60
+TABLE (453) 142 143 144 145 146 147
+TEMPORARY (454) 218
+TEXT (455) 206
+TERMINATED (456)
+THEN (457) 294 295
+TIME (458) 193
+TIMESTAMP (459) 194
+TINYBLOB (460) 201
+TINYINT (461) 182
+TINYTEXT (462) 205
+TO (463)
+TRAILING (464) 277
+TRIGGER (465)
+UNDO (466)
+UNION (467)
+UNIQUE (468) 165 166
+UNLOCK (469)
+UNSIGNED (470) 176
+UPDATE (471) 101 128
+USAGE (472)
+USE (473) 77
+USING (474) 76 97
+UTC_DATE (475)
+UTC_TIME (476)
+UTC_TIMESTAMP (477)
+VALUES (478) 99 124
+VARBINARY (479) 200
+VARCHAR (480) 198
+VARYING (481)
+WHEN (482) 294 295
+WHERE (483) 9
+WHILE (484)
+WITH (485) 18
+WRITE (486)
+YEAR (487) 196 286
+YEAR_MONTH (488) 285
+ZEROFILL (489) 177
+FSUBSTRING (490) 271 272 273
+FTRIM (491) 274 275
+FDATE_ADD (492) 279
+FDATE_SUB (493) 280
+FCOUNT (494) 269 270
+
+
+Nonterminals, with rules where they appear
+
+$accept (254)
+    on left: 0
+stmt_list (255)
+    on left: 1 2 3 4, on right: 0 2 4
+stmt (256)
+    on left: 5 86 98 123 127 136 141 219, on right: 1 2
+select_stmt (257)
+    on left: 6 7, on right: 5 85 118 126 213 243 244 245 246 265 266
+    267
+opt_where (258)
+    on left: 8 9, on right: 7 87 92 97 128
+opt_groupby (259)
+    on left: 10 11, on right: 7
+groupby_list (260)
+    on left: 12 13, on right: 11 13 22
+opt_asc_desc (261)
+    on left: 14 15 16, on right: 12 13
+opt_with_rollup (262)
+    on left: 17 18, on right: 11
+opt_having (263)
+    on left: 19 20, on right: 7
+opt_orderby (264)
+    on left: 21 22, on right: 7 87 128
+opt_limit (265)
+    on left: 23 24 25, on right: 7 87 128
+opt_into_list (266)
+    on left: 26 27, on right: 7
+column_list (267)
+    on left: 28 29 30 31, on right: 27 30 31 76 110 152 153 154 155
+    156 165
+select_opts (268)
+    on left: 32 33 34 35 36 37 38 39 40, on right: 6 7 33 34 35 36
+    37 38 39 40
+select_expr_list (269)
+    on left: 41 42 43, on right: 6 7 42
+select_expr (270)
+    on left: 44, on right: 41 42
+table_references (271)
+    on left: 45 46, on right: 7 46 52 92 97 128
+table_reference (272)
+    on left: 47 48, on right: 45 46 58 59 60 61 62
+table_factor (273)
+    on left: 49 50 51 52, on right: 47 58 59 60 61 62
+opt_as (274)
+    on left: 53 54, on right: 51 213
+opt_as_alias (275)
+    on left: 55 56 57, on right: 44 49 50
+join_table (276)
+    on left: 58 59 60 61 62, on right: 48
+opt_inner_cross (277)
+    on left: 63 64 65, on right: 58
+opt_outer (278)
+    on left: 66 67, on right: 61 70 71
+left_or_right (279)
+    on left: 68 69, on right: 61
+opt_left_or_right_outer (280)
+    on left: 70 71 72, on right: 62
+opt_join_condition (281)
+    on left: 73 74, on right: 58
+join_condition (282)
+    on left: 75 76, on right: 61 73
+index_hint (283)
+    on left: 77 78 79 80, on right: 49 50
+opt_for_join (284)
+    on left: 81 82, on right: 77 78 79
+index_list (285)
+    on left: 83 84, on right: 77 78 79 84
+table_subquery (286)
+    on left: 85, on right: 51
+delete_stmt (287)
+    on left: 87 92 97, on right: 86
+delete_opts (288)
+    on left: 88 89 90 91, on right: 87 88 89 90 92 97
+delete_list (289)
+    on left: 93 94, on right: 92 94 97
+opt_dot_star (290)
+    on left: 95 96, on right: 93 94
+insert_stmt (291)
+    on left: 99 117 118, on right: 98
+opt_ondupupdate (292)
+    on left: 100 101, on right: 99 117 118 124 125 126
+insert_opts (293)
+    on left: 102 103 104 105 106, on right: 99 103 104 105 106 117
+    118 124 125 126 130 131
+opt_into (294)
+    on left: 107 108, on right: 99 117 118 124 125 126
+opt_col_names (295)
+    on left: 109 110, on right: 99 118 124 126
+insert_vals_list (296)
+    on left: 111 112, on right: 99 112 124
+insert_vals (297)
+    on left: 113 114 115 116, on right: 111 112 115 116
+insert_asgn_list (298)
+    on left: 119 120 121 122, on right: 101 117 121 122 125
+replace_stmt (299)
+    on left: 124 125 126, on right: 123
+update_stmt (300)
+    on left: 128, on right: 127
+update_opts (301)
+    on left: 129 130 131, on right: 128
+update_asgn_list (302)
+    on left: 132 133 134 135, on right: 128 134 135
+create_database_stmt (303)
+    on left: 137 138, on right: 136
+opt_if_not_exists (304)
+    on left: 139 140, on right: 137 138 142 143 144 145 146 147
+create_table_stmt (305)
+    on left: 142 143 144 145 146 147, on right: 141
+create_col_list (306)
+    on left: 148 149, on right: 142 143 144 146 149
+create_definition (307)
+    on left: 151 152 153 154 155 156, on right: 148 149
+$@1 (308)
+    on left: 150, on right: 151
+column_atts (309)
+    on left: 157 158 159 160 161 162 163 164 165 166 167 168 169, on right:
+    151 158 159 160 161 162 163 164 165 166 167 168 169
+opt_length (310)
+    on left: 170 171 172, on right: 181 182 183 184 185 186 187 188
+    189 190 191 197 199
+opt_binary (311)
+    on left: 173 174, on right: 205 206 207 208
+opt_uz (312)
+    on left: 175 176 177, on right: 176 177 182 183 184 185 186 187
+    188 189 190 191
+opt_csc (313)
+    on left: 178 179 180, on right: 179 180 197 198 205 206 207 208
+    209 210
+data_type (314)
+    on left: 181 182 183 184 185 186 187 188 189 190 191 192 193 194
+    195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210,
+    on right: 151
+enum_list (315)
+    on left: 211 212, on right: 209 210 212
+create_select_statement (316)
+    on left: 213, on right: 144 145 146 147
+opt_ignore_replace (317)
+    on left: 214 215 216, on right: 213
+opt_temporary (318)
+    on left: 217 218, on right: 142 143 144 145 146 147
+set_stmt (319)
+    on left: 220, on right: 219
+set_list (320)
+    on left: 221 222, on right: 220 222
+set_expr (321)
+    on left: 223 224, on right: 221 222
+expr (322)
+    on left: 225 226 227 228 229 230 231 232 233 234 235 236 237 238
+    239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254
+    255 256 257 258 263 264 265 266 267 268 269 270 271 272 273 274
+    275 279 280 290 291 292 293 296 297 298 299 300 301 302 303, on right:
+    9 12 13 20 24 25 44 60 75 113 115 119 121 132 133 134 135 223 224
+    232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247
+    248 249 250 251 252 253 254 255 256 257 258 259 260 263 264 265
+    266 270 272 273 275 279 280 281 282 283 284 285 286 287 288 289
+    290 291 293 294 295 296 297 298 299 303
+val_list (323)
+    on left: 259 260, on right: 260 262 263 264 271 274 275
+opt_val_list (324)
+    on left: 261 262, on right: 268
+trim_ltb (325)
+    on left: 276 277 278, on right: 275
+interval_exp (326)
+    on left: 281 282 283 284 285 286 287 288 289, on right: 279 280
+case_list (327)
+    on left: 294 295, on right: 290 291 292 293 295<a id="I_indexterm_d1e16121" class="indexterm"/><a id="I_indexterm_d1e16122" class="indexterm"/>
+</pre></div></div></div></div></body>
+</html>

@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 4. Parsing SQL"><div class="titlepage"><div><div><h1 class="title"><a id="sql"/>Chapter 4. Parsing SQL</h1></div></div></div><p><a id="index-288K744UD0R" class="indexterm"/><a id="I_indexterm4_d1e4806" class="indexterm"/>SQL (which stands for Structured Query Language and is
+    usually pronounced <span class="emphasis"><em>sequel</em></span>) is the most common
+    language used to handle relational databases.<sup>[<a id="id483361" href="#ftn.id483361" class="footnote">15</a>]</sup> We’ll develop a SQL parser that produces a compact tokenized
+    version of SQL statements.</p><p>This parser is based on the version of SQL used in the popular MySQL
+    open source database. MySQL actually uses a bison parser to parse its SQL
+    input, although for a variety of reasons this parser isn’t based on
+    mySQL’s parser but rather is based on the description of the language in
+    the manual.</p><p>MySQL’s parser is much longer and more complex, since this
+    pedagogical example leaves out many of the less heavily used parts.
+    MySQL’s parser is written in an odd way that uses bison to generate a C
+    parser that’s compiled by the C++ compiler, with a handwritten C++ lexer.
+    There’s also the detail that its license doesn’t allow excerpting in a
+    book like this one. But if you’re interested, it’s the file <code class="literal">sql/sql_yacc.yy</code>, which is part of the source
+    code at <a class="ulink" href="http://dev.mysql.com/downloads/mysql/5.1.html">http://dev.mysql.com/downloads/mysql/5.1.html</a>.</p><p>The ultimate definitions for SQL are the standards documents
+    published by ANSI and ISO including ISO/IEC 9075-2:2003, which defines
+    SQL, and a variety of related documents that define the way to embed SQL
+    in other programming languages and in XML.</p><div class="sect1" title="A Quick Overview of SQL"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e4830"/>A Quick Overview of SQL</h1></div></div></div><p><a id="index-436L480SW2G" class="indexterm"/>SQL is a special-purpose language for relational
+      databases. Rather than manipulating data in memory, it manipulates data
+      in database tables, referring to memory only incidentally.</p><div class="sect2" title="Relational Databases"><div class="titlepage"><div><div><h2 class="title"><a id="id518341"/>Relational Databases</h2></div></div></div><p><a id="I_indexterm4_d1e4845" class="indexterm"/><a id="I_indexterm4_d1e4850" class="indexterm"/>A <span class="emphasis"><em>database</em></span> is a collection of
+        <span class="emphasis"><em>tables</em></span><a id="I_indexterm4_d1e4861" class="indexterm"/>, which are analogous to files. Each table contains
+        <span class="emphasis"><em>rows</em></span> and <span class="emphasis"><em>columns</em></span>, which are
+        analogous to records and fields. The rows in a table are not kept in
+        any particular order. You create a set of tables by giving the name
+        and type of each column:</p><a id="I_programlisting4_d1e4873"/><pre class="programlisting">CREATE TABLE Foods (
+      name CHAR(8) NOT NULL,
+      type CHAR(5),
+      flavor    CHAR(6),
+      PRIMARY KEY ( name )
+)
+
+CREATE TABLE Courses (
+      course      CHAR(8) NOT NULL PRIMARY KEY,
+      flavor      CHAR(6),
+      sequence INTEGER
+)</pre><p>The syntax is completely free-format, and there are often
+        several different syntactic ways to write the same thing—notice the
+        two different ways we gave the <code class="literal">PRIMARY
+        KEY</code><a id="I_indexterm4_d1e4879" class="indexterm"/> specifier. (The <span class="emphasis">primary
+        key</span> in a table is a column, or set of columns, that
+        uniquely specifies a row.) <a class="xref" href="ch04.xhtml#twotabs" title="Table 4-1. Two relational tables">Table 4-1</a> shows the two
+        tables we just created after loading in data.</p><div class="table"><a id="twotabs"/><p class="title">Table 4-1. Two relational tables</p><div class="table-contents"><table summary="Two relational tables" style="border-collapse: collapse;border-top: 0.5pt solid ; border-bottom: 0.5pt solid ; border-left: 0.5pt solid ; border-right: 0.5pt solid ; "><colgroup><col/><col/><col/><col/><col/><col/><col/><col/></colgroup><thead><tr><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">Foods</th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">Courses</th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </th><th style="border-bottom: 0.5pt solid ; "> </th></tr></thead><tbody><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "><span class="emphasis"><em>name</em></span></td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "><span class="emphasis"><em>type</em></span></td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "><span class="emphasis"><em>flavor</em></span></td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "><span class="emphasis"><em>course</em></span></td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "><span class="emphasis"><em>flavor</em></span></td><td style="border-bottom: 0.5pt solid ; "><span class="emphasis"><em>sequence</em></span></td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">peach</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">fruit</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">sweet</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">salad</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">1</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">tomato</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">fruit</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">main</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">2</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">lemon</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">fruit</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">sour</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">dessert</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">sweet</td><td style="border-bottom: 0.5pt solid ; ">3</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">lard</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">fat</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">bland</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; "> </td><td style="border-bottom: 0.5pt solid ; "> </td></tr><tr><td style="border-right: 0.5pt solid ; ">cheddar</td><td style="border-right: 0.5pt solid ; ">fat</td><td style="border-right: 0.5pt solid ; ">savory</td><td style="border-right: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; "> </td><td style="border-right: 0.5pt solid ; "> </td><td style=""> </td></tr></tbody></table></div></div><p>SQL implements what’s known as a <span class="emphasis"><em>tuple
+        calculus</em></span><a id="I_indexterm4_d1e4999" class="indexterm"/>, where <span class="emphasis"><em>tuple</em></span> is relational-ese for
+        a record, which is an ordered list of fields or expressions. To use a
+        database, you tell the database what tuples you want it to extract
+        from your data. It’s up to the database to figure out how to get it
+        from the tables it has. (That’s the calculus part.) The specification
+        of a set of desired data is a <span class="emphasis"><em>query</em></span>. For example,
+        using the two tables in <a class="xref" href="ch04.xhtml#twotabs" title="Table 4-1. Two relational tables">Table 4-1</a>, to get a list of
+        fruits, you would say the following:</p><a id="I_programlisting4_d1e5013"/><pre class="programlisting">SELECT name, flavor
+FROM  Foods
+WHERE Foods.type = "fruit"</pre><p>The response is shown in <a class="xref" href="ch04.xhtml#sqlt1" title="Table 4-2. SQL response table">Table 4-2</a>.</p><div class="table"><a id="sqlt1"/><p class="title">Table 4-2. SQL response table</p><div class="table-contents"><table summary="SQL response table" style="border-collapse: collapse;border-top: 0.5pt solid ; border-bottom: 0.5pt solid ; border-left: 0.5pt solid ; border-right: 0.5pt solid ; "><colgroup><col/><col/></colgroup><thead><tr><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">name</th><th style="border-bottom: 0.5pt solid ; ">flavor</th></tr></thead><tbody><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">peach</td><td style="border-bottom: 0.5pt solid ; ">sweet</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">tomato</td><td style="border-bottom: 0.5pt solid ; ">savory</td></tr><tr><td style="border-right: 0.5pt solid ; ">lemon</td><td style="">sour</td></tr></tbody></table></div></div><p>You can also ask questions spanning more than one table. To get
+        a list of foods suitable to each course of the meal, you say the
+        following:</p><a id="I_programlisting4_d1e5049"/><pre class="programlisting">SELECT course, name, Foods.flavor, type
+FROM   Courses, Foods
+WHERE  Courses.flavor = Foods.flavor</pre><p>The response is shown in <a class="xref" href="ch04.xhtml#sqlt2" title="Table 4-3. Second SQL response table">Table 4-3</a>.</p><div class="table"><a id="sqlt2"/><p class="title">Table 4-3. Second SQL response table</p><div class="table-contents"><table summary="Second SQL response table" style="border-collapse: collapse;border-top: 0.5pt solid ; border-bottom: 0.5pt solid ; border-left: 0.5pt solid ; border-right: 0.5pt solid ; "><colgroup><col/><col/><col/><col/></colgroup><thead><tr><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">course</th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">name</th><th style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">flavor</th><th style="border-bottom: 0.5pt solid ; ">type</th></tr></thead><tbody><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">salad</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">tomato</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">fruit</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">salad</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">cheddar</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">fat</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">main</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">tomato</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">fruit</td></tr><tr><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">main</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">cheddar</td><td style="border-right: 0.5pt solid ; border-bottom: 0.5pt solid ; ">savory</td><td style="border-bottom: 0.5pt solid ; ">fat</td></tr><tr><td style="border-right: 0.5pt solid ; ">dessert</td><td style="border-right: 0.5pt solid ; ">peach</td><td style="border-right: 0.5pt solid ; ">sweet</td><td style="">fruit</td></tr></tbody></table></div></div><p>When listing the column names, we can leave out the table name
+        if the column name is unambiguous.</p></div></div><div class="sect1" title="Manipulating Relations"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e5117"/>Manipulating Relations</h1></div></div></div><p>SQL has a rich set of table manipulation commands. You can read
+      and write individual rows with <code class="literal">SELECT</code>, <code class="literal">INSERT</code>, <code class="literal">UPDATE</code>, and <code class="literal">DELETE</code> commands. The <code class="literal">SELECT</code> statement has a very complex syntax
+      that lets you look for values in columns; compare columns to each other;
+      do arithmetic; and compute minimum, maximum, average, and group
+      totals.</p></div><div class="sect1" title="Three Ways to Use SQL"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e5137"/>Three Ways to Use SQL</h1></div></div></div><p>In the original version of SQL, users typed commands into a file
+      or directly at the terminal and received responses immediately. People
+      still sometimes use it this way for creating tables and for debugging,
+      but for the vast majority of applications, SQL commands come from inside
+      programs, and the results are returned to those programs. The SQL
+      standard defines a “module language” to embed SQL in a variety of
+      programming languages, but MySQL avoids the issue by using subroutine
+      calls for communication between a user program and the database, and it
+      doesn’t use the module language at all.</p><p>Since the syntax of SQL is so large, we have reproduced the entire
+      grammar in one place in the <a class="xref" href="apa.xhtml" title="Appendix A. SQL Parser Grammar and Cross-Reference">Appendix A</a>, with a
+      cross-reference for all of the symbols in the grammar.<a id="I_indexterm4_d1e5146" class="indexterm"/></p></div><div class="sect1" title="SQL to RPN"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e5147"/>SQL to RPN</h1></div></div></div><p><a id="I_indexterm4_d1e5151" class="indexterm"/><a id="I_indexterm4_d1e5156" class="indexterm"/>Our tokenized version of SQL will use a version of Reverse
+      Polish Notation (RPN), familiar to users of HP calculators. In 1920,
+      Polish logician Jan Łukasiewicz<a id="I_indexterm4_d1e5162" class="indexterm"/><sup>[<a id="id464149" href="#ftn.id464149" class="footnote">16</a>]</sup> realized that if you put the operators before the operands
+      in logical expressions, you don’t need any parentheses or other
+      punctuation to describe the order of evaluation:</p><a id="I_programlisting4_d1e5171"/><pre class="programlisting">(a+b)*c          * + a b c
+a+(b*c)          + a * b c</pre><p>It works equally well in reverse, if you put the operators after
+      the operands:</p><a id="I_programlisting4_d1e5175"/><pre class="programlisting">(a+b)*c          a b + c *
+a+(b*c)          a b c * +</pre><p>On a computer, RPN has the practical advantage that it is very
+      easy to interpret using a stack. The computer processes each token in
+      order. If it’s an operand, it pushes the token on the stack. If it’s an
+      operator, it pops the right number of operands off the stack, does the
+      operation, and pushes the result. This trick is very well known and has
+      been used since 1954 to build software and hardware that interprets RPN
+      code using a stack.</p><p>RPN has two other advantages for compiler developers. One is that
+      if you’re using a bottom-up parser like the ones that bison generates,
+      it is amazingly easy to generate RPN. If you emit the action code for
+      each operator or operand in the rule that recognizes it, your code will
+      come out in RPN order. Here’s a sneak preview of part of the SQL
+      parser:</p><a id="I_programlisting4_d1e5181"/><pre class="programlisting">expr: NAME         { emit("NAME %s", $1); }
+   | INTNUM        { emit("NUMBER %d", $1); }
+   | expr '+' expr { emit("ADD"); }
+   | expr '-' expr { emit("SUB"); }
+   | expr '*' expr { emit("MUL"); }
+   | expr '/' expr { emit("DIV"); }</pre><p>When it parses <code class="literal">a+2*3</code>, it emits
+      <code class="literal">NAME a, NUMBER 2, NUMBER 3, MUL, ADD</code>.
+      This lovely property comes directly from the way a LALR parser works,
+      pushing the symbols for partially parsed rules on its internal stack and
+      then at the end of each rule popping the symbols and pushing the new LHS
+      symbol, which is a sequence of operations just the same as what an RPN
+      interpreter does.</p><p>The other advantage is that it is very easy to turn a string of
+      RPN tokens into an AST, and vice versa. To turn RPN into an AST, you run
+      through the RPN pushing each operand and, for each operator, pop the
+      operands, build an AST tree node with the operands and operator, and
+      then push the address of the new tree node. When you’re done, the stack
+      will contain the root of the AST. To go the other way, you do a
+      depth-first walk of the AST. Starting from the root of the AST, at each
+      node you visit the subnodes (by recursively calling the tree-walking
+      subroutine) and then emit the operator for the node. At leaf nodes, you
+      just emit the operand for that node.</p><p>Classic RPN has a fixed number of operands for each operator, but
+      we’re going to relax the rules a little and have some operators that
+      take a variable number of operands, with the number as part of the
+      operator. For example:</p><a id="I_programlisting4_d1e5196"/><pre class="programlisting">select a,b,c from d;
+ 
+rpn: NAME a
+rpn: NAME b
+rpn: NAME c
+rpn: TABLE d
+rpn: SELECT 3</pre><p>The <code class="literal">3</code> in the <code class="literal">SELECT</code> tells the RPN interpreter that the
+      statement is selecting three things, so after it pops the table name, it
+      should take the three field names off the stack. I’ve written
+      interpreters for RPN code, and this trick makes the code a lot simpler
+      than the alternative of using extra tree-building operators to combine
+      the variable number of operands into one before handing the combined
+      operand to the main operator.</p></div><div class="sect1" title="The Lexer"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e5206"/>The Lexer</h1></div></div></div><p><a id="index-448R350NT4S" class="indexterm"/><a id="index-523W757JR0I" class="indexterm"/>First we need a lexer for the tokens <a id="I_indexterm4_d1e5221" class="indexterm"/>that SQL uses. The syntax is free-format, with whitespace
+      ignored except to separate words. There is a fairly long but fixed set
+      of reserved words. The other tokens are conventional: names, strings,
+      numbers, and punctuation. Comments are Ada-style, from a pair of dashes
+      to the end of the line, with a MySQL extension also allowing C
+      comments.</p><div class="example"><a id="mysqllex"/><p class="title">Example 4-1. MySQL lexer</p><div class="example-contents"><pre class="programlisting">/*
+ * Scanner for mysql subset
+ * $Header: /usr/home/johnl/flnb/RCS/ch04.tr,v 1.7 2009/05/19 18:28:27 johnl Exp $
+ */
+
+%option noyywrap nodefault yylineno case-insensitive
+%{
+#include "pmysql.tab.h"
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+void yyerror(char *s, ...);
+
+int oldstate;
+
+%}
+
+%x COMMENT
+%s BTWMODE
+
+%%</pre></div></div><p>The lexer, shown in <a class="xref" href="ch04.xhtml#mysqllex" title="Example 4-1. MySQL lexer">Example 4-1</a>, starts with a few
+      include files, notably <code class="literal">pmysql.tab.h</code>,
+      the token name definition file generated by bison. It also defines two
+      start states, an exclusive <code class="literal">COMMENT</code>
+      state used in C-style comments and an inclusive <code class="literal">BTWMODE</code> state used in a kludge to deal with a
+      SQL expression that has its own idea of the keyword <code class="literal">AND</code>.</p><div class="sect2" title="Scanning SQL Keywords"><div class="titlepage"><div><div><h2 class="title"><a id="id458348"/>Scanning SQL Keywords</h2></div></div></div><p><a id="index-378F106EI3B" class="indexterm"/><a id="index-514M761IB5M" class="indexterm"/>SQL has a lot of keywords:</p><a id="I_programlisting4_d1e5263"/><pre class="programlisting">  /* keywords */
+
+ADD     { return ADD; }
+ALL     { return ALL; }
+ALTER   { return ALTER; }
+ANALYZE { return ANALYZE; }
+
+  /* Hack for BETWEEN ... AND ... 
+   * return special AND token if BETWEEN seen
+   */
+&lt;BTWMODE&gt;AND    { BEGIN INITIAL; return AND; }
+AND     { return ANDOP; }
+ANY     { return ANY; }
+AS      { return AS; }
+ASC     { return ASC; }
+AUTO_INCREMENT  { return AUTO_INCREMENT; }
+BEFORE  { return BEFORE; }
+BETWEEN { BEGIN BTWMODE; return BETWEEN; }
+INT8|BIGINT     { return BIGINT; }
+BINARY  { return BINARY; }
+BIT     { return BIT; }
+BLOB    { return BLOB; }
+BOTH    { return BOTH; }
+BY      { return BY; }
+CALL    { return CALL; }
+CASCADE { return CASCADE; }
+CASE    { return CASE; }
+CHANGE  { return CHANGE; }
+CHAR(ACTER)?    { return CHAR; }
+CHECK   { return CHECK; }
+COLLATE { return COLLATE; }
+COLUMN  { return COLUMN; }
+COMMENT { return COMMENT; }
+CONDITION       { return CONDITION; }
+CONSTRAINT      { return CONSTRAINT; }
+CONTINUE        { return CONTINUE; }
+CONVERT { return CONVERT; }
+CREATE  { return CREATE; }
+CROSS   { return CROSS; }
+CURRENT_DATE    { return CURRENT_DATE; }
+CURRENT_TIME    { return CURRENT_TIME; }
+CURRENT_TIMESTAMP       { return CURRENT_TIMESTAMP; }
+CURRENT_USER    { return CURRENT_USER; }
+CURSOR  { return CURSOR; }
+DATABASE        { return DATABASE; }
+DATABASES       { return DATABASES; }
+DATE    { return DATE; }
+DATETIME        { return DATETIME; }
+DAY_HOUR        { return DAY_HOUR; }
+DAY_MICROSECOND { return DAY_MICROSECOND; }
+DAY_MINUTE      { return DAY_MINUTE; }
+DAY_SECOND      { return DAY_SECOND; }
+NUMERIC|DEC|DECIMAL     { return DECIMAL; }
+DECLARE { return DECLARE; }
+DEFAULT { return DEFAULT; }
+DELAYED { return DELAYED; }
+DELETE  { return DELETE; }
+DESC    { return DESC; }
+DESCRIBE        { return DESCRIBE; }
+DETERMINISTIC   { return DETERMINISTIC; }
+DISTINCT        { return DISTINCT; }
+DISTINCTROW     { return DISTINCTROW; }
+DIV     { return DIV; }
+FLOAT8|DOUBLE   { return DOUBLE; }
+DROP    { return DROP; }
+DUAL    { return DUAL; }
+EACH    { return EACH; }
+ELSE    { return ELSE; }
+ELSEIF  { return ELSEIF; }
+END     { return END; }
+ENUM { return ENUM; }
+ESCAPED { return ESCAPED; }
+EXISTS  { yylval.subtok = 0; return EXISTS; }
+NOT[ \t\n]+EXISTS       { yylval.subtok = 1; return EXISTS; }
+EXIT    { return EXIT; }
+EXPLAIN { return EXPLAIN; }
+FETCH   { return FETCH; }
+FLOAT4? { return FLOAT; }
+FOR     { return FOR; }
+FORCE   { return FORCE; }
+FOREIGN { return FOREIGN; }
+FROM    { return FROM; }
+FULLTEXT        { return FULLTEXT; }
+GRANT   { return GRANT; }
+GROUP   { return GROUP; }
+HAVING  { return HAVING; }
+HIGH_PRIORITY   { return HIGH_PRIORITY; }
+HOUR_MICROSECOND        { return HOUR_MICROSECOND; }
+HOUR_MINUTE     { return HOUR_MINUTE; }
+HOUR_SECOND     { return HOUR_SECOND; }
+IF      { return IF; }
+IGNORE  { return IGNORE; }
+IN      { return IN; }
+INFILE  { return INFILE; }
+INNER   { return INNER; }
+INOUT   { return INOUT; }
+INSENSITIVE     { return INSENSITIVE; }
+INSERT  { return INSERT; }
+INT4?|INTEGER   { return INTEGER; }
+INTERVAL        { return INTERVAL; }
+INTO    { return INTO; }
+IS      { return IS; }
+ITERATE { return ITERATE; }
+JOIN    { return JOIN; }
+INDEX|KEY       { return KEY; }
+KEYS    { return KEYS; }
+KILL    { return KILL; }
+LEADING { return LEADING; }
+LEAVE   { return LEAVE; }
+LEFT    { return LEFT; }
+LIKE    { return LIKE; }
+LIMIT   { return LIMIT; }
+LINES   { return LINES; }
+LOAD    { return LOAD; }
+LOCALTIME       { return LOCALTIME; }
+LOCALTIMESTAMP  { return LOCALTIMESTAMP; }
+LOCK    { return LOCK; }
+LONG    { return LONG; }
+LONGBLOB        { return LONGBLOB; }
+LONGTEXT        { return LONGTEXT; }
+LOOP    { return LOOP; }
+LOW_PRIORITY    { return LOW_PRIORITY; }
+MATCH   { return MATCH; }
+MEDIUMBLOB      { return MEDIUMBLOB; }
+MIDDLEINT|MEDIUMINT     { return MEDIUMINT; }
+MEDIUMTEXT      { return MEDIUMTEXT; }
+MINUTE_MICROSECOND      { return MINUTE_MICROSECOND; }
+MINUTE_SECOND   { return MINUTE_SECOND; }
+MOD     { return MOD; }
+MODIFIES        { return MODIFIES; }
+NATURAL { return NATURAL; }
+NOT     { return NOT; }
+NO_WRITE_TO_BINLOG      { return NO_WRITE_TO_BINLOG; }
+NULL    { return NULLX; }
+NUMBER  { return NUMBER; }
+ON      { return ON; }
+ON[ \t\n]+DUPLICATE { return ONDUPLICATE; } /* hack due to limited lookahead */
+OPTIMIZE        { return OPTIMIZE; }
+OPTION  { return OPTION; }
+OPTIONALLY      { return OPTIONALLY; }
+OR      { return OR; }
+ORDER   { return ORDER; }
+OUT     { return OUT; }
+OUTER   { return OUTER; }
+OUTFILE { return OUTFILE; }
+PRECISION       { return PRECISION; }
+PRIMARY { return PRIMARY; }
+PROCEDURE       { return PROCEDURE; }
+PURGE   { return PURGE; }
+QUICK   { return QUICK; }
+READ    { return READ; }
+READS   { return READS; }
+REAL    { return REAL; }
+REFERENCES      { return REFERENCES; }
+REGEXP|RLIKE    { return REGEXP; }
+RELEASE { return RELEASE; }
+RENAME  { return RENAME; }
+REPEAT  { return REPEAT; }
+REPLACE { return REPLACE; }
+REQUIRE { return REQUIRE; }
+RESTRICT        { return RESTRICT; }
+RETURN  { return RETURN; }
+REVOKE  { return REVOKE; }
+RIGHT   { return RIGHT; }
+ROLLUP  { return ROLLUP; }
+SCHEMA  { return SCHEMA; }
+SCHEMAS { return SCHEMAS; }
+SECOND_MICROSECOND      { return SECOND_MICROSECOND; }
+SELECT  { return SELECT; }
+SENSITIVE       { return SENSITIVE; }
+SEPARATOR       { return SEPARATOR; }
+SET     { return SET; }
+SHOW    { return SHOW; }
+INT2|SMALLINT   { return SMALLINT; }
+SOME    { return SOME; }
+SONAME  { return SONAME; }
+SPATIAL { return SPATIAL; }
+SPECIFIC        { return SPECIFIC; }
+SQL     { return SQL; }
+SQLEXCEPTION    { return SQLEXCEPTION; }
+SQLSTATE        { return SQLSTATE; }
+SQLWARNING      { return SQLWARNING; }
+SQL_BIG_RESULT  { return SQL_BIG_RESULT; }
+SQL_CALC_FOUND_ROWS     { return SQL_CALC_FOUND_ROWS; }
+SQL_SMALL_RESULT        { return SQL_SMALL_RESULT; }
+SSL     { return SSL; }
+STARTING        { return STARTING; }
+STRAIGHT_JOIN   { return STRAIGHT_JOIN; }
+TABLE   { return TABLE; }
+TEMPORARY       { return TEMPORARY; }
+TERMINATED      { return TERMINATED; }
+TEXT    { return TEXT; }
+THEN    { return THEN; }
+TIME    { return TIME; }
+TIMESTAMP       { return TIMESTAMP; }
+INT1|TINYINT    { return TINYINT; }
+TINYTEXT        { return TINYTEXT; }
+TO      { return TO; }
+TRAILING        { return TRAILING; }
+TRIGGER { return TRIGGER; }
+UNDO    { return UNDO; }
+UNION   { return UNION; }
+UNIQUE  { return UNIQUE; }
+UNLOCK  { return UNLOCK; }
+UNSIGNED        { return UNSIGNED; }
+UPDATE  { return UPDATE; }
+USAGE   { return USAGE; }
+USE     { return USE; }
+USING   { return USING; }
+UTC_DATE        { return UTC_DATE; }
+UTC_TIME        { return UTC_TIME; }
+UTC_TIMESTAMP   { return UTC_TIMESTAMP; }
+VALUES? { return VALUES; }
+VARBINARY       { return VARBINARY; }
+VARCHAR(ACTER)? { return VARCHAR; }
+VARYING { return VARYING; }
+WHEN    { return WHEN; }
+WHERE   { return WHERE; }
+WHILE   { return WHILE; }
+WITH    { return WITH; }
+WRITE   { return WRITE; }
+XOR     { return XOR; }
+YEAR    { return YEAR; }
+YEAR_MONTH      { return YEAR_MONTH; }
+ZEROFILL        { return ZEROFILL; }</pre><p>All of the reserved words <a id="I_indexterm4_d1e5267" class="indexterm"/>are separate tokens in the parser, because it is the
+        easiest thing to do. Notice that <code class="literal">CHARACTER</code> and <code class="literal">VARCHARACTER</code> can be abbreviated to <code class="literal">CHAR</code> and <code class="literal">VARCHAR</code>, and <code class="literal">INDEX</code> and <code class="literal">KEY</code> are the same as each other.</p><p>The keyword <code class="literal">BETWEEN</code> switches
+        into start state <code class="literal">BTWMODE</code>, in which
+        the word <code class="literal">AND</code> returns the token
+        <code class="literal">AND</code> rather than <code class="literal">ANDOP</code>. The reason is that normally <code class="literal">AND</code> is treated the same as the <code class="literal">&amp;&amp;</code> logical-and operator, except in
+        the SQL operator <code class="literal">BETWEEN ...
+        AND</code>:</p><a id="I_programlisting4_d1e5319"/><pre class="programlisting">     IF(a &amp;&amp; b, ...)   <em class="lineannotation"><span class="lineannotation">normally these mean the same thing</span></em>
+     IF(a AND b, ...) 
+
+     ... WHERE a BETWEEN c AND d, ... <em class="lineannotation"><span class="lineannotation">except here</span></em></pre><p>There’s a variety of ways to deal with problems like this, but
+        lexical special cases are often the easiest.</p><p>Also note that the phrases <code class="literal">NOT
+        EXISTS</code> and <code class="literal">ON DUPLICATE</code>
+        are recognized as single tokens; this is to avoid shift/reduce
+        conflicts in the parser because of other contexts where <code class="literal">NOT</code> and <code class="literal">ON</code> can appear. To remember the difference
+        between <code class="literal">EXISTS</code> and <code class="literal">NOT EXISTS</code>, the lexer returns a value along
+        with the token that the parser uses when generating the token code.
+        These two don’t actually turn out to be ambiguous, but parsing them
+        needs more than the single-token lookahead that bison usually uses. We
+        revisit these in <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a> where the alternate GLR
+        parser can handle them directly.<a id="I_indexterm4_d1e5351" class="indexterm"/><a id="I_indexterm4_d1e5352" class="indexterm"/></p></div><div class="sect2" title="Scanning Numbers"><div class="titlepage"><div><div><h2 class="title"><a id="id493471"/>Scanning Numbers</h2></div></div></div><p><a id="I_indexterm4_d1e5357" class="indexterm"/><a id="I_indexterm4_d1e5362" class="indexterm"/>Numbers come in a variety of forms:</p><a id="I_programlisting4_d1e5368"/><pre class="programlisting">   /* numbers */
+
+-?[0-9]+                { yylval.intval = atoi(yytext); return INTNUM; } 
+
+-?[0-9]+"."[0-9]* |
+-?"."[0-9]+     |
+-?[0-9]+E[-+]?[0-9]+    |
+-?[0-9]+"."[0-9]*E[-+]?[0-9]+ |
+-?"."[0-9]+E[-+]?[0-9]+ { yylval.floatval = atof(yytext) ;
+                                  return APPROXNUM; }
+    /* booleans */
+TRUE    { yylval.intval = 1; return BOOL; }
+UNKNOWN { yylval.intval = -1; return BOOL; }
+FALSE   { yylval.intval = 0; return BOOL; }
+
+   /* strings */
+
+'(\\.|''|[^'\n])*'   |
+\"(\\.|\"\"|[^"\n])*\"  { yylval.strval = strdup(yytext); return STRING; }
+
+'(\\.|[^'\n])*$      { yyerror("Unterminated string %s", yytext); }
+\"(\\.|[^"\n])*$    { yyerror("Unterminated string %s", yytext); }
+
+   /* hex strings */
+X'[0-9A-F]+' |  
+0X[0-9A-F]+  { yylval.strval = strdup(yytext); return STRING; }
+
+   /* bit strings */
+
+0B[01]+      |
+B'[01]+'     { yylval.strval = strdup(yytext); return STRING; }</pre><p>SQL numbers are similar to the numbers we’ve seen in previous
+        chapters. The rules to scan them turn them into C integers or doubles
+        and store them in the token values. Boolean values are true, false,
+        and unknown, so they’re recognized as reserved words and returned as
+        variations on a <code class="literal">BOOL</code> token.</p><p>SQL strings <a id="I_indexterm4_d1e5377" class="indexterm"/>are enclosed in single quotes, using a pair of quotes to
+        represent a single quote <a id="I_indexterm4_d1e5383" class="indexterm"/><a id="I_indexterm4_d1e5386" class="indexterm"/>in the string. MySQL extends this to add double-quoted
+        strings, and <code class="literal">\x</code> escapes within
+        strings. The first two string patterns match valid, quoted strings
+        that don’t extend past a newline and return the string as the token
+        value, remembering to make a copy since the value in <code class="literal">yytext</code> doesn’t stay around.<sup>[<a id="id458813" href="#ftn.id458813" class="footnote">17</a>]</sup> The next two patterns catch unterminated strings and
+        print a suitable diagnostic.</p><p>The next four patterns match hex and binary strings, each of
+        which can be written in two ways. A more realistic example would
+        convert them to binary, but for our purposes we just return them as
+        strings.</p></div><div class="sect2" title="Scanning Operators and Punctuation"><div class="titlepage"><div><div><h2 class="title"><a id="id455171"/>Scanning Operators and Punctuation</h2></div></div></div><p><a id="I_indexterm4_d1e5406" class="indexterm"/><a id="I_indexterm4_d1e5411" class="indexterm"/><a id="I_indexterm4_d1e5416" class="indexterm"/>Operators and punctuation can be captured with a few
+        patterns:</p><a id="I_programlisting4_d1e5422"/><pre class="programlisting">   /* operators */
+[-+&amp;~|^/%*(),.;!]   { return yytext[0]; }
+
+"&amp;&amp;"            { return ANDOP; }
+"||"            { return OR; }
+
+"="     { yylval.subtok = 4; return COMPARISON; }
+"&lt;=&gt;"   { yylval.subtok = 12; return COMPARISON; }
+"&gt;="    { yylval.subtok = 6; return COMPARISON; }
+"&gt;"     { yylval.subtok = 2; return COMPARISON; }
+"&lt;="    { yylval.subtok = 5; return COMPARISON; }
+"&lt;"     { yylval.subtok = 1; return COMPARISON; }
+"!="    |
+"&lt;&gt;"    { yylval.subtok = 3; return COMPARISON; }
+
+"&lt;&lt;"    { yylval.subtok = 1; return SHIFT; }
+"&gt;&gt;"    { yylval.subtok = 2; return SHIFT; }
+
+":="     { return ASSIGN; }</pre><p>Next come the punctuation tokens, using the standard trick to
+        match all of the single-character operators with the same pattern.
+        MySQL has the usual range of comparison operators, which are all
+        treated as one <code class="literal">COMPARISON</code> operator
+        with the token value telling which one. We’ll see later that this
+        doesn’t work perfectly, since the <code class="literal">=</code>
+        token is used in a few places where it’s not a comparison, but we can
+        work around it.</p></div><div class="sect2" title="Scanning Functions and Names"><div class="titlepage"><div><div><h2 class="title"><a id="id439394"/>Scanning Functions and Names</h2></div></div></div><p><a id="I_indexterm4_d1e5436" class="indexterm"/><a id="I_indexterm4_d1e5441" class="indexterm"/><a id="I_indexterm4_d1e5446" class="indexterm"/>The last pieces to capture are functions and
+        names:</p><a id="I_programlisting4_d1e5452"/><pre class="programlisting">        /* functions */
+
+SUBSTR(ING)?/"(" { return FSUBSTRING; }
+TRIM/"("         { return FTRIM; }
+DATE_ADD/"("    { return FDATE_ADD; }
+DATE_SUB/"("    { return FDATE_SUB; }
+
+         /* check trailing context manually */
+COUNT    { int c = input(); unput(c);
+           if(c == '(') return FCOUNT;
+           yylval.strval = strdup(yytext);
+           return NAME; }
+
+        /* names */
+
+[A-Za-z][A-Za-z0-9_]*   { yylval.strval = strdup(yytext);
+                          return NAME; }
+
+`[^`/\\.\n]+`           { yylval.strval = strdup(yytext+1);
+                          yylval.strval[yyleng-2] = 0;
+                          return NAME; }
+
+`[^`\n]*$               { yyerror("unterminated quoted name %s", yytext); }
+
+        /* user variables */
+@[0-9a-z_.$]+ |
+@\"[^"\n]+\" |
+@`[^`\n]+` |
+@'[^'\n]+' { yylval.strval = strdup(yytext+1); return USERVAR; }
+
+@\"[^"\n]*$ |
+@`[^`\n]*$ |
+@'[^'\n]*$ { yyerror("unterminated quoted user variable %s", yytext); }</pre><p>Standard SQL has a small fixed list of functions whose names are
+        effectively keywords,<a id="I_indexterm4_d1e5456" class="indexterm"/> but MySQL adds its long list of functions and lets you
+        define your own, so they have to be recognized by context in the
+        parser. MySQL usually considers them to be function names only when
+        they are immediately followed by an open parenthesis, so the patterns
+        use trailing context to check. However, MySQL provides an option to
+        turn off the open parenthesis test. The pattern for <code class="literal">COUNT</code> shows an alternative way to do
+        trailing context, by peeking at the next character with <code class="literal">input()</code> and <code class="literal">unput()</code>. This is less elegant than a
+        trailing context pattern but has the advantage that your code can
+        decide at runtime whether to do the test and what token to report
+        back.</p><p>Names start with a letter and are composed of letters, digits,
+        and underscores. The pattern to match them has to follow all of the
+        reserved words, so the reserved word patterns take precedence. When a
+        name is recognized, the scanner returns a copy of it. Names can also
+        be quoted in backticks, which allow arbitrary characters in names. The
+        scanner returns a quoted name the same way as an unquoted one,
+        stripping off the backticks. The next pattern catches a missing close
+        backtick, by matching a string that starts with a backtick, and runs
+        to the end of the line.</p><p>User variables are a MySQL extension to standard SQL and are
+        variables that are part of a user’s session rather than part of a
+        database. Their names start with an <code class="literal">@</code> sign and can use any of three quoting
+        techniques to include arbitrary characters.</p><p>We also have some patterns to catch unclosed quoted user
+        variable names. They end with <code class="literal">\n</code>
+        rather than <code class="literal">$</code> to avoid a “dangerous
+        trailing context” warning from flex; a <code class="literal">$</code> at the end of a pattern is equivalent to
+        <code class="literal">/\n</code>, and multiple patterns with
+        trailing context that share an action turn out to be inefficient to
+        handle. In this case, since we didn’t have any other plans for the
+        <code class="literal">\n</code>, we just make the pattern match
+        the newline, but if that were a problem, the alternative would just be
+        to copy the action code separately for each of the three
+        patterns.</p></div><div class="sect2" title="Comments and Miscellany"><div class="titlepage"><div><div><h2 class="title"><a id="id439385"/>Comments and Miscellany</h2></div></div></div><a id="I_programlisting4_d1e5498"/><pre class="programlisting">        /* comments */  <a id="I_indexterm4_d1e5500" class="indexterm"/> 
+#.*             ;
+"--"[ \t].*     ;
+
+"/*"            { oldstate = YY_START; BEGIN COMMENT; }
+&lt;COMMENT&gt;"*/"   { BEGIN oldstate; }
+&lt;COMMENT&gt;.|\n   ;
+&lt;COMMENT&gt;&lt;&lt;EOF&gt;&gt; { yyerror("unclosed comment"); }
+
+        /* everything else */
+[ \t\n]         /* whitespace */
+.               { yyerror("mystery character '%c'", *yytext); }
+
+%%</pre><p>The last few patterns skip whitespace,<a id="I_indexterm4_d1e5508" class="indexterm"/> counting lines when the whitespace is a newline; skip
+        comments; and complain if any invalid character appears in the input.
+        The C comment patterns use the exclusive start state <code class="literal">COMMENT</code> to absorb the contents of the
+        comment. The <code class="literal">&lt;&lt;EOF&gt;&gt;</code>
+        pattern catches an unclosed C-style comment that runs to the end of
+        the input file.<a id="I_indexterm4_d1e5520" class="indexterm"/><a id="I_indexterm4_d1e5521" class="indexterm"/></p></div></div><div class="sect1" title="The Parser"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e5522"/>The Parser</h1></div></div></div><p><a id="index-705U644VW6Q" class="indexterm"/>The SQL parser, shown in <a class="xref" href="ch04.xhtml#mysqlparse" title="Example 4-2. MySQL subset parser">Example 4-2</a>, is
+      larger than any of the parsers we’ve seen up to this point, but we can
+      understand it in pieces.</p><div class="example"><a id="mysqlparse"/><p class="title">Example 4-2. MySQL subset parser</p><div class="example-contents"><pre class="programlisting">/*
+ * Parser for mysql subset
+ * $Header: /usr/home/johnl/flnb/RCS/ch04.tr,v 1.7 2009/05/19 18:28:27 johnl Exp $
+ */
+%{
+#include &lt;stdlib.h&gt;
+#include &lt;stdarg.h&gt;
+#include &lt;string.h&gt;
+
+void yyerror(char *s, ...);
+void emit(char *s, ...);
+%}
+
+%union {
+        int intval;
+        double floatval;
+        char *strval;
+        int subtok;
+}</pre></div></div><p>The parser starts out with the usual include statements and two
+      function prototypes, one for <code class="literal">yyerror()</code>, which is the same as in <a class="xref" href="ch03.xhtml" title="Chapter 3. Using Bison">Chapter 3</a>, and one for <code class="literal">emit()</code>, the routine used to emit the RPN code,
+      which takes a <code class="literal">printf</code>-style format
+      string and arguments.</p><p>The <code class="literal">%union</code> has four members,
+      all of which we met in the lexer: integer and float numeric values, a
+      pointer to copies of strings, and <code class="literal">subtok</code> for tokens that have subtypes. Since
+      <code class="literal">intval</code> and <code class="literal">subtok</code> are both integers, the parser would
+      work just as well if we’d used a single field for both, but separating
+      them helps document the two different purposes, numeric value and
+      subtype, that the token value is used for.</p><a id="I_programlisting4_d1e5566"/><pre class="programlisting">        /* names and literal values */
+
+%token &lt;strval&gt; NAME
+%token &lt;strval&gt; STRING
+%token &lt;intval&gt; INTNUM
+%token &lt;intval&gt; BOOL
+%token &lt;floatval&gt; APPROXNUM
+
+       /* user @abc names */
+
+%token &lt;strval&gt; USERVAR
+
+       /* operators and precedence levels */
+
+%right ASSIGN
+%left OR
+%left XOR
+%left ANDOP
+%nonassoc IN IS LIKE REGEXP
+%left NOT '!'
+%left BETWEEN
+%left &lt;subtok&gt; COMPARISON /* = &lt;&gt; &lt; &gt; &lt;= &gt;= &lt;=&gt; */
+%left '|'
+%left '&amp;'
+%left &lt;subtok&gt; SHIFT /* &lt;&lt; &gt;&gt; */
+%left '+' '-'
+%left '*' '/' '%' MOD
+%left '^'
+%nonassoc UMINUS</pre><p>Next come token declarations, matching the tokens used in the
+      lexer. Like C, MySQL has a dauntingly large number of precedence levels,
+      but bison has no trouble handling them if you can define them. The
+      <code class="literal">COMPARISON</code> and <code class="literal">SHIFT</code> tokens are both declared here to have
+      <code class="literal">subtok</code> values where the lexer returns
+      the particular operator or shift direction.</p><p>Next comes a long list of reserved words. Some of these are
+      duplicates of tokens already defined. Bison doesn’t object to duplicate
+      token declarations, and it’s convenient to have one master alphabetical
+      list of all the reserved word tokens. The full list of tokens is in the
+      cross-reference in the <a class="xref" href="apa.xhtml" title="Appendix A. SQL Parser Grammar and Cross-Reference">Appendix A</a>, so here we just show a
+      representative part of the list. Note the special definition of <code class="literal">EXISTS</code>, which can correspond to <code class="literal">EXISTS</code> or <code class="literal">NOT
+      EXISTS</code> when the lexer reads the input.</p><a id="I_programlisting4_d1e5592"/><pre class="programlisting">%token ADD
+%token ALL
+ ...
+%token ESCAPED
+%token &lt;subtok&gt; EXISTS /* NOT EXISTS or EXISTS */
+ ...
+ /* functions with special syntax */
+%token FSUBSTRING
+%token FTRIM
+%token FDATE_ADD FDATE_SUB
+%token FCOUNT</pre><p>There are a few character tokens like <code class="literal">';'</code> that aren’t operators and so have no
+      precedence that didn’t have to be defined.</p><p>We finish the definition section with a list of nonterminals that
+      have values. Because of the way we generate the RPN code in the parser,
+      these values are either bitmasks where a nonterminal matches a set of
+      options or else a count where the nonterminal matches a list of items of
+      variable length.</p><a id="I_programlisting4_d1e5602"/><pre class="programlisting">%type &lt;intval&gt; select_opts select_expr_list
+%type &lt;intval&gt; val_list opt_val_list case_list
+%type &lt;intval&gt; groupby_list opt_with_rollup opt_asc_desc
+%type &lt;intval&gt; table_references opt_inner_cross opt_outer
+%type &lt;intval&gt; left_or_right opt_left_or_right_outer column_list
+%type &lt;intval&gt; index_list opt_for_join
+
+%type &lt;intval&gt; delete_opts delete_list
+%type &lt;intval&gt; insert_opts insert_vals insert_vals_list
+%type &lt;intval&gt; insert_asgn_list opt_if_not_exists update_opts update_asgn_list
+%type &lt;intval&gt; opt_temporary opt_length opt_binary opt_uz enum_list
+%type &lt;intval&gt; column_atts data_type opt_ignore_replace create_col_list
+
+%start stmt_list
+
+%%</pre><div class="sect2" title="The Top-Level Parsing Rules"><div class="titlepage"><div><div><h2 class="title"><a id="id462881"/>The Top-Level Parsing Rules</h2></div></div></div><a id="I_programlisting4_d1e5607"/><pre class="programlisting">stmt_list: stmt ';'<a id="I_indexterm4_d1e5609" class="indexterm"/>
+  | stmt_list stmt ';'
+  ;</pre><p>The top level is just a list of statements with each terminated
+        by a semicolon, roughly the same as what the <code class="literal">mysql</code> command-line tool accepts. Each
+        different statement will define an alternative, or several
+        alternatives, for <code class="literal">stmt</code>.</p></div><div class="sect2" title="SQL Expressions"><div class="titlepage"><div><div><h2 class="title"><a id="id470456"/>SQL Expressions</h2></div></div></div><p><a id="index-475S254EQ3I" class="indexterm"/>Before we define the syntax for specific statements,
+        we’ll define the syntax of MySQL expressions, which are an extended
+        version of the expressions familiar from languages like C and
+        Fortran.</p><a id="I_programlisting4_d1e5633"/><pre class="programlisting">   /**** expressions ****/
+   
+expr: NAME         { emit("NAME %s", $1); free($1); }
+   | NAME '.' NAME { emit("FIELDNAME %s.%s", $1, $3); free($1); free($3); }
+   | USERVAR       { emit("USERVAR %s", $1); free($1); }
+   | STRING        { emit("STRING %s", $1); free($1); }
+   | INTNUM        { emit("NUMBER %d", $1); }
+   | APPROXNUM     { emit("FLOAT %g", $1); }
+   | BOOL          { emit("BOOL %d", $1); }
+   ;</pre><p>The simplest expressions are variable names <a id="I_indexterm4_d1e5637" class="indexterm"/>and constants.<a id="I_indexterm4_d1e5643" class="indexterm"/> Since a name in a SQL expression is usually a column
+        name in a table, a name can also be qualified as <code class="literal">table.name</code> if there are several tables in
+        the statement that use the same field name, which is quite common when
+        the fields are used with common values to link tables together. Other
+        simple expressions are user variables starting with an <code class="literal">@</code> sign (dealt with in the lexer and not
+        visible here) and constant strings, fixed and floating numbers, and
+        boolean values. In each case, the code just emits an RPN statement for
+        the item. For the items returned from the lexer as strings, it then
+        frees the string created by the lexer to avoid storage leaks. In a
+        more realistic parser, names would probably be entered into a symbol
+        table rather than passed around as strings.</p><a id="I_programlisting4_d1e5655"/><pre class="programlisting">expr: expr '+' expr { emit("ADD"); }
+   | expr '-' expr { emit("SUB"); }
+   | expr '*' expr { emit("MUL"); }
+   | expr '/' expr { emit("DIV"); }
+   | expr '%' expr { emit("MOD"); }
+   | expr MOD expr { emit("MOD"); }
+   | '-' expr %prec UMINUS { emit("NEG"); }
+   | expr ANDOP expr { emit("AND"); }
+   | expr OR expr { emit("OR"); }
+   | expr XOR expr { emit("XOR"); }
+   | expr '|' expr { emit("BITOR"); }
+   | expr '&amp;' expr { emit("BITAND"); }
+   | expr '^' expr { emit("BITXOR"); }
+   | expr SHIFT expr { emit("SHIFT %s", $2==1?"left":"right"); }
+   | NOT expr { emit("NOT"); }
+   | '!' expr { emit("NOT"); }
+   | expr COMPARISON expr { emit("CMP %d", $2); }
+
+      /* recursive selects and comparisons thereto */
+   | expr COMPARISON '(' select_stmt ')' { emit("CMPSELECT %d", $2); }
+   | expr COMPARISON ANY '(' select_stmt ')' { emit("CMPANYSELECT %d", $2); }
+   | expr COMPARISON SOME '(' select_stmt ')' { emit("CMPANYSELECT %d", $2); }
+   | expr COMPARISON ALL '(' select_stmt ')' { emit("CMPALLSELECT %d", $2); }
+   ;
+
+
+expr:  expr IS NULLX     { emit("ISNULL"); }
+   |   expr IS NOT NULLX { emit("ISNULL"); emit("NOT"); }
+   |   expr IS BOOL      { emit("ISBOOL %d", $3); }
+   |   expr IS NOT BOOL  { emit("ISBOOL %d", $4); emit("NOT"); }
+
+   | USERVAR ASSIGN expr { emit("ASSIGN @%s", $1); free($1); }
+   ;
+
+expr: expr BETWEEN expr AND expr %prec BETWEEN { emit("BETWEEN"); }
+   ;</pre><p>Unary and binary expressions <a id="I_indexterm4_d1e5659" class="indexterm"/><a id="I_indexterm4_d1e5664" class="indexterm"/>are straightforward and just emit the code for the
+        appropriate operator. Comparisons also emit a subcode to tell what
+        kind of comparison to do. (The subcodes are bit-encoded, where 1 means
+        less than, 2 means greater than, and 4 means equal.)</p><p>SQL permits recursive <code class="literal">SELECT</code>
+        statements <a id="I_indexterm4_d1e5675" class="indexterm"/>where an internal <code class="literal">SELECT</code> returns a list of values that an
+        external condition checks. If the internal <code class="literal">SELECT</code> can return multiple values, it can
+        check whether <code class="literal">ANY</code> or <code class="literal">ALL/SOME</code> of the comparisons succeed.
+        Although this can produce very complex statements, parsing it is
+        simple since it just refers to <code class="literal">select_stmt</code>, defined later, for the internal
+        <code class="literal">SELECT</code>. The RPN code emitted is the
+        code for the expression to compare, then the code for the <code class="literal">SELECT</code>, and then an operator <code class="literal">CMPSELECT</code>, <code class="literal">CMPANYSELECT</code>, or <code class="literal">CMPALLSELECT</code> to say that this is a
+        comparison of the preceding expression and <code class="literal">SELECT</code>.</p><p>SQL has some postfix operators <a id="I_indexterm4_d1e5718" class="indexterm"/>including <code class="literal">IS NULL</code>,
+        <code class="literal">IS TRUE</code>, and <code class="literal">IS FALSE</code>, as well as negated versions of
+        them such as <code class="literal">IS NOT FALSE</code>.
+        (Remember that <code class="literal">BOOL</code> is a boolean
+        constant, <code class="literal">TRUE</code>, <code class="literal">FALSE</code>, or <code class="literal">UNKNOWN</code>.) Rather than coming up with RPN
+        codes for the negated versions, we just emit a <code class="literal">NOT </code>operator to reverse the result of the
+        test.</p><p>Next comes a MySQL extension to standard SQL: Internal
+        assignments to user variables. These use a <code class="literal">:=</code> assignment operator,<a id="I_indexterm4_d1e5757" class="indexterm"/><a id="I_indexterm4_d1e5760" class="indexterm"/> returned from the lexer as an <code class="literal">ASSIGN</code> token, to avoid ambiguity with the
+        equality comparison operator.</p><p>The syntactically unusual <code class="literal">BETWEEN ...
+        AND</code> operator <a id="I_indexterm4_d1e5772" class="indexterm"/>tests a value against two limits. It needed a lexical
+        hack, described earlier, because of the ambiguity between the <code class="literal">AND</code> in this operator and the logical
+        operation <code class="literal">AND</code>. (Like all hacks,
+        this one isn’t totally satisfactory, but it will do.) Since bison’s
+        precedence rules normally use the precedence of the rightmost token in
+        a rule, we need a <code class="literal">%prec</code> to tell it
+        to use <code class="literal">BETWEEN</code>’s precedence.</p><a id="I_programlisting4_d1e5791"/><pre class="programlisting">val_list: expr { $$ = 1; }
+   | expr ',' val_list { $$ = 1 + $3; }
+   ;
+
+opt_val_list: /* nil */ { $$ = 0 }
+   | val_list
+   ;
+
+expr: expr IN '(' val_list ')'       { emit("ISIN %d", $4); }
+   | expr NOT IN '(' val_list ')'    { emit("ISIN %d", $5); emit("NOT"); }
+   | expr IN '(' select_stmt ')'     { emit("CMPANYSELECT 4"); }
+   | expr NOT IN '(' select_stmt ')' { emit("CMPALLSELECT 3"); }
+   | EXISTS '(' select_stmt ')'      { emit("EXISTSSELECT"); if($1)emit("NOT"); }
+   ;</pre><p>The next set of operators uses variable-length lists of
+        expressions <a id="I_indexterm4_d1e5796" class="indexterm"/>(called <span class="emphasis"><em>lists of values</em></span><a id="I_indexterm4_d1e5804" class="indexterm"/> or <code class="literal">val_list</code>s in the
+        MySQL manual). In <a class="xref" href="ch03.xhtml" title="Chapter 3. Using Bison">Chapter 3</a> we built trees to manage
+        multiple expressions, but RPN makes the job considerably easier. Since
+        an RPN interpreter evaluates each RPN value onto its internal stack,
+        an operator that takes multiple values needs only to know how many
+        values to pop off the stack. In our RPN code, such operators include
+        an expression count.</p><p>This means the bison rules to parse the variable-length lists
+        need only maintain a count of how many expressions they’ve parsed,
+        which we keep as the value of the list’s LHS symbol, in this case
+        <code class="literal">val_list</code>. A single element list has
+        length 1, and at each stage, a multi-element list has one more element
+        than its sublist. There are some constructs where the list of values
+        is optional, so an <code class="literal">opt_val_list</code> is
+        either empty, with a count value of zero, or a <code class="literal">val_list</code> with a count value of whatever the
+        <code class="literal">val_list</code> had. (Remember the default
+        action <code class="literal">$$ = $1</code> for rules with no
+        explicit action.)</p><p>Once we have the lists, we can parse the <code class="literal">IN</code><a id="I_indexterm4_d1e5836" class="indexterm"/> and <code class="literal">NOT IN</code>
+        operators<a id="I_indexterm4_d1e5845" class="indexterm"/> that test whether an expression is or isn’t in a list
+        of values. Note that the emitted code includes the count of values.
+        SQL also has a variant form where the values come from a <code class="literal">SELECT</code> statement. For these statements,
+        <code class="literal">IN</code> and <code class="literal">NOT
+        IN</code> are equivalent to <code class="literal">=
+        ANY</code> and <code class="literal">!= ALL</code>, so we
+        emit the same code.</p><div class="sect3" title="Functions"><div class="titlepage"><div><div><h3 class="title"><a id="id482723"/>Functions</h3></div></div></div><p><a id="I_indexterm4_d1e5871" class="indexterm"/>SQL has a limited set of functions that MySQL greatly
+          extends. Parsing normal function calls is very simple, since we can
+          use the <code class="literal">opt_val_list</code> rule and the
+          RPN is <code class="literal">CALL</code> with the number of
+          arguments, but the parsing is made much more complex by several
+          functions that have their own quirky optional syntax.</p><a id="I_programlisting4_d1e5883"/><pre class="programlisting">  /* regular functions */
+expr: NAME '(' opt_val_list ')' {  emit("CALL %d %s", $3, $1); free($1); }
+   ;
+
+  /* functions with special syntax */
+expr: FCOUNT '(' '*' ')' { emit("COUNTALL") }
+   | FCOUNT '(' expr ')' { emit(" CALL 1 COUNT"); } 
+
+expr: FSUBSTRING '(' val_list ')'               {  emit("CALL %d SUBSTR", $3); }
+   | FSUBSTRING '(' expr FROM expr ')'          {  emit("CALL 2 SUBSTR"); }
+   | FSUBSTRING '(' expr FROM expr FOR expr ')' {  emit("CALL 3 SUBSTR"); }
+
+   | FTRIM '(' val_list ')'                     { emit("CALL %d TRIM", $3); }
+   | FTRIM '(' trim_ltb expr FROM val_list ')'  { emit("CALL 3 TRIM"); }
+   ;
+
+trim_ltb: LEADING { emit("NUMBER 1"); }
+   | TRAILING     { emit("NUMBER 2"); }
+   | BOTH         { emit("NUMBER 3"); }
+   ;
+
+expr: FDATE_ADD '(' expr ',' interval_exp ')' { emit("CALL 3 DATE_ADD"); }
+   |  FDATE_SUB '(' expr ',' interval_exp ')' { emit("CALL 3 DATE_SUB"); }
+   ;
+
+interval_exp: INTERVAL expr DAY_HOUR { emit("NUMBER 1"); }
+   | INTERVAL expr DAY_MICROSECOND   { emit("NUMBER 2"); }
+   | INTERVAL expr DAY_MINUTE        { emit("NUMBER 3"); }
+   | INTERVAL expr DAY_SECOND        { emit("NUMBER 4"); }
+   | INTERVAL expr YEAR_MONTH        { emit("NUMBER 5"); }
+   | INTERVAL expr YEAR              { emit("NUMBER 6"); }
+   | INTERVAL expr HOUR_MICROSECOND  { emit("NUMBER 7"); }
+   | INTERVAL expr HOUR_MINUTE       { emit("NUMBER 8"); }
+   | INTERVAL expr HOUR_SECOND       { emit("NUMBER 9"); }
+   ;</pre><p>We handle five functions with special syntax here, <code class="literal">COUNT</code>, <code class="literal">SUBSTRING</code>, <code class="literal">TRIM</code>, <code class="literal">DATE_ADD</code>, and <code class="literal">DATE_SUB</code>. <code class="literal">COUNT</code> has a special form, <code class="literal">COUNT(*)</code>, used to efficiently count the
+          number of records returned by a <code class="literal">SELECT</code> statement, as well as a normal form
+          that counts the number of different values of an expression. We have
+          one rule for the special form, which emits a special <code class="literal">COUNTALL</code> operator, and a second rule for
+          the regular form, which emits a regular function call. <code class="literal">SUBSTRING</code> is a normal substring operator
+          taking the original string, where to start, and how many characters
+          to take. It can either use the regular call syntax or use reserved
+          words <code class="literal">FROM</code> and <code class="literal">FOR</code> to delimit the arguments. There’s a
+          rule for each form, all generating similar code since it’s the same
+          two or three arguments. <code class="literal">TRIM</code>
+          similarly can use normal syntax or special syntax like <code class="literal">TRIM(LEADING 'x' FROM a)</code>. Again, we parse
+          each form and generate rules. The keywords <code class="literal">LEADING</code>, <code class="literal">TRAILING</code>, and <code class="literal">BOTH</code> turn into the integer values 1
+          through 3 passed as the first argument in a three-argument form.
+          <code class="literal">DATE_ADD</code> and <code class="literal">DATE_SUB</code> add or subtract a scaled number
+          of time periods to a date. The special syntax accepts a long list of
+          scaling types, which again turn into integers passed to the
+          functions.</p><p>Bison really shines when handling this kind of complex syntax
+          for two reasons: one is that you can generally just write down rules
+          like these as you need and they’ll work, but more important, since
+          bison will diagnose any ambiguous grammar, you know that if it
+          doesn’t report conflicts, you haven’t accidentally broken some other
+          part of the parser.</p></div><div class="sect3" title="Other expressions"><div class="titlepage"><div><div><h3 class="title"><a id="id506633"/>Other expressions</h3></div></div></div><p>We wrap up the expression grammar with a grab bag of special
+          cases.</p><a id="I_programlisting4_d1e5954"/><pre class="programlisting">expr: CASE expr case_list END           { emit("CASEVAL %d 0", $3); }
+   |  CASE expr case_list ELSE expr END { emit("CASEVAL %d 1", $3); }
+   |  CASE case_list END                { emit("CASE %d 0", $2); }
+   |  CASE case_list ELSE expr END      { emit("CASE %d 1", $2); }
+   ;
+
+case_list: WHEN expr THEN expr     { $$ = 1; }
+         | case_list WHEN expr THEN expr { $$ = $1+1; } 
+   ;
+
+expr: expr LIKE expr { emit("LIKE"); }
+   | expr NOT LIKE expr { emit("LIKE"); emit("NOT"); }
+   ;
+
+expr: expr REGEXP expr { emit("REGEXP"); }
+   | expr NOT REGEXP expr { emit("REGEXP"); emit("NOT"); }
+   ;
+
+expr: CURRENT_TIMESTAMP { emit("NOW") };
+   | CURRENT_DATE       { emit("NOW") };
+   | CURRENT_TIME       { emit("NOW") };
+   ;
+
+expr: BINARY expr %prec UMINUS { emit("STRTOBIN"); }
+   ;</pre><p>The <code class="literal">CASE</code> statement
+          <a id="I_indexterm4_d1e5961" class="indexterm"/>comes in two forms. In the first, <code class="literal">CASE</code> is followed by a value that is
+          compared against a list of test values with an expression value for
+          each test, and an optional <code class="literal">ELSE</code>
+          default, as in <code class="literal">CASE a WHEN 100 THEN 1 WHEN
+          200 THEN 2 ELSE 3 END</code>. The other is just a list of
+          conditional expressions, as in <code class="literal">CASE WHEN
+          a=100 THEN 1 WHEN a=200 THEN 2 END</code>. We have a rule
+          <code class="literal">case_list</code> that builds up a list
+          of <code class="literal">WHEN</code>/<code class="literal">THEN</code> expression pairs and then uses it in
+          four variants of <code class="literal">CASE</code>, each of
+          the two versions with and without <code class="literal">ELSE</code>. The RPN is <code class="literal">CASEVAL</code> or <code class="literal">CASE</code> for the versions with or without an
+          initial value, with a count of <code class="literal">WHEN</code>/<code class="literal">THEN</code> pairs and 1 or 0 if there’s an
+          <code class="literal">ELSE</code> value. The <code class="literal">LIKE</code> and <code class="literal">REGEXP</code> operators do forms of pattern
+          matching. They’re basically binary operators except that they permit
+          a preceding <code class="literal">NOT</code> to reverse the
+          sense of the test. Finally, there are three versions of the keyword
+          for the current time, as well as a unary <code class="literal">BINARY</code> operator that coerces an expression
+          to be treated as binary rather than text data.<a id="I_indexterm4_d1e6024" class="indexterm"/></p></div></div><div class="sect2" title="Select Statements"><div class="titlepage"><div><div><h2 class="title"><a id="id478979"/>Select Statements</h2></div></div></div><p><a id="index-046I272FV8Q" class="indexterm"/>By far the most complex statement in SQL is <code class="literal">SELECT</code>, which retrieves data from SQL tables
+        and summaries and manipulates it. We deal with it first because it
+        will use several subrules that we can reuse when parsing other
+        statements.</p><a id="I_programlisting4_d1e6038"/><pre class="programlisting">   /* statements: select statement */
+
+stmt: select_stmt { emit("STMT"); }
+   ;
+
+select_stmt: SELECT select_opts select_expr_list   <em class="lineannotation"><span class="lineannotation">simple select with no tables</span></em>
+                        { emit("SELECTNODATA %d %d", $2, $3); } ;
+
+    | SELECT select_opts select_expr_list          <em class="lineannotation"><span class="lineannotation">select with tables</span></em>
+     FROM table_references
+     opt_where opt_groupby opt_having opt_orderby opt_limit
+     opt_into_list { emit("SELECT %d %d %d", $2, $3, $5); } ;
+;</pre><p>The first rule says that a <code class="literal">select_stmt</code> is a kind of statement, and it
+        emits an RPN <code class="literal">STMT</code> as a delimiter
+        between statements. The syntax of <code class="literal">SELECT</code> lists the expressions that SQL needs
+        to calculate for each record (aka tuple) it retrieves, lists an
+        optional (but usual) <code class="literal">FROM</code> with the
+        tables containing the data for the expressions, and lists optional
+        qualifiers such as <code class="literal">WHERE</code>, <code class="literal">GROUP BY</code>, and <code class="literal">HAVING</code> that limit, combine, and sort the
+        records retrieved. Each qualifier has its own rules.</p><a id="I_programlisting4_d1e6070"/><pre class="programlisting">opt_where: /* nil */ 
+   | WHERE expr { emit("WHERE"); };
+
+opt_groupby: /* nil */ 
+   | GROUP BY groupby_list opt_with_rollup
+                             { emit("GROUPBYLIST %d %d", $3, $4); }
+;
+
+groupby_list: expr opt_asc_desc
+                             { emit("GROUPBY %d",  $2); $$ = 1; }
+   | groupby_list ',' expr opt_asc_desc
+                             { emit("GROUPBY %d",  $4); $$ = $1 + 1; }
+   ;
+
+opt_asc_desc: /* nil */ { $$ = 0; }
+   | ASC                { $$ = 0; }
+   | DESC               { $$ = 1; }
+    ;
+
+opt_with_rollup: /* nil */  { $$ = 0; }
+   | WITH ROLLUP  { $$ = 1; }
+   ;
+
+opt_having: /* nil */ 
+   | HAVING expr { emit("HAVING"); };
+
+opt_orderby: /* nil */ 
+   | ORDER BY groupby_list { emit("ORDERBY %d", $3); }
+   ;
+
+opt_limit: /* nil */ | LIMIT expr { emit("LIMIT 1"); }
+  | LIMIT expr ',' expr             { emit("LIMIT 2"); }
+  ; 
+
+opt_into_list: /* nil */ 
+   | INTO column_list { emit("INTO %d", $2); }
+   ;
+
+column_list: NAME { emit("COLUMN %s", $1); free($1); $$ = 1; }
+  | column_list ',' NAME  { emit("COLUMN %s", $3); free($3); $$ = $1 + 1; }
+  ;</pre><p>Some of the options, <code class="literal">WHERE</code>,
+        <code class="literal">GROUPBY</code>, and <code class="literal">HAVING</code>, take a fixed number of expressions,
+        while <code class="literal">LIMIT</code> takes either one or two
+        expressions. These each have straightforward rules to match the option
+        and its expression(s), and they emit an RPN operator to say what to do
+        with the expressions.</p><p><code class="literal">GROUP BY</code> and <code class="literal">ORDER BY</code> take a list of expressions, usually
+        column names, each optionally followed by <code class="literal">ASC</code> or <code class="literal">DESC</code> to set the sort order. The <code class="literal">groupby_list</code> rule makes a counted list of
+        expressions, emitting a <code class="literal">GROUPBY</code>
+        operator with an operand for the sort order. The <code class="literal">GROUP BY</code> and <code class="literal">ORDER
+        BY</code> rules then emit <code class="literal">GROUPBYLIST</code> and <code class="literal">ORDERBY</code> operators with the count and, for
+        <code class="literal">GROUP BY</code>, a flag to say whether to
+        use the <code class="literal">WITH ROLLUP</code> option, which
+        adds some extra summary fields to the result.</p><p>The <code class="literal">INTO</code> operator takes a
+        plain list of names, which we call a <code class="literal">column_list</code>, that is a list of field names
+        into which to store the selected data. <code class="literal">INTO</code> isn’t used very often, but we’ll reuse
+        <code class="literal">column_list</code> several other places
+        later where the syntax has a list of column names.</p><div class="sect3" title="Select options and table references"><div class="titlepage"><div><div><h3 class="title"><a id="id465408"/>Select options and table references</h3></div></div></div><p><a id="index-654W816GB7G" class="indexterm"/>Now we handle the initial options and the main list of
+          expressions in a <code class="literal">SELECT</code>.</p><a id="I_programlisting4_d1e6151"/><pre class="programlisting">select_opts:                          { $$ = 0; }
+| select_opts ALL                 
+   { if($1 &amp; 01) yyerror("duplicate ALL option"); $$ = $1 | 01; }
+| select_opts DISTINCT            
+   { if($1 &amp; 02) yyerror("duplicate DISTINCT option"); $$ = $1 | 02; }
+| select_opts DISTINCTROW         
+   { if($1 &amp; 04) yyerror("duplicate DISTINCTROW option"); $$ = $1 | 04; }
+| select_opts HIGH_PRIORITY       
+   { if($1 &amp; 010) yyerror("duplicate HIGH_PRIORITY option"); $$ = $1 | 010; }
+| select_opts STRAIGHT_JOIN       
+   { if($1 &amp; 020) yyerror("duplicate STRAIGHT_JOIN option"); $$ = $1 | 020; }
+| select_opts SQL_SMALL_RESULT    
+   { if($1 &amp; 040) yyerror("duplicate SQL_SMALL_RESULT option"); $$ = $1 | 040; }
+| select_opts SQL_BIG_RESULT      
+   { if($1 &amp; 0100) yyerror("duplicate SQL_BIG_RESULT option"); $$ = $1 | 0100; }
+| select_opts SQL_CALC_FOUND_ROWS 
+   { if($1 &amp; 0200) yyerror("duplicate SQL_CALC_FOUND_ROWS option"); $$ = 
+   $1 | 0200; }
+    ;
+
+select_expr_list: select_expr { $$ = 1; }
+    | select_expr_list ',' select_expr {$$ = $1 + 1; }
+    | '*' { emit("SELECTALL"); $$ = 1; }
+    ;
+
+select_expr: expr opt_as_alias ;
+
+opt_as_alias: AS NAME { emit ("ALIAS %s", $2); free($2); }
+  | NAME              { emit ("ALIAS %s", $1); free($1); }
+  | /* nil */
+  ;</pre><p>The options are flags that affect the way that a <code class="literal">SELECT</code> is handled. The rules about what
+          options are compatible with each other are too complex to encode
+          into the grammar, so we just accept any set of options and build up
+          a bitmask of them, which also lets us diagnose duplicate options.
+          (When options can occur in any order, there’s no good way to prevent
+          duplicates in the grammar, and it’s generally easy to detect them
+          yourself as we do here.)</p><p>The <code class="literal">SELECT</code> expression list
+          is a comma-separated list of expressions, each optionally followed
+          by an <code class="literal">AS</code> clause to give the
+          expression a name to use to refer to it elsewhere in the <code class="literal">SELECT</code> statement. We emit an <code class="literal">ALIAS</code> operator in the RPN. As a special
+          case, <code class="literal"><code class="literal">*</code></code> means all of the fields in the
+          source records, for which we emit <code class="literal">SELECTALL</code>.</p></div><div class="sect3" title="SELECT table references"><div class="titlepage"><div><div><h3 class="title"><a id="id535000"/>SELECT table references</h3></div></div></div><p>The most complex and powerful part of <code class="literal">SELECT</code>, and the most powerful part of SQL,
+          is the way it can refer to multiple tables. In a <code class="literal">SELECT</code>, you can tell it to create
+          conceptual joined tables built from data stored in many actual
+          tables, either by explicit joins or by recursive <code class="literal">SELECT</code> statements. Since tables can be
+          rather large, there are also ways to give it hints about how to do
+          the joining efficiently.</p><a id="I_programlisting4_d1e6194"/><pre class="programlisting">table_references:    table_reference { $$ = 1; }
+    | table_references ',' table_reference { $$ = $1 + 1; }
+    ;
+
+table_reference:  table_factor
+  | join_table
+;
+
+table_factor:
+    NAME opt_as_alias index_hint { emit("TABLE %s", $1); free($1); }
+  | NAME '.' NAME opt_as_alias index_hint { emit("TABLE %s.%s", $1, $3);
+                               free($1); free($3); }
+  | table_subquery opt_as NAME { emit("SUBQUERYAS %s", $3); free($3); }
+  | '(' table_references ')' { emit("TABLEREFERENCES %d", $2); }
+  ;
+
+opt_as: AS 
+  | /* nil */
+  ;
+
+join_table:
+    table_reference opt_inner_cross JOIN table_factor opt_join_condition
+                  { emit("JOIN %d", 100+$2); }
+  | table_reference STRAIGHT_JOIN table_factor
+                  { emit("JOIN %d", 200); }
+  | table_reference STRAIGHT_JOIN table_factor ON expr
+                  { emit("JOIN %d", 200); }
+  | table_reference left_or_right opt_outer JOIN table_factor join_condition
+                  { emit("JOIN %d", 300+$2+$3); }
+  | table_reference NATURAL opt_left_or_right_outer JOIN table_factor
+                  { emit("JOIN %d", 400+$3); }
+  ;
+
+opt_inner_cross: /* nil */ { $$ = 0; }
+   | INNER { $$ = 1; }
+   | CROSS  { $$ = 2; }
+;
+
+opt_outer: /* nil */  { $$ = 0; }
+   | OUTER {$$ = 4; }
+   ;
+
+left_or_right: LEFT { $$ = 1; }
+    | RIGHT { $$ = 2; }
+    ;
+
+opt_left_or_right_outer: LEFT opt_outer { $$ = 1 + $2; }
+   | RIGHT opt_outer  { $$ = 2 + $2; }
+   | /* nil */ { $$ = 0; }
+   ;
+
+opt_join_condition: /* nil */
+   | join_condition ;
+
+join_condition:
+    ON expr { emit("ONEXPR"); }
+    | USING '(' column_list ')' { emit("USING %d", $3); }
+    ;
+
+index_hint:
+     USE KEY opt_for_join '(' index_list ')'
+                  { emit("INDEXHINT %d %d", $5, 10+$3); }
+   | IGNORE KEY opt_for_join '(' index_list ')'
+                  { emit("INDEXHINT %d %d", $5, 20+$3); }
+   | FORCE KEY opt_for_join '(' index_list ')'
+                  { emit("INDEXHINT %d %d", $5, 30+$3); }
+   | /* nil */
+   ;
+
+opt_for_join: FOR JOIN { $$ = 1; }
+   | /* nil */ { $$ = 0; }
+   ;
+
+index_list: NAME  { emit("INDEX %s", $1); free($1); $$ = 1; }
+   | index_list ',' NAME { emit("INDEX %s", $3); free($3); $$ = $1 + 1; }
+   ;
+
+table_subquery: '(' select_stmt ')' { emit("SUBQUERY"); }
+   ;</pre><p>Although the grammar for the table sublanguage is long, it’s
+          not all that complex, consisting mostly of lists of items and a lot
+          of optional clauses. Each <code class="literal">table_reference</code> can be a <code class="literal">table_factor</code> (which is a plain table, a
+          nested <code class="literal">SELECT</code>, or a parenthesized
+          list) or else a <code class="literal">join_table</code>, an
+          explicit join. A plain table reference is the name of the table,
+          with or without the name of the database that contains it; an
+          optional <code class="literal">AS</code> clause to give an
+          alias name (a table can usefully appear more than once in the same
+          <code class="literal">SELECT</code>, and this makes it
+          possible to tell which instance an expression refers to); and an
+          optional hint about which indexes to use, described in a
+          moment.</p><p>A nested <code class="literal">SELECT</code><a id="I_indexterm4_d1e6221" class="indexterm"/> is a <code class="literal">SELECT</code>
+          statement in parentheses, which must have a name assigned, although
+          the <code class="literal">AS</code> before the name is
+          optional. A <code class="literal">table_factor</code> can also
+          be a parenthesized list of <code class="literal">table_reference</code>s, which can be useful when
+          creating joins.</p><p>Each <code class="literal">table_factor</code> can also
+          take an index hint. A SQL table can have indexes <a id="I_indexterm4_d1e6242" class="indexterm"/>on any combination of fields, which makes it faster to
+          do searches based on those fields. Each index has a name, typically
+          something like <code class="literal">foo_index</code> for a
+          field <code class="literal">foo</code>. Normally MySQL uses
+          the appropriate indexes automatically, but you can also override its
+          choice of indexes by <code class="literal">USE KEY</code>,
+          <code class="literal">FORCE KEY</code>, or <code class="literal">IGNORE KEY</code>.</p><p>A join <a id="I_indexterm4_d1e6266" class="indexterm"/>specifies the way to combine two groups of tables.
+          Joins come in a variety of flavors that change the order in which
+          the table are matched up, specify what to do with records in one
+          group that don’t match any records in the other group, and specify
+          other details. Every join also explicitly or implicitly specifies
+          the fields to use to match up the tables, in a variety of syntaxes,
+          for example:</p><a id="I_programlisting4_d1e6272"/><pre class="programlisting">   SELECT * FROM a JOIN b on a.foo=b.bar
+   SELECT * FROM a JOIN b USING (foo) <em class="lineannotation"><span class="lineannotation">a.foo=b.foo</span></em></pre><p>In a <code class="literal">NATURAL</code>
+          join,<a id="I_indexterm4_d1e6281" class="indexterm"/> the join matches on fields with the same name, and in
+          a regular join, if there are no fields listed, it creates a
+          cross-product, joining every record in the first group with every
+          record in the second group. In this latter case, the result is
+          usually whittled down by a <code class="literal">WHERE</code>
+          or <code class="literal">HAVING</code> clause. For all the
+          various sorts of joins, we emit a <code class="literal">JOIN</code> operator with subfields describing
+          the exact kind of join.</p><p>Note the separate rules <code class="literal">table_factor</code> and <code class="literal">table_reference</code>. They’re separate to set
+          the associativity of <code class="literal">JOIN</code>
+          operators and resolve the ambiguity in an expression like <code class="literal">a JOIN b JOIN c</code>, which means <code class="literal">(a JOIN b) JOIN c</code> rather than <code class="literal">a JOIN (b JOIN c)</code>. In the <code class="literal">join_table</code> rule, there’s a <code class="literal">table_reference</code> on the left side of each
+          join and <code class="literal">table_factor</code> on the right, making the
+          syntax left associative. Since a <code class="literal">table_factor</code> can be a parenthesized
+          <code class="literal">table_reference</code>, you can use
+          parentheses if that’s not what you want. In this case, we could have
+          made everything a <code class="literal">table_reference</code>
+          and used precedence to resolve the ambiguity, but this syntax comes
+          directly from the SQL standard, and there seemed to be no reason to
+          change it.<a id="I_indexterm4_d1e6336" class="indexterm"/><a id="I_indexterm4_d1e6337" class="indexterm"/></p></div></div><div class="sect2" title="Delete Statement"><div class="titlepage"><div><div><h2 class="title"><a id="id485221"/>Delete Statement</h2></div></div></div><p><a id="I_indexterm4_d1e6342" class="indexterm"/>Once we have the <code class="literal">SELECT</code> statement under control, the other
+        data manipulation statements are easy to parse. <code class="literal">DELETE</code> deletes records from a table, with
+        the records to delete chosen using a <code class="literal">WHERE</code> clause identical to the <code class="literal">WHERE</code> clause in a <code class="literal">SELECT</code> or chosen from a group of tables also
+        specified the same as in a <code class="literal">SELECT</code>.</p><a id="I_programlisting4_d1e6367"/><pre class="programlisting">   /* statements: delete statement */
+
+stmt: delete_stmt { emit("STMT"); }
+   ;
+
+   /* single table delete */
+delete_stmt: DELETE delete_opts FROM NAME
+    opt_where opt_orderby opt_limit
+                  { emit("DELETEONE %d %s", $2, $4); free($4); }
+;
+
+delete_opts: delete_opts LOW_PRIORITY { $$ = $1 + 01; }
+   | delete_opts QUICK { $$ = $1 + 02; }
+   | delete_opts IGNORE { $$ = $1 + 04; }
+   | /* nil */ { $$ = 0; }
+   ;</pre><p>The <code class="literal">DELETE</code> statement reuses
+        several rules we wrote for <code class="literal">SELECT</code>:
+        <code class="literal">opt_where</code> for an optional <code class="literal">WHERE</code> clause, <code class="literal">opt_orderby</code> for an optional <code class="literal">ORDER BY</code> clause, and <code class="literal">opt_limit</code> for an optional <code class="literal">LIMIT</code> clause. Since the rules for each of
+        those clauses emits its own RPN, we only have to write rules for some
+        keywords specific to <code class="literal">DELETE</code>,
+        <code class="literal">QUICK</code>, and <code class="literal">IGNORE</code>, and for the <code class="literal">DELETE</code> statement itself.</p><a id="I_programlisting4_d1e6409"/><pre class="programlisting">   /* multitable delete, first version */
+delete_stmt: DELETE delete_opts
+    delete_list
+    FROM table_references opt_where
+            { emit("DELETEMULTI %d %d %d", $2, $3, $5); }
+
+delete_list: NAME opt_dot_star { emit("TABLE %s", $1); free($1); $$ = 1; }
+   | delete_list ',' NAME opt_dot_star
+            { emit("TABLE %s", $3); free($3); $$ = $1 + 1; }
+   ;
+
+opt_dot_star: /* nil */ | '.' '*' ;
+
+   /* multitable delete, second version */
+delete_stmt: DELETE delete_opts
+    FROM delete_list
+    USING table_references opt_where
+            { emit("DELETEMULTI %d %d %d", $2, $4, $6); }
+;</pre><p>There are two different syntaxes for multitable <code class="literal">DELETE</code>s, to be compatible with various other implementations of SQL.
+        One lists the tables followed by <code class="literal">FROM</code> and the <code class="literal">table_references</code>; the other says
+        <code class="literal">FROM</code>, the list of tables, <code class="literal">USING</code>, and the <code class="literal">table_references</code>. Bison deals easily
+        with these variants, and we emit the same RPN for both. The <code class="literal">delete_list</code> has a little optional “syntactic
+        sugar,” letting you specify the table from which records are to be
+        deleted as <code class="literal">name.*</code>, as well as plain
+        <code class="literal">name</code>, to remind readers that all of
+        the fields in each record are deleted.</p></div><div class="sect2" title="Insert and Replace Statements"><div class="titlepage"><div><div><h2 class="title"><a id="id471641"/>Insert and Replace Statements</h2></div></div></div><p><a id="index-351E232FF2C" class="indexterm"/><a id="index-805G504CA5S" class="indexterm"/>The <code class="literal">INSERT</code> and
+        <code class="literal">REPLACE</code> statements add records to a
+        table. The only difference between them is that if the primary key
+        fields in a new record have the same values as an existing record,
+        <code class="literal">INSERT</code> fails with an error unless
+        there’s an <code class="literal">ON DUPLICATE KEY</code> clause,
+        while <code class="literal">REPLACE</code> replaces the existing
+        record. <code class="literal">INSERT</code>, like <code class="literal">DELETE</code>, has two equivalent variant forms to
+        insert new data, and it has a third form that inserts records created
+        by a <code class="literal">SELECT</code>.</p><a id="I_programlisting4_d1e6484"/><pre class="programlisting">  <em class="lineannotation"><span class="lineannotation"> INSERT INTO a(b,c) values (1,2),(3,DEFAULT)</span></em>
+
+   /* statements: insert statement */
+
+stmt: insert_stmt { emit("STMT"); }
+   ;
+
+insert_stmt: INSERT insert_opts opt_into NAME
+     opt_col_names
+     VALUES insert_vals_list
+     opt_ondupupdate { emit("INSERTVALS %d %d %s", $2, $7, $4); free($4) }
+   ;
+
+opt_ondupupdate: /* nil */
+   | ONDUPLICATE KEY UPDATE insert_asgn_list { emit("DUPUPDATE %d", $4); }
+   ;
+
+insert_opts: /* nil */ { $$ = 0; }
+   | insert_opts LOW_PRIORITY { $$ = $1 | 01 ; }
+   | insert_opts DELAYED { $$ = $1 | 02 ; }
+   | insert_opts HIGH_PRIORITY { $$ = $1 | 04 ; }
+   | insert_opts IGNORE { $$ = $1 | 010 ; }
+   ;
+
+opt_into: INTO | /* nil */
+   ;
+
+opt_col_names: /* nil */
+   | '(' column_list ')' { emit("INSERTCOLS %d", $2); }
+   ;
+
+insert_vals_list: '(' insert_vals ')' { emit("VALUES %d", $2); $$ = 1; }
+   | insert_vals_list ',' '(' insert_vals ')' { emit("VALUES %d", $4); $$ = $1 + 1; }
+
+insert_vals:
+     expr { $$ = 1; }
+   | DEFAULT { emit("DEFAULT"); $$ = 1; }
+   | insert_vals ',' expr { $$ = $1 + 1; }
+   | insert_vals ',' DEFAULT { emit("DEFAULT"); $$ = $1 + 1; }
+   ;</pre><p>The first form specifies the name of the table and the list of
+        fields to be provided (all of them if not specified), then specifies
+        <code class="literal">VALUES</code>, and finally specifies lists
+        of values. This form can insert multiple records, so the rule <code class="literal">insert_vals</code> matches the fields for one
+        record enclosed in parentheses and <code class="literal">insert_vals_list</code> matches multiple
+        comma-separated sets of fields. Each field value can be an expression
+        or the keyword <code class="literal">DEFAULT</code>. There are a
+        few optional keywords to control the details of the insert.</p><p>The <code class="literal">opt_ondupupdate</code> rule
+        handles the <code class="literal">ON DUPLICATE</code> clause,
+        which gives a list of fields to change if an inserted record would
+        have had a duplicate key. Since the syntax is <code class="literal">SET field=value</code> and <code class="literal">=</code> is scanned as a <code class="literal">COMPARISON</code> operator, we accept <code class="literal">COMPARISON</code> and check in our code to be sure
+        that it’s an equal sign and not something else.<sup>[<a id="id531058" href="#ftn.id531058" class="footnote">18</a>]</sup> Note that <code class="literal">ONDUPLICATE</code> is one token; in the lexer
+        we treat the two words as one token to avoid ambiguity with <code class="literal">ON</code> clauses in nested <code class="literal">SELECT</code>s.</p><a id="I_programlisting4_d1e6542"/><pre class="programlisting">  <em class="lineannotation"><span class="lineannotation"> INSERT INTO a SET b=1, c=2</span></em>
+
+insert_stmt: INSERT insert_opts opt_into NAME
+    SET insert_asgn_list
+    opt_ondupupdate
+     { emit("INSERTASGN %d %d %s", $2, $6, $4); free($4) }
+   ;
+
+insert_asgn_list:
+     NAME COMPARISON expr 
+       { if ($2 != 4) { yyerror("bad insert assignment to %s", $1); YYERROR; }
+       emit("ASSIGN %s", $1); free($1); $$ = 1; }
+   | NAME COMPARISON DEFAULT
+       { if ($2 != 4) { yyerror("bad insert assignment to %s", $1); YYERROR; }
+                 emit("DEFAULT"); emit("ASSIGN %s", $1); free($1); $$ = 1; }
+   | insert_asgn_list ',' NAME COMPARISON expr
+       { if ($4 != 4) { yyerror("bad insert assignment to %s", $1); YYERROR; }
+                 emit("ASSIGN %s", $3); free($3); $$ = $1 + 1; }
+   | insert_asgn_list ',' NAME COMPARISON DEFAULT
+       { if ($4 != 4) { yyerror("bad insert assignment to %s", $1); YYERROR; }
+                 emit("DEFAULT"); emit("ASSIGN %s", $3); free($3); $$ = $1 + 1; }
+   ;</pre><p>The second form uses an assignment syntax similar to the one for
+        <code class="literal">ON DUPLICATE</code>. We have to check that
+        the <code class="literal">COMPARISON</code> is really an =. If
+        not, we produce an error message by calling <code class="literal">yyerror()</code>, and then we tell the parser to
+        start error recovery with <code class="literal">YYERROR</code>.
+        (In this version of the parser there’s no error recovery, but see
+        <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a>.) This form uses same optional <code class="literal">ON DUPLICATE</code> syntax at the end of the
+        statement, so we use the same
+        rule.</p><a id="I_programlisting4_d1e6569"/><pre class="programlisting">   <em class="lineannotation"><span class="lineannotation">INSERT into a(b,c) SELECT x,y FROM z where x &lt; 12</span></em> 
+insert_stmt: INSERT insert_opts opt_into NAME opt_col_names
+    select_stmt
+    opt_ondupupdate { emit("INSERTSELECT %d %s", $2, $4); free($4); }
+  ;</pre><p>The third form of <code class="literal">INSERT</code> uses
+        data from a <code class="literal">SELECT</code> statement to
+        create new records. All of the pieces of this statement are the same
+        as syntax we’ve seen before, so we write only the one rule and reuse
+        subrules for the pieces.</p><div class="sect3" title="Replace statement"><div class="titlepage"><div><div><h3 class="title"><a id="id455965"/>Replace statement</h3></div></div></div><p>The syntax of the <code class="literal">REPLACE</code>
+          statement is just like <code class="literal">INSERT</code>, so
+          the rules for it are the same too, changing <code class="literal">INSERT</code> to <code class="literal">REPLACE</code> and renaming the top-level
+          rules.<a id="I_indexterm4_d1e6599" class="indexterm"/><a id="I_indexterm4_d1e6600" class="indexterm"/></p><a id="I_programlisting4_d1e6601"/><pre class="programlisting">   /** replace just like insert **/
+stmt: replace_stmt { emit("STMT"); }
+   ;
+
+replace_stmt: REPLACE insert_opts opt_into NAME
+     opt_col_names
+     VALUES insert_vals_list
+     opt_ondupupdate { emit("REPLACEVALS %d %d %s", $2, $7, $4); free($4) }
+   ;
+
+replace_stmt: REPLACE insert_opts opt_into NAME
+    SET insert_asgn_list
+    opt_ondupupdate
+     { emit("REPLACEASGN %d %d %s", $2, $6, $4); free($4) }
+   ;
+
+replace_stmt: REPLACE insert_opts opt_into NAME opt_col_names
+    select_stmt
+    opt_ondupupdate { emit("REPLACESELECT %d %s", $2, $4); free($4); }
+  ;</pre></div></div><div class="sect2" title="Update Statement"><div class="titlepage"><div><div><h2 class="title"><a id="id535283"/>Update Statement</h2></div></div></div><p><a id="I_indexterm4_d1e6607" class="indexterm"/>The <code class="literal">UPDATE</code> statement
+        changes fields in existing records. Again, its syntax lets us reuse
+        rules from previous statements.</p><a id="I_programlisting4_d1e6616"/><pre class="programlisting">/** update **/
+stmt: update_stmt { emit("STMT"); }
+   ;
+
+update_stmt: UPDATE update_opts table_references
+    SET update_asgn_list
+    opt_where
+    opt_orderby
+opt_limit { emit("UPDATE %d %d %d", $2, $3, $5); }
+;
+
+update_opts: /* nil */ { $$ = 0; }
+   | insert_opts LOW_PRIORITY { $$ = $1 | 01 ; }
+   | insert_opts IGNORE { $$ = $1 | 010 ; }
+   ;
+
+update_asgn_list:
+     NAME COMPARISON expr 
+     { if ($2 != 4) { yyerror("bad update assignment to %s", $1); YYERROR; }
+	 emit("ASSIGN %s", $1); free($1); $$ = 1; }
+   | NAME '.' NAME COMPARISON expr 
+       { if ($4 != 4) { yyerror("bad update assignment to %s", $1); YYERROR; }
+	 emit("ASSIGN %s.%s", $1, $3); free($1); free($3); $$ = 1; }
+   | update_asgn_list ',' NAME COMPARISON expr
+       { if ($4 != 4) { yyerror("bad update assignment to %s", $3); YYERROR; }
+	 emit("ASSIGN %s.%s", $3); free($3); $$ = $1 + 1; }
+   | update_asgn_list ',' NAME '.' NAME COMPARISON expr
+       { if ($6 != 4) { yyerror("bad update  assignment to %s.$s", $3, $5); 
+          YYERROR; }
+         emit("ASSIGN %s.%s", $3, $5); free($3); free($5); $$ = 1; }
+   ;</pre><p><code class="literal">UPDATE</code> has its own set of
+        options in the <code class="literal">update_opts</code> rule.
+        The list of assignments after <code class="literal">SET</code>
+        is similar to the one in <code class="literal">INSERT</code>,
+        but it allows qualified table names since you can update more than one
+        table at a time, and it doesn’t have the default option in <code class="literal">INSERT</code>, so we have a similar but different
+        <code class="literal">update_asgn_list</code>. <code class="literal">INSERT</code> uses the same <code class="literal">opt_where</code> and <code class="literal">opt_orderby</code> to limit and sort the records
+        updated.</p><p>This ends the list of data manipulation statements in our SQL
+        subset. MySQL has several more not covered here, but their syntax is
+        straightforward to parse.</p></div><div class="sect2" title="Create Database"><div class="titlepage"><div><div><h2 class="title"><a id="id460776"/>Create Database</h2></div></div></div><p><a id="I_indexterm4_d1e6653" class="indexterm"/><a id="I_indexterm4_d1e6658" class="indexterm"/>Now we’ll handle two of the many data definition
+        statements that create and modify the structure of databases and
+        tables.</p><a id="I_programlisting4_d1e6664"/><pre class="programlisting">   /** create database **/
+
+stmt: create_database_stmt { emit("STMT"); }
+   ;
+
+create_database_stmt: 
+     CREATE DATABASE opt_if_not_exists NAME 
+       { emit("CREATEDATABASE %d %s", $3, $4); free($4); }
+   | CREATE SCHEMA opt_if_not_exists NAME 
+       { emit("CREATEDATABASE %d %s", $3, $4); free($4); }
+   ;
+
+opt_if_not_exists:  /* nil */ { $$ = 0; }
+   | IF EXISTS           
+       { if(!$2) { yyerror("IF EXISTS doesn't exist"); YYERROR; }
+                        $$ = $2; /* NOT EXISTS hack */ }
+   ;</pre><p><code class="literal">CREATE DATABASE</code>, or the
+        equivalent <code class="literal">CREATE SCHEMA</code> statement,
+        makes a new database in which you can then create tables. It has one
+        optional clause, <code class="literal">IF NOT EXISTS</code>, to
+        prevent an error message if the database already exists. Recall that
+        we did a lexical hack to treat <code class="literal">IF NOT
+        EXISTS</code> and <code class="literal">IF EXISTS</code> as
+        the same token in expressions. In this case, only <code class="literal">IF NOT EXISTS</code> is valid, so we test in the
+        action code and complain and tell the parser it’s a syntax error if
+        it’s the wrong one.</p></div><div class="sect2" title="Create Table"><div class="titlepage"><div><div><h2 class="title"><a id="id495023"/>Create Table</h2></div></div></div><p><a id="index-416G108AO4Q" class="indexterm"/><a id="index-415S772UN0O" class="indexterm"/>The <code class="literal">CREATE TABLE</code>
+        statement rivals <code class="literal">SELECT</code> in its
+        length and number of options, but its syntax is much simpler since
+        nearly all of the syntax is just declaring the type and attribute of
+        each column in the table.</p><p>We start with six versions of <code class="literal">create_table_statement</code>. There are three
+        pairs that differ only in <code class="literal">NAME</code> or
+        <code class="literal">NAME.NAME</code> for the name of the
+        table. The first pair is the normal version with an explicit list of
+        columns in <code class="literal">create_col_list</code>. The
+        other two create and populate a table from a <code class="literal">SELECT</code> statement, with one including a list
+        of column names and the other defaulting to the column names from the
+        <code class="literal">SELECT</code>.</p><a id="I_programlisting4_d1e6727"/><pre class="programlisting">   /** create table **/
+stmt: create_table_stmt { emit("STMT"); }
+   ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME
+   '(' create_col_list ')' { emit("CREATE %d %d %d %s", $2, $4, $7, $5); free($5); }
+   ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME '.' NAME
+   '(' create_col_list ')' { emit("CREATE %d %d %d %s.%s", $2, $4, $9, $5, $7);
+                          free($5); free($7); }
+   ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME
+   '(' create_col_list ')'
+create_select_statement { emit("CREATESELECT %d %d %d %s", $2, $4, $7, $5); free($5); }
+    ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME
+   create_select_statement { emit("CREATESELECT %d %d 0 %s", $2, $4, $5); free($5); }
+    ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME '.' NAME
+   '(' create_col_list ')'
+   create_select_statement  { emit("CREATESELECT %d %d 0 %s.%s", $2, $4, $5, $7);
+                              free($5); free($7); }
+    ;
+
+create_table_stmt: CREATE opt_temporary TABLE opt_if_not_exists NAME '.' NAME
+   create_select_statement { emit("CREATESELECT %d %d 0 %s.%s", $2, $4, $5, $7);
+                          free($5); free($7); }
+    ;
+
+opt_temporary:   /* nil */ { $$ = 0; }
+   | TEMPORARY { $$ = 1;}
+   ;</pre><p>The heart of a <code class="literal">CREATE
+        DATABASE</code> statement is the list of columns,<a id="I_indexterm4_d1e6734" class="indexterm"/> or more precisely the list of <code class="literal">create_definitions</code>, which includes both
+        columns and indexes.<a id="I_indexterm4_d1e6743" class="indexterm"/> The indexes can be the <code class="literal">PRIMARY
+        KEY</code>, which means that it’s unique for each record; a regular
+        <code class="literal">INDEX</code> (also called <code class="literal">KEY</code>); or a <code class="literal">FULLTEXT</code> index, which indexes individual
+        words in the data. Each of those takes a list of column names, for
+        which we once again reuse the <code class="literal">column_list</code> rule we defined for <code class="literal">SELECT</code>.</p><a id="I_programlisting4_d1e6768"/><pre class="programlisting">create_col_list: create_definition { $$ = 1; }
+    | create_col_list ',' create_definition { $$ = $1 + 1; }
+    ;
+
+create_definition: PRIMARY KEY '(' column_list ')'    { emit("PRIKEY %d", $4); }
+    | KEY '(' column_list ')'            { emit("KEY %d", $3); }
+    | INDEX '(' column_list ')'          { emit("KEY %d", $3); }
+    | FULLTEXT INDEX '(' column_list ')' { emit("TEXTINDEX %d", $4); }
+    | FULLTEXT KEY '(' column_list ')'   { emit("TEXTINDEX %d", $4); }
+    ;</pre><p>Each definition is bracketed by an RPN <code class="literal">STARTCOL</code> operator since the set of
+        per-column options is large; this delimits each column’s options. The
+        column itself is the name of the column, the data type, and the
+        optional attributes, such as whether the column can contain null
+        values, what its default value is, and whether it’s a key. (Declaring
+        a column to be a key is equivalent to creating an index on the
+        column.) For the attributes, we emit an <code class="literal">ATTR</code> operator for each one and count the
+        number of attributes. The code here doesn’t check for duplicates, but
+        we could do so by making the value of <code class="literal">column_atts</code> a structure with both a count
+        and a bitmask and checking the bitmask as we did earlier in <code class="literal">SELECT</code> options.</p><a id="I_programlisting4_d1e6784"/><pre class="programlisting">create_definition: { emit("STARTCOL"); } NAME data_type column_atts
+                   { emit("COLUMNDEF %d %s", $3, $2); free($2); }
+
+column_atts: /* nil */ { $$ = 0; }
+    | column_atts NOT NULLX             { emit("ATTR NOTNULL"); $$ = $1 + 1; }
+    | column_atts NULLX
+    | column_atts DEFAULT STRING        
+        { emit("ATTR DEFAULT STRING %s", $3); free($3); $$ = $1 + 1; }
+    | column_atts DEFAULT INTNUM        
+        { emit("ATTR DEFAULT NUMBER %d", $3); $$ = $1 + 1; }
+    | column_atts DEFAULT APPROXNUM     
+        { emit("ATTR DEFAULT FLOAT %g", $3); $$ = $1 + 1; }
+    | column_atts DEFAULT BOOL          
+        { emit("ATTR DEFAULT BOOL %d", $3); $$ = $1 + 1; }
+    | column_atts AUTO_INCREMENT        
+        { emit("ATTR AUTOINC"); $$ = $1 + 1; }
+    | column_atts UNIQUE '(' column_list ')' 
+        { emit("ATTR UNIQUEKEY %d", $4); $$ = $1 + 1; }
+    | column_atts UNIQUE KEY { emit("ATTR UNIQUEKEY"); $$ = $1 + 1; }
+    | column_atts PRIMARY KEY { emit("ATTR PRIKEY"); $$ = $1 + 1; }
+    | column_atts KEY { emit("ATTR PRIKEY"); $$ = $1 + 1; }
+    | column_atts COMMENT STRING 
+        { emit("ATTR COMMENT %s", $3); free($3); $$ = $1 + 1; }
+    ;</pre><p>The syntax for the data type <a id="I_indexterm4_d1e6788" class="indexterm"/>is long but not complicated. Many of the types allow the
+        number of characters or digits to be specified, so there’s an <code class="literal">opt_length</code> that takes one or two length
+        values. (We encode them into one number here; a structure would have
+        been more elegant.) Other options say whether a number is unsigned or
+        displayed filled with zeros, whether a string is treated as binary
+        data, and, for text, what character set and collation rule it uses.
+        Those last two are specified as strings from a large set of language
+        and collation systems, but for our purposes we just accept any string.
+        With these auxiliary rules, we can now parse the long list of MySQL
+        data types. Again we encode the data type into a number, and again a
+        structure would be more elegant, but the number will do for our
+        RPN.</p><p>The last two types, <code class="literal">ENUM</code> and
+        <code class="literal">SET</code>, each take a list of strings
+        that name the members of the enumeration or set, which we parse as
+        <code class="literal">enum_val</code>.</p><a id="I_programlisting4_d1e6808"/><pre class="programlisting">opt_length: /* nil */ { $$ = 0; }
+   | '(' INTNUM ')' { $$ = $2; }
+   | '(' INTNUM ',' INTNUM ')' { $$ = $2 + 1000*$4; }
+   ;
+
+opt_binary: /* nil */ { $$ = 0; }
+   | BINARY { $$ = 4000; }
+   ;
+
+opt_uz: /* nil */ { $$ = 0; }
+   | opt_uz UNSIGNED { $$ = $1 | 1000; }
+   | opt_uz ZEROFILL { $$ = $1 | 2000; }
+   ;
+
+opt_csc: /* nil */
+   | opt_csc CHAR SET STRING { emit("COLCHARSET %s", $4); free($4); }
+   | opt_csc COLLATE STRING { emit("COLCOLLATE %s", $3); free($3); }
+   ;
+
+data_type:
+     BIT opt_length { $$ = 10000 + $2; }
+   | TINYINT opt_length opt_uz { $$ = 10000 + $2; }
+   | SMALLINT opt_length opt_uz { $$ = 20000 + $2 + $3; }
+   | MEDIUMINT opt_length opt_uz { $$ = 30000 + $2 + $3; }
+   | INT opt_length opt_uz { $$ = 40000 + $2 + $3; }
+   | INTEGER opt_length opt_uz { $$ = 50000 + $2 + $3; }
+   | BIGINT opt_length opt_uz { $$ = 60000 + $2 + $3; }
+   | REAL opt_length opt_uz { $$ = 70000 + $2 + $3; }
+   | DOUBLE opt_length opt_uz { $$ = 80000 + $2 + $3; }
+   | FLOAT opt_length opt_uz { $$ = 90000 + $2 + $3; }
+   | DECIMAL opt_length opt_uz { $$ = 110000 + $2 + $3; }
+   | DATE { $$ = 100001; }
+   | TIME { $$ = 100002; }
+   | TIMESTAMP { $$ = 100003; }
+   | DATETIME { $$ = 100004; }
+   | YEAR { $$ = 100005; }
+   | CHAR opt_length opt_csc { $$ = 120000 + $2; }
+   | VARCHAR '(' INTNUM ')' opt_csc { $$ = 130000 + $3; }
+   | BINARY opt_length { $$ = 140000 + $2; }
+   | VARBINARY '(' INTNUM ')' { $$ = 150000 + $3; }
+   | TINYBLOB { $$ = 160001; }
+   | BLOB { $$ = 160002; }
+   | MEDIUMBLOB { $$ = 160003; }
+   | LONGBLOB { $$ = 160004; }
+   | TINYTEXT opt_binary opt_csc { $$ = 170000 + $2; }
+   | TEXT opt_binary opt_csc { $$ = 171000 + $2; }
+   | MEDIUMTEXT opt_binary opt_csc { $$ = 172000 + $2; }
+   | LONGTEXT opt_binary opt_csc { $$ = 173000 + $2; }
+   | ENUM '(' enum_list ')' opt_csc { $$ = 200000 + $3; }
+   | SET '(' enum_list ')' opt_csc { $$ = 210000 + $3; }
+   ;
+
+enum_list: STRING { emit("ENUMVAL %s", $1); free($1); $$ = 1; }
+   | enum_list ',' STRING { emit("ENUMVAL %s", $3); free($3); $$ = $1 + 1; }
+   ;</pre><p>The other version of a <code class="literal">CREATE</code>
+        uses a <code class="literal">SELECT</code> statement preceded by
+        some optional keywords and an optional meaningless <code class="literal">AS</code>.<a id="I_indexterm4_d1e6822" class="indexterm"/><a id="I_indexterm4_d1e6823" class="indexterm"/></p><a id="I_programlisting4_d1e6824"/><pre class="programlisting">create_select_statement: opt_ignore_replace opt_as select_stmt { emit("CREATESELECT %d", $1) }
+   ;
+
+opt_ignore_replace: /* nil */ { $$ = 0; }
+   | IGNORE { $$ = 1; }
+   | REPLACE { $$ = 2; }
+   ;</pre></div><div class="sect2" title="User Variables"><div class="titlepage"><div><div><h2 class="title"><a id="id465314"/>User Variables</h2></div></div></div><p><a id="I_indexterm4_d1e6830" class="indexterm"/><a id="I_indexterm4_d1e6835" class="indexterm"/>The last statement we parse is a <code class="literal">SET</code> statement, which is a MySQL extension
+        that sets user variables. The assignment can use either <code class="literal">:=,</code> which we call <code class="literal">ASSIGN</code>, or a plain <code class="literal">=</code> sign, checking as always to be sure it’s
+        not some other comparison operator.</p><a id="I_programlisting4_d1e6853"/><pre class="programlisting">   /**** set user variables ****/
+
+stmt: set_stmt { emit("STMT"); }
+   ;
+
+set_stmt: SET set_list ;
+
+set_list: set_expr | set_list ',' set_expr ;
+
+set_expr:
+      USERVAR COMPARISON expr { if ($2 != 4) { yyerror("bad set to @%s", $1); YYERROR; }
+                 emit("SET %s", $1); free($1); }
+    | USERVAR ASSIGN expr { emit("SET %s", $1); free($1); }
+    ;</pre><p>That ends our SQL syntax. MySQL has many, many other statements,
+        but these give a reasonable idea of what’s involved in parsing
+        them.</p></div><div class="sect2" title="The Parser Routines"><div class="titlepage"><div><div><h2 class="title"><a id="id496544"/>The Parser Routines</h2></div></div></div><p>Finally, we have a few support routines. The <code class="literal">emit</code> routine just prints out the RPN. In a
+        more sophisticated compiler, it could act as a simpleminded assembler
+        and emit a stream of bytecode operators for an RPN interpreter.</p><p>The <code class="literal">yyerror</code> and <code class="literal">main</code> routines should be familiar from the
+        previous chapter. This main program accepts a <code class="literal">-d</code> switch to turn on parse-time debugging, a
+        useful feature when debugging a grammar as complex as this one.</p><a id="I_programlisting4_d1e6876"/><pre class="programlisting">%%
+void
+emit(char *s, ...)
+{
+  extern yylineno;
+
+  va_list ap;
+  va_start(ap, s);
+
+  printf("rpn: ");
+  vfprintf(stdout, s, ap);
+  printf("\n");
+}
+
+void
+yyerror(char *s, ...)
+{
+  extern yylineno;
+
+  va_list ap;
+  va_start(ap, s);
+
+  fprintf(stderr, "%d: error: ", yylineno);
+  vfprintf(stderr, s, ap);
+  fprintf(stderr, "\n");
+}
+
+main(int ac, char **av)
+{
+  extern FILE *yyin;
+
+  if(ac &gt; 1 &amp;&amp; !strcmp(av[1], "-d")) {
+    yydebug = 1; ac--; av++;
+  }
+
+  if(ac &gt; 1 &amp;&amp; (yyin = fopen(av[1], "r")) == NULL) {
+    perror(av[1]);
+    exit(1);
+  }
+
+  if(!yyparse())
+    printf("SQL parse worked\n");
+  else
+    printf("SQL parse failed\n");
+} /* main */<a id="I_indexterm4_d1e6878" class="indexterm"/></pre></div></div><div class="sect1" title="The Makefile for the SQL Parser"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e6880"/>The Makefile for the SQL Parser</h1></div></div></div><p><a id="I_indexterm4_d1e6884" class="indexterm"/><a id="I_indexterm4_d1e6889" class="indexterm"/>The Makefile runs the lexer and parser through flex and
+      bison, respectively, and compiles them together. The dependencies take
+      care of generating and compiling the scanner, including the
+      bison-generated header file.</p><a id="I_programlisting4_d1e6895"/><pre class="programlisting"># Makefile for pmysql
+CC = cc -g
+LEX = flex
+YACC = bison
+CFLAGS = -DYYDEBUG=1
+
+PROGRAMS5 = pmysql
+
+all:    ${PROGRAMS5}
+
+# chapter 5
+
+pmysql: pmysql.tab.o pmysql.o
+        ${CC} -o $@ pmysql.tab.o pmysql.o
+
+pmysql.tab.c pmysql.tab.h:      pmysql.y
+        ${YACC} -vd pmysql.y
+
+pmysql.c:       pmysql.l
+        ${LEX} -o $*.c $&lt;
+
+pmysql.o:       pmysql.c pmysql.tab.h
+
+.SUFFIXES:    .pgm .l .y .c</pre></div><div class="sect1" title="Exercises"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect14_d1e6897"/>Exercises</h1></div></div></div><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>In several places, the SQL parser accepts more general syntax
+          than SQL itself permits. For example, the parser accepts any
+          expression as the left operand of a <code class="literal">LIKE</code> predicate, although that operand has
+          to be a column reference. Fix the parser to diagnose these erroneous
+          inputs. You can either change the syntax or add action code to check
+          the expressions. Try both to see which is easier and which gives
+          better diagnostics.</p></li><li class="listitem"><p>Turn the parser into a SQL cross-referencer, which reads a set
+          of SQL statements and produces a report showing for each name where
+          it is defined and where it is referenced.</p></li><li class="listitem"><p>(Term project.) Modify the embedded SQL translator to
+          interface to a real database on your system.<a id="I_indexterm4_d1e6913" class="indexterm"/></p></li></ol></div></div><div class="footnotes"><br/><hr/><div class="footnote"><p><sup>[<a id="ftn.id483361" href="#id483361" class="para">15</a>] </sup>SQL is the Fortran of databases—nobody likes it much, the
+        language is ugly and ad hoc, every database supports it, and we all
+        use it.</p></div><div class="footnote"><p><sup>[<a id="ftn.id464149" href="#id464149" class="para">16</a>] </sup>It’s called Polish notation because people don’t know how to
+          pronounce Łukasiewicz. It’s roughly WOO-ka-shay-vits.</p></div><div class="footnote"><p><sup>[<a id="ftn.id458813" href="#id458813" class="para">17</a>] </sup>MySQL actually accepts multiline strings, but we’re keeping
+            this example simple.</p></div><div class="footnote"><p><sup>[<a id="ftn.id531058" href="#id531058" class="para">18</a>] </sup>This could fairly be considered a kludge, but the
+            alternative would be to treat <code class="literal">=</code>
+            separately from the other comparison operators and add an extra
+            rule every place a comparison can occur, which would result in
+            more code.</p></div></div></div></div></body>
+</html>

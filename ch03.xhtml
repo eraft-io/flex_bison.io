@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 3. Using Bison"><div class="titlepage"><div><div><h1 class="title"><a id="bison"/>Chapter 3. Using Bison</h1></div></div></div><p><a id="index-413B550MC5L" class="indexterm"/>The previous chapter concentrated on flex alone. In this
+    chapter we turn our attention to bison, although we use flex to generate
+    our lexical analyzers. Where flex recognizes regular expressions, bison
+    recognizes entire grammars. Flex divides the input stream into pieces
+    (<span class="emphasis"><em>tokens</em></span>), and then bison takes these pieces and
+    groups them together logically. In this chapter we’ll finish the desk
+    calculator we started in <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>, starting with simple
+    arithmetic and then adding built-in functions, user variables, and finally
+    user-defined functions.</p><div class="sect1" title="How a Bison Parser Matches Its Input"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3382"/>How a Bison Parser Matches Its Input</h1></div></div></div><p><a id="I_indexterm3_d1e3386" class="indexterm"/><a id="I_indexterm3_d1e3391" class="indexterm"/>Bison takes a grammar that you specify and writes a parser
+      that recognizes valid “sentences”<a id="I_indexterm3_d1e3397" class="indexterm"/> in that grammar. We use the term
+      <span class="emphasis"><em>sentence</em></span> here in a fairly general way—for a C
+      language grammar, the sentences are syntactically valid C programs.
+      Programs can be syntactically valid but semantically invalid, for
+      example, a C program that assigns a string to an int variable. Bison
+      handles only the syntax; other validation is up to you. As we saw in
+      <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>, a grammar is a series of rules that the parser
+      uses to recognize syntactically valid input. For example, here is a
+      version of the grammar we’ll use later in this chapter in a
+      calculator:</p><a id="I_programlisting3_d1e3408"/><pre class="programlisting">statement:   NAME '=' expression
+
+expression:  NUMBER '+' NUMBER
+           | NUMBER '−' NUMBER</pre><p>The vertical bar, |,<a id="I_indexterm3_d1e3412" class="indexterm"/><a id="I_indexterm3_d1e3415" class="indexterm"/> means there are two possibilities for the same symbol;
+      that is, an expression can be either an addition or a subtraction. The
+      symbol to the left of the : is known as the <span class="emphasis"><em>left-hand
+      side</em></span> of the rule<a id="I_indexterm3_d1e3422" class="indexterm"/><a id="I_indexterm3_d1e3425" class="indexterm"/>, often abbreviated LHS, and the symbols to the right are
+      the <span class="emphasis"><em>right-hand side</em></span>, usually abbreviated RHS.
+      Several rules may have the same left-hand side; the vertical bar is just
+      shorthand for this. Symbols that actually appear in the input and are
+      returned by the lexer are terminal symbols or tokens, while those that
+      appear on the left-hand side of each rule are nonterminal symbols or
+      nonterminals. Terminal and nonterminal symbols must be different; it is
+      an error to write a rule with a token on the left side.</p><p>The usual way to represent a parsed sentence is as a tree. For
+      example, if we parsed the input <code class="literal">fred = 12 +
+      13</code> with this grammar, the tree would look like <a class="xref" href="ch03.xhtml#bisptree1" title="Figure 3-1. Expression parse tree">Figure 3-1</a>.</p><div class="figure-float"><div class="figure"><a id="bisptree1"/><div class="figure-contents"><div class="mediaobject"><a id="I_mediaobject3_d1e3442"/><img src="Images/httpatomoreillycomsourceoreillyimages1740022.png" alt="Expression parse tree" width="497" height="347"/></div></div><p class="title">Figure 3-1. Expression parse tree</p></div></div><p>In this example, <code class="literal">12 + 13</code> is an
+      expression, and <code class="literal">fred = expression</code> is
+      a statement. A bison parser doesn’t automatically create this tree as a
+      data structure, although as we will see, it is not hard to do so
+      yourself. Every grammar includes a start symbol, the one that has to be
+      at the root of the parse tree. In this grammar, <code class="literal">statement</code> is the start symbol. Rules can refer
+      directly or indirectly to themselves; this important ability makes it
+      possible to parse arbitrarily long input sequences. Let’s extend our
+      grammar to handle longer arithmetic expressions:</p><a id="I_programlisting3_d1e3458"/><pre class="programlisting">expression: NUMBER
+          | expression '+' NUMBER
+          | expression '−' NUMBER</pre><div class="figure"><a id="bisptree2"/><div class="figure-contents"><div class="mediaobject"><a id="I_mediaobject3_d1e3463"/><img src="Images/httpatomoreillycomsourceoreillyimages1740024.png" alt="Parse tree with recursive rules" width="636" height="700"/></div></div><p class="title">Figure 3-2. Parse tree with recursive rules</p></div><p>Now we can parse a sequence like <code class="literal">fred =
+      14 + 23 − 11 + 7</code> by applying the expression rules repeatedly,
+      as in <a class="xref" href="ch03.xhtml#bisptree2" title="Figure 3-2. Parse tree with recursive rules">Figure 3-2</a>. Bison can parse recursive rules very
+      efficiently, so we will see recursive rules in nearly every grammar we
+      use.</p></div><div class="sect1" title="Shift/Reduce Parsing"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3475"/>Shift/Reduce Parsing</h1></div></div></div><p><a id="index-812A444CV5C" class="indexterm"/><a id="index-204Q062HU1L" class="indexterm"/><a id="index-878W785AF4O" class="indexterm"/>A bison parser works by looking for rules that might match
+      the tokens seen so far. When bison processes a parser, it creates a set
+      of states, each of which reflects a possible position in one or more
+      partially parsed rules. As the parser reads tokens, each time it reads a
+      token that doesn’t complete a rule, it pushes the token on an internal
+      stack and switches to a new state reflecting the token it just read.
+      This action is called a <span class="emphasis"><em>shift</em></span>. When it has found
+      all the symbols that constitute the right-hand side of a rule, it pops
+      the right-hand side symbols off the stack, pushes the left-hand side
+      symbol onto the stack, and switches to a new state reflecting the new
+      symbol on the stack. This action is called a
+      <span class="emphasis"><em>reduction</em></span><a id="I_indexterm3_d1e3500" class="indexterm"/>, since it usually reduces the number of items on the
+      stack.<sup>[<a id="id531036" href="#ftn.id531036" class="footnote">10</a>]</sup> Whenever bison reduces a rule, it executes user code
+      associated with the rule. This is how you actually do something with the
+      material that the parser parses. Let’s look how it parses the input
+      <code class="literal">fred = 12 + 13</code> using the simple rules
+      in <a class="xref" href="ch03.xhtml#bisptree1" title="Figure 3-1. Expression parse tree">Figure 3-1</a>. The parser starts by shifting tokens on
+      to the internal stack one at a time:</p><a id="I_programlisting3_d1e3516"/><pre class="programlisting">    fred
+    fred =
+    fred = 12
+    fred = 12 +
+    fred = 12 + 13</pre><p>At this point it can reduce the rule <code class="literal">expression: NUMBER + NUMBER</code>, so it pops the
+      12, the plus, and the 13 from the stack and replaces them with
+      <span class="emphasis"><em><code class="literal">expression</code></em></span>:</p><a id="I_programlisting3_d1e3527"/><pre class="programlisting">    fred = <span class="emphasis"><em>expression</em></span></pre><p>Now it reduces the rule <code class="literal">statement: NAME = expression</code>, so it pops
+      <code class="literal">fred</code>, <code class="literal">=</code>, and <span class="emphasis"><em><code class="literal">expression</code></em></span> and replaces them
+      with <span class="emphasis"><em><code class="literal">statement</code></em></span>.
+      We’ve reached the end of the input and the stack has been reduced to the
+      start symbol, so the input was valid according to the grammar.</p><div class="sect2" title="What Bison’s LALR(1) Parser Cannot Parse"><div class="titlepage"><div><div><h2 class="title"><a id="id440144"/>What Bison’s LALR(1) Parser Cannot Parse</h2></div></div></div><p>Bison parsers can use either of two parsing methods, known as
+        LALR(1) (Look Ahead Left to Right with a one-token lookahead) and GLR
+        (Generalized Left to Right). Most parsers use LALR(1), which is less
+        powerful but considerably faster and easier to use than GLR. In this
+        chapter we’ll describe LALR parsing and save GLR for <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>.</p><p>Although LALR parsing is quite powerful, you can write grammars
+        that it cannot handle. It cannot deal with ambiguous grammars, ones in
+        which the same input can match more than one parse tree. It also
+        cannot deal with grammars that need more than one token of lookahead
+        to tell whether it has matched a rule. (But bison has a wonderful hack
+        to deal with the most common kind of ambiguous grammars, which we’ll
+        come to in a few pages.) Consider this extremely contrived
+        example:</p><a id="I_programlisting3_d1e3559"/><pre class="programlisting">phrase:  cart_animal AND CART
+       | work_animal AND PLOW
+
+cart_animal: HORSE | GOAT
+
+work_animal: HORSE | OX</pre><p>This grammar isn’t ambiguous, since there is only one possible
+        parse tree for any valid input, but bison can’t handle it because it
+        requires two symbols of lookahead. In particular, in the input
+        <code class="literal">HORSE AND CART</code> it cannot tell
+        whether <code class="literal">HORSE</code> is a <code class="literal">cart_animal</code>, or a <code class="literal">work_animal</code> until it sees <code class="literal">CART</code>, and bison cannot look that far ahead.
+        If we changed the first rule to this:</p><a id="I_programlisting3_d1e3578"/><pre class="programlisting">phrase: cart_animal CART
+      | work_animal PLOW</pre><p>bison would have no trouble, since it can look one token ahead
+        to see whether an input of <code class="literal">HORSE</code> is
+        followed by <code class="literal">CART</code>, in which case the
+        horse is a <code class="literal">cart_animal</code>, or by
+        <code class="literal">PLOW</code>, in which case it is a
+        <code class="literal">work_animal</code>. In practice, the rules
+        about what bison can handle are not as complex and confusing as they
+        may seem here. One reason is that bison knows exactly what grammars it
+        can parse and what it cannot. If you give it one that it cannot
+        handle, it will tell you, so there is no problem of overcomplex
+        parsers silently failing. Another reason is that the grammars that
+        bison can handle correspond pretty well to ones that people really
+        write. As often as not, a grammatical construct that confuses bison
+        will confuse people as well, so if you have some latitude in your
+        language design, you should consider changing the language to make it
+        more understandable both to bison and to its users. For more
+        information on shift/reduce parsing, see <a class="xref" href="ch07.xhtml" title="Chapter 7. Ambiguities and Conflicts">Chapter 7</a>.
+        For a discussion of what bison has to do to turn your specification
+        into a working C program, a good reference is Dick Grune’s <span class="emphasis">Parsing Techniques: A Practical Guide</span>. He offers a
+        download of an old but quite adequate edition at <a class="ulink" href="http://www.cs.vu.nl/~dick/PTAPG.html">http://www.cs.vu.nl/~dick/PTAPG.html</a>.<a id="I_indexterm3_d1e3605" class="indexterm"/><a id="I_indexterm3_d1e3606" class="indexterm"/><a id="I_indexterm3_d1e3607" class="indexterm"/></p></div></div><div class="sect1" title="A Bison Parser"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3608"/>A Bison Parser</h1></div></div></div><p><a id="I_indexterm3_d1e3612" class="indexterm"/><a id="I_indexterm3_d1e3617" class="indexterm"/><a id="I_indexterm3_d1e3622" class="indexterm"/><a id="I_indexterm3_d1e3627" class="indexterm"/>A bison specification has the same three-part structure as
+      a flex specification. (Flex copied its structure from the earlier lex,
+      which copied its structure from yacc, the predecessor of bison.) The
+      first section, the definition section, handles control information for
+      the parser and generally sets up the execution environment in which the
+      parser will operate. The second section contains the rules for the
+      parser, and the third section is C code copied verbatim into the
+      generated C program.</p><p>Bison creates the C program by plugging pieces into a standard
+      skeleton file. The rules are compiled into arrays that represent the
+      state machine that matches the input tokens. The actions have the
+      <code class="literal">$N</code> and <code class="literal">@N</code> values translated into C and then are put
+      into a switch statement within <code class="literal">yyparse()</code> that runs the appropriate action
+      each time there’s a reduction. Some bits of the skeleton have multiple
+      versions from which bison chooses depending on what options are in use;
+      for example, if the parser uses the locations feature, it includes code
+      to handle location data.</p><p>In this chapter we take the simple calculator example from <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a> and extend it significantly. First, we rewrite it to
+      take advantage of some handy bison shortcuts and change it to produce a
+      reusable data structure rather than computing the values on the fly.
+      Later, we’ll add more complex syntax for loops and functions and show
+      how to implement them in a simple interpreter.<sup>[<a id="id470504" href="#ftn.id470504" class="footnote">11</a>]</sup></p></div><div class="sect1" title="Abstract Syntax Trees"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3649"/>Abstract Syntax Trees</h1></div></div></div><p><a id="I_indexterm3_d1e3653" class="indexterm"/><a id="I_indexterm3_d1e3658" class="indexterm"/>One of the most powerful data structures used in compilers
+      is an <span class="emphasis"><em>abstract syntax tree</em></span> (AST). In <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a> we saw a parse tree, a tree that has a node for every
+      rule used to parse the input string. In most real grammars, there are
+      rules that exist to manage grouping but that add no meaning to the
+      program. In the calculator example, the rules <code class="literal">exp: term</code> and <code class="literal">term:
+      factor</code> exist only to tell the parser the relative precedence
+      of the operators. An AST is basically a parse tree that omits the nodes
+      for the uninteresting rules.</p><p>Once a parser creates an AST, it’s straightforward to write
+      recursive routines that “walk” the tree. We’ll see several tree walkers
+      in this example.</p></div><div class="sect1" title="An Improved Calculator That Creates ASTs"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3677"/>An Improved Calculator That Creates ASTs</h1></div></div></div><p><a id="index-262Q357OC1J" class="indexterm"/><a id="index-321I447AK7L" class="indexterm"/><a id="index-722L385HB1W" class="indexterm"/><a id="index-782N035FT4K" class="indexterm"/><a id="index-047C781VD4J" class="indexterm"/>This example is big enough to be worth dividing into
+      several source files, so we’ll put most of the C code into a separate
+      file, which means we also need a C header file to declare the routines
+      and data structures used in the various files (<a class="xref" href="ch03.xhtml#fb31h" title="Example 3-1. Calculator that builds an AST: header fb3-1.h">Example 3-1</a>).</p><div class="example"><a id="fb31h"/><p class="title">Example 3-1. Calculator that builds an AST: header fb3-1.h</p><div class="example-contents"><pre class="programlisting">/*
+ * Declarations for a calculator fb3-1
+ */
+
+/* interface to the lexer */
+extern int yylineno; /* from lexer */
+void yyerror(char *s, ...);
+
+/* nodes in the abstract syntax tree */
+struct ast {
+  int nodetype;
+  struct ast *l;
+  struct ast *r;
+};
+
+struct numval {
+  int nodetype;   /* type K for constant */
+  double number;
+};
+
+/* build an AST */
+struct ast *newast(int nodetype, struct ast *l, struct ast *r);
+struct ast *newnum(double d);
+
+/* evaluate an AST */
+double eval(struct ast *);
+
+/* delete and free an AST */
+void treefree(struct ast *);</pre></div></div><p>The variable <code class="literal">yylineno</code> and
+      routine <code class="literal">yyerror</code> are familiar from the
+      flex example. Our <code class="literal">yyerror</code> is slightly
+      enhanced to take multiple arguments in the style of <code class="literal">printf</code>.</p><p>The AST consists of nodes, each of which has a node type.
+      Different nodes have different fields, but for now we have just two
+      kinds, one that has pointers to up to two subnodes and one that contains
+      a number. Two routines, <code class="literal">newast</code> and
+      <code class="literal">newnum</code>, create AST nodes; <code class="literal">eval</code> walks an AST and returns the value of the
+      expression it represents; and <code class="literal">treefree</code> walks an AST and deletes all of its
+      nodes.</p><div class="example"><a id="fb31y"/><p class="title">Example 3-2. Bison parser for AST calculator</p><div class="example-contents"><pre class="programlisting">/* calculator with AST */
+
+%{
+#  include &lt;stdio.h&gt;
+#  include &lt;stdlib.h&gt;
+#  include "fb3-1.h"
+%}
+
+%union {
+  struct ast *a;
+  double d;
+}
+
+/* declare tokens */
+%token &lt;d&gt; NUMBER
+%token EOL
+
+%type &lt;a&gt; exp factor term</pre></div></div><p><a class="xref" href="ch03.xhtml#fb31y" title="Example 3-2. Bison parser for AST calculator">Example 3-2</a> shows the bison parser for the AST
+      calculator. The first section of the parser uses the <code class="literal">%union</code> construct to declare types to be used
+      in the values <a id="I_indexterm3_d1e3751" class="indexterm"/>of symbols in the parser. In a bison parser, every symbol,
+      both tokens and nonterminals, can have a value associated with it. By
+      default, the values are all integers, but useful programs generally need
+      more sophisticated values. The <code class="literal">%union</code>
+      construct,<a id="I_indexterm3_d1e3760" class="indexterm"/> as its name suggests, is used to create a C language
+      <code class="literal">union</code> declaration for symbol values.
+      In this case, the union has two members; <code class="literal">a</code>, which is a pointer to an AST, and <code class="literal">d</code>, which is a double precision number.</p><p>Once the union is defined, we need to tell bison what symbols have
+      what types of values by putting the appropriate name from the union in
+      angle brackets (<code class="literal">&lt; &gt;</code>). The token
+      <code class="literal">NUMBER</code>, which represents numbers in
+      the input, has the value <code class="literal">&lt;d&gt;</code> to
+      hold the value of the number. The new declaration <code class="literal">%type</code> assigns the value <code class="literal">&lt;a&gt;</code> to <code class="literal">exp</code>, <code class="literal">factor</code>, and <code class="literal">term</code>, which we’ll use as we build up our
+      AST.</p><p>You don’t have to declare a type for a token or declare a
+      nonterminal at all if you don’t use the symbol’s value. If there is a
+      <code class="literal">%union</code> in the declarations, bison
+      will give you an error if you attempt to use the value of a symbol that
+      doesn’t have an assigned type. Keep in mind that any rule without
+      explicit action code gets the default action <code class="literal">$$
+      = $1;</code>, and bison will complain if the LHS symbol has a type
+      and the RHS symbol doesn’t have the same type.</p><a id="I_programlisting3_d1e3809"/><pre class="programlisting">%%
+calclist: /* nothing */
+| calclist exp EOL {
+     printf("= %4.4g\n", eval($2));   <em class="lineannotation"><span class="lineannotation">evaluate and print the AST</span></em>
+     treefree($2);                    <em class="lineannotation"><span class="lineannotation">free up the AST</span></em>
+     printf("&gt; ");
+ }
+
+ | calclist EOL { printf("&gt; "); } /* blank line or a comment */
+ ;
+
+exp: factor
+ | exp '+' factor { $$ = newast('+', $1,$3); }
+ | exp '-' factor { $$ = newast('-', $1,$3);}
+ ;
+
+factor: term
+ | factor '*' term { $$ = newast('*', $1,$3); }
+ | factor '/' term { $$ = newast('/', $1,$3); }
+ ;
+
+term: NUMBER { $$ = newnum($1); }
+ | '|' term { $$ = newast('|', $2, NULL); }
+ | '(' exp ')' { $$ = $2; }
+ | '-' term { $$ = newast('M', $2, NULL); }
+ ;
+%%</pre><div class="sect2" title="Literal Character Tokens"><div class="titlepage"><div><div><h2 class="title"><a id="id468737"/>Literal Character Tokens</h2></div></div></div><p><a id="index-161R315HW8H" class="indexterm"/><a id="index-368R278VH0U" class="indexterm"/>The rules section has two significant changes from the
+        version in <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>. One is that the rules now use
+        literal tokens for the operators. Rather than giving every token a
+        name, it’s also possible to use a single quoted character as a token,
+        with the ASCII value of the token being the token number. (Bison
+        starts the numbers for named tokens at 258, so there’s no problem of
+        collisions.) By convention, literal character tokens are used to
+        represent input tokens consisting of the same character; for example,
+        the token <code class="literal">'+'</code> represents the input
+        token <code class="literal">+</code>, so in practice they are
+        used only for punctuation and operators. There’s no need to declare
+        literal character tokens unless you need to declare the type of their
+        values.</p><p>The other change to the parser is that it creates an AST for
+        each expression rather than evaluating it on the fly. In this version
+        of the calculator, we create an AST for each expression and then
+        evaluate the AST, print the result, and free the AST. We call <code class="literal">newast()</code> to create each node in the AST.
+        Each node has an operator type, which is generally the same as the
+        token name. Notice that unary minus creates a node of type <code class="literal">M</code> to distinguish it from binary
+        subtraction.</p><div class="example"><a id="fb31l"/><p class="title">Example 3-3. Lexer for AST calculator</p><div class="example-contents"><pre class="programlisting">/* recognize tokens for the calculator */
+%option noyywrap nodefault yylineno
+%{
+# include "fb3-1.h"
+# include "fb3-1.tab.h"
+%}
+
+/* float exponent */
+EXP     ([Ee][-+]?[0-9]+)
+
+%%
+"+" |
+"-" |
+"*" |
+"/" |
+"|" |
+"(" |
+")"     { return yytext[0]; }
+[0-9]+"."[0-9]*{EXP}? |
+"."?[0-9]+{EXP}? { yylval.d = atof(yytext); return NUMBER; }
+
+\n      { return EOL; }
+"//".*  
+[ \t]   { /* ignore whitespace */ }
+.       { yyerror("Mystery character %c\n", *yytext); }
+%%</pre></div></div><p>The lexer, shown in <a class="xref" href="ch03.xhtml#fb31l" title="Example 3-3. Lexer for AST calculator">Example 3-3</a>, is a little
+        simpler than the version in <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>. We use a common
+        idiom for the single-character operators, handling them all with the
+        same rule that returns <code class="literal">yytext[0]</code>,
+        the character itself, as the token. We do still have names for
+        <code class="literal">NUMBER</code> and <code class="literal">EOL</code>. We also handle floating-point numbers,
+        using a version of the pattern from <a class="xref" href="ch02.xhtml" title="Chapter 2. Using Flex">Chapter 2</a>, and
+        change the internal representation of numbers to double. Since
+        <code class="literal">yylval</code> is now a union, the double
+        value has to be assigned to <code class="literal">yylval.d</code>. (Flex does not automate the
+        management of token values as bison does.)</p><div class="example"><a id="fb31c"/><p class="title">Example 3-4. C routines for AST calculator</p><div class="example-contents"><pre class="programlisting">#  include &lt;stdio.h&gt;
+#  include &lt;stdlib.h&gt;
+#  include &lt;stdarg.h&gt;
+#  include "fb3-1.h"
+
+struct ast *
+newast(int nodetype, struct ast *l, struct ast *r)
+{
+  struct ast *a = malloc(sizeof(struct ast));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = nodetype;
+  a-&gt;l = l;
+  a-&gt;r = r;
+  return a;
+}
+
+struct ast *
+newnum(double d)
+{
+  struct numval *a = malloc(sizeof(struct numval));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = 'K';
+  a-&gt;number = d;
+  return (struct ast *)a;
+}</pre></div></div><p>Finally, there is a file of routines called from the parser,
+        shown in <a class="xref" href="ch03.xhtml#fb31c" title="Example 3-4. C routines for AST calculator">Example 3-4</a>.<sup>[<a id="id439281" href="#ftn.id439281" class="footnote">12</a>]</sup> First come the two routines to create AST nodes, by
+        <code class="literal">malloc</code>-ing a node and filling it
+        in. All AST nodes have a <code class="literal">nodetype</code>
+        as the first field, so a tree walk can tell what kind of nodes it’s
+        walking through.</p><a id="I_programlisting3_d1e3894"/><pre class="programlisting">double
+eval(struct ast *a)
+{
+  double v;  <em class="lineannotation"><span class="lineannotation">calculated value of this subtree</span></em>
+
+  switch(a-&gt;nodetype) {
+  case 'K': v = ((struct numval *)a)-&gt;number; break;
+
+  case '+': v = eval(a-&gt;l) + eval(a-&gt;r); break;
+  case '-': v = eval(a-&gt;l) - eval(a-&gt;r); break;
+  case '*': v = eval(a-&gt;l) * eval(a-&gt;r); break;
+  case '/': v = eval(a-&gt;l) / eval(a-&gt;r); break;
+  case '|': v = eval(a-&gt;l); if(v &lt; 0) v = -v; break;
+  case 'M': v = -eval(a-&gt;l); break;
+  default: printf("internal error: bad node %c\n", a-&gt;nodetype);
+  }
+  return v;
+}
+
+void
+treefree(struct ast *a)
+{
+  switch(a-&gt;nodetype) {
+
+    /* two subtrees */
+  case '+':
+  case '-':
+  case '*':
+  case '/':
+    treefree(a-&gt;r);
+
+    /* one subtree */
+  case '|':
+  case 'M':
+    treefree(a-&gt;l);
+
+    /* no subtree */
+  case 'K':
+    free(a);
+    break;
+
+  default: printf("internal error: free bad node %c\n", a-&gt;nodetype);
+  }
+}</pre><p>Next we have the two tree-walking routines. They each make
+        what’s known as a <span class="emphasis"><em>depth-first</em></span> traversal
+        <a id="I_indexterm3_d1e3904" class="indexterm"/>of the tree, recursively visiting the subtrees of each
+        node and then the node itself. The <code class="literal">eval</code> routine returns the value of the tree
+        or subtree from each call, and the <code class="literal">treefree</code> doesn’t have to return
+        anything.</p><a id="I_programlisting3_d1e3914"/><pre class="programlisting">void
+yyerror(char *s, ...)
+{
+  va_list ap;
+  va_start(ap, s);
+
+  fprintf(stderr, "%d: error: ", yylineno);
+  vfprintf(stderr, s, ap);
+  fprintf(stderr, "\n");
+}
+
+int
+main()
+{
+  printf("&gt; "); 
+  return yyparse();
+}</pre><p>Finally, we have <code class="literal">yyerror</code> and
+        <code class="literal">main</code>. This version of <code class="literal">yyerror</code> uses varargs to accept a <code class="literal">printf</code>-style argument list, which turns out
+        to be convenient when generating error messages.<a id="I_indexterm3_d1e3930" class="indexterm"/><a id="I_indexterm3_d1e3931" class="indexterm"/></p></div><div class="sect2" title="Building the AST Calculator"><div class="titlepage"><div><div><h2 class="title"><a id="id548106"/>Building the AST Calculator</h2></div></div></div><p>This program now has three source files and a header file, so of
+        course we use <code class="literal">make</code> to build
+        it.</p><a id="I_programlisting3_d1e3941"/><pre class="programlisting">fb3-1:  fb3-1.l fb3-1.y fb3-1.h
+        bison -d fb3-1.y
+        flex -ofb3-1.lex.c fb3-1.l
+        cc -o $@ fb3-1.tab.c fb3-1.lex.c fb3-1funcs.c</pre><p>Notice the <code class="literal">-o</code> flag to
+        <code class="literal">flex</code>. Bison automatically names its
+        generated C file to match the <code class="literal">.y</code>
+        file, but flex always calls its C file <code class="literal">lex.yy.c</code> unless you tell it
+        otherwise.<a id="I_indexterm3_d1e3957" class="indexterm"/><a id="I_indexterm3_d1e3958" class="indexterm"/><a id="I_indexterm3_d1e3960" class="indexterm"/><a id="I_indexterm3_d1e3961" class="indexterm"/><a id="I_indexterm3_d1e3962" class="indexterm"/></p></div></div><div class="sect1" title="Shift/Reduce Conflicts and Operator Precedence"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e3963"/>Shift/Reduce Conflicts and Operator Precedence</h1></div></div></div><p><a id="index-821J526KM1N" class="indexterm"/><a id="index-184M704NL5I" class="indexterm"/><a id="index-518G662AF8T" class="indexterm"/><a id="index-464F601DK7W" class="indexterm"/><a id="index-304B854CM6F" class="indexterm"/>The expression parser uses three different symbols,
+      <code class="literal">exp</code>, <code class="literal">factor</code>, and <code class="literal">term</code>, to set the precedence and associativity
+      of operators. Although this parser is still reasonably legible, as
+      grammars add more operators with more levels of precedence, they become
+      increasingly hard to read and maintain. Bison provides a clever way to
+      describe the precedence separately from the rules in the grammar, which
+      makes the grammar and parser smaller and easier to maintain. First,
+      we’ll just make all expressions use <code class="literal">exp</code> symbols:</p><a id="I_programlisting3_d1e4006"/><pre class="programlisting">%type &lt;a&gt; exp
+
+%%
+ ...
+exp: exp '+' exp { $$ = newast('+', $1,$3); }
+   | exp '-' exp { $$ = newast('-', $1,$3);}
+   | exp '*' exp { $$ = newast('*', $1,$3); }
+   | exp '/' exp { $$ = newast('/', $1,$3); }
+   | '|' exp     { $$ = newast('|', $2, NULL); }
+   | '(' exp ')' { $$ = $2; }
+   | '-' exp     { $$ = newast('M', $2, NULL); }
+   | NUMBER      { $$ = newnum($1); }
+ ;
+%%</pre><p>But this grammar has a problem: It is extremely ambiguous. For
+      example, the input <code class="literal">2+3*4</code> might mean
+      <code class="literal">(2+3)*4</code> or <code class="literal">2+(3*4)</code>, and the input <code class="literal">3-4-5-6</code> might mean <code class="literal">3-(4-(5-6))</code> or <code class="literal">(3-4)-(5-6)</code> or any of a lot of other
+      possibilities. <a class="xref" href="ch03.xhtml#bis2tree" title="Figure 3-3. Two expression parse trees">Figure 3-3</a> shows the two possible parses
+      for <code class="literal">2+3*4</code>.</p><div class="figure-float"><div class="figure"><a id="bis2tree"/><div class="figure-contents"><div class="mediaobject"><a id="I_mediaobject3_d1e4037"/><img src="Images/httpatomoreillycomsourceoreillyimages1740026.png" alt="Two expression parse trees" width="631" height="347"/></div></div><p class="title">Figure 3-3. Two expression parse trees</p></div></div><p>If you compile this grammar as it stands, bison will tell you that
+      there are 24 <span class="emphasis"><em>shift/reduce conflicts</em></span>, which are
+      states where it cannot tell whether it should shift the token on the
+      stack or reduce a rule first. For example, when parsing <code class="literal">2+3*4</code>, the parser goes through these steps (we
+      abbreviate <code class="literal">exp</code> as <code class="literal">E</code> here):</p><a id="I_programlisting3_d1e4056"/><pre class="programlisting">     2         <em class="lineannotation"><span class="lineannotation">shift NUMBER</span></em>
+     E         <em class="lineannotation"><span class="lineannotation">reduce E → NUMBER</span></em>
+     E +       <em class="lineannotation"><span class="lineannotation">shift +</span></em>
+     E + 3     <em class="lineannotation"><span class="lineannotation">shift NUMBER</span></em>
+     E + E     <em class="lineannotation"><span class="lineannotation">reduce E → NUMBER</span></em></pre><p>At this point, the parser looks at the <code class="literal">*</code> and could either reduce <code class="literal">2+3</code> using:</p><a id="I_programlisting3_d1e4080"/><pre class="programlisting">    exp:       exp '+' exp</pre><p>to an expression or shift the <code class="literal">*</code>, expecting to be able to reduce:</p><a id="I_programlisting3_d1e4087"/><pre class="programlisting">    exp:       exp '*' exp</pre><p>later on.</p><p>The problem is that we haven’t told bison about the precedence and
+      associativity of the operators.
+      <span class="emphasis"><em>Precedence</em></span><a id="I_indexterm3_d1e4096" class="indexterm"/> controls which operators execute first in an expression.
+      Mathematical and programming tradition (dating back past the first
+      Fortran compiler in 1956) says that multiplication and division take
+      precedence over addition and subtraction, so <code class="literal">a+b*c</code> means <code class="literal">a+(b*c)</code>, and <code class="literal">d/e-f</code> means <code class="literal">(d/e)-f</code>. In any expression grammar, operators
+      are grouped into levels of precedence from lowest to highest. The total
+      number of levels depends on the language. The C language is notorious
+      for having too many precedence levels, a total of 15 levels.</p><p><span class="emphasis"><em>Associativity</em></span><a id="I_indexterm3_d1e4117" class="indexterm"/><a id="I_indexterm3_d1e4122" class="indexterm"/> controls the grouping of operators at the same precedence
+      level. Operators may group to the left, for example, <code class="literal">a-b-c</code> in C means <code class="literal">(a-b)-c</code>, or to the right, for example,
+      <code class="literal">a=b=c</code> in C means <code class="literal">a=(b=c)</code>. In some cases, operators do not group
+      at all; for example, in Fortran <code class="literal">A.LE.B.LE.C</code> is invalid.</p><p>There are two ways to specify precedence and associativity in a
+      grammar, implicitly and explicitly. So far, we’ve specified them
+      implicitly, by using separate nonterminal symbols for each precedence
+      level. This is a perfectly reasonable way to write a grammar, and if
+      bison didn’t have explicit precedence rules, it would be the only
+      way.</p><p>But bison also lets you specify precedence explicitly. We can add
+      these lines to the declaration section to tell it how to resolve the
+      conflicts:</p><a id="I_programlisting3_d1e4148"/><pre class="programlisting">%left '+' '-'
+%left '*' '/'
+%nonassoc '|' UMINUS
+
+%type &lt;a&gt; exp
+
+%%
+ ...
+exp: exp '+' exp { $$ = newast('+', $1,$3); }
+   | exp '-' exp { $$ = newast('-', $1,$3);}
+   | exp '*' exp { $$ = newast('*', $1,$3); }
+   | exp '/' exp { $$ = newast('/', $1,$3); }
+   | '|' exp     { $$ = newast('|', $2, NULL); }
+   | '(' exp ')' { $$ = $2; }
+   | '-' exp %prec UMINUS{ $$ = newast('M', NULL, $2); }
+   | NUMBER      { $$ = newnum($1); }
+ ;</pre><p>Each of these declarations defines a level of precedence, with the
+      order of the <code class="literal">%left</code>, <code class="literal">%right</code>, and <code class="literal">%nonassoc</code> declarations defining the order of
+      precedence from lowest to highest. They tell bison that <code class="literal">+</code> and <code class="literal">-</code> are
+      left associative and at the lowest precedence level; <code class="literal">*</code> and <code class="literal">/</code> are
+      left associative and at a higher precedence level; and <code class="literal">|</code> and <code class="literal">UMINUS</code>, a pseudotoken standing for unary
+      minus, have no associativity and are at the highest precedence. (We
+      don’t have any right-associative operators here, but if we did, they’d
+      use <code class="literal">%right</code>.) Bison assigns each rule
+      the precedence of the rightmost token on the right-hand side; if that
+      token has no precedence assigned, the rule has no precedence of its own.
+      When bison encounters a shift/reduce conflict, it consults the table of
+      precedence, and if all the rules involved in the conflict have a
+      precedence assigned, it uses precedence to resolve the conflict.</p><p>In our grammar, all of the conflicts occur in the rules of the
+      form <code class="literal">exp OP exp</code>, so setting
+      precedence for the four operators allows it to resolve all of the
+      conflicts. This parser using precedence is slightly smaller and faster
+      than the one with the extra rules for implicit precedence, since it has
+      fewer rules to reduce.</p><p>The rule for negation includes <code class="literal">%prec
+      UMINUS</code>. The only operator in this rule is <code class="literal">-</code>, which has low precedence, but we want unary
+      minus to have higher precedence than multiplication rather than lower.
+      The <code class="literal">%prec</code> tells bison to use the
+      precedence of <code class="literal">UMINUS</code> for this
+      rule.</p><div class="sect2" title="When Not to Use Precedence Rules"><div class="titlepage"><div><div><h2 class="title"><a id="id457613"/>When Not to Use Precedence Rules</h2></div></div></div><p>You can use precedence rules to fix any shift/reduce conflict
+        that occurs in the grammar. This is usually a terrible idea. In
+        expression grammars, the cause of the conflicts is easy to understand,
+        and the effect of the precedence rules is clear. In other situations,
+        precedence rules fix shift/reduce problems, but it can be extremely
+        difficult to understand just what effect they have on the
+        grammar.</p><p>Use precedence in only two situations: in expression grammars
+        and to resolve the “dangling else” conflict <a id="I_indexterm3_d1e4209" class="indexterm"/>in grammars for if/then/else language constructs. (See
+        the section <a class="xref" href="ch07.xhtml#ifthenelse" title="IF/THEN/ELSE">IF/THEN/ELSE</a> for examples of the latter.)
+        Otherwise, if you can, you should fix the grammar to remove the
+        conflict. Remember that conflicts mean that bison can’t create a
+        parser for a grammar, probably because it’s ambiguous. This means
+        there are multiple possible parses for the same input and the parser
+        that bison created chose one of them. Except in the two previous
+        cases, this usually points to a problem in your language definition.
+        In some cases, if a grammar is ambiguous to bison, it’s almost
+        certainly ambiguous to humans, too. See <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a> for
+        more information on finding and repairing conflicts, as well as the
+        advanced bison features that let you use ambiguous grammars if you
+        really want to do so.<a id="I_indexterm3_d1e4219" class="indexterm"/><a id="I_indexterm3_d1e4220" class="indexterm"/><a id="I_indexterm3_d1e4221" class="indexterm"/><a id="I_indexterm3_d1e4222" class="indexterm"/><a id="I_indexterm3_d1e4224" class="indexterm"/></p></div></div><div class="sect1" title="An Advanced Calculator"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e4225"/>An Advanced Calculator</h1></div></div></div><p><a id="index-417T245UM8P" class="indexterm"/><a id="index-725G642BI5C" class="indexterm"/><a id="index-410F688LN2E" class="indexterm"/><a id="index-836N647UD0V" class="indexterm"/><a id="index-545J513HJ6J" class="indexterm"/>The final example in this chapter extends the calculator
+      to make it a small but somewhat realistic compiler. We’ll add named
+      variables and assignments; comparison expressions (greater, less, equal,
+      etc.); flow control with if/then/else and while/do; built-in and
+      user-defined functions; and a little error recovery. The previous
+      version of the calculator didn’t take much advantage of the AST
+      representation of expressions, but in this one, the AST is the key to
+      the implementation of flow control and user functions. Here’s an example
+      of defining a user function, and then calling it, using a built-in
+      function as one of the arguments:</p><a id="I_programlisting3_d1e4253"/><pre class="programlisting">&gt; <span class="bold"><strong>let avg(a,b) = (a+b)/2;</strong></span>
+Defined avg
+&gt; <span class="bold"><strong>avg(3, sqrt(25))</strong></span>
+=    4</pre><p>As before, we start with the declarations, shown in <a class="xref" href="ch03.xhtml#fb32h" title="Example 3-5. Advanced calculator header fb3-2.h">Example 3-5</a>.</p><div class="example"><a id="fb32h"/><p class="title">Example 3-5. Advanced calculator header fb3-2.h</p><div class="example-contents"><pre class="programlisting">/*
+ * Declarations for a calculator fb3-1
+ */
+
+/* interface to the lexer */
+extern int yylineno; /* from lexer */
+void yyerror(char *s, ...);
+
+/* symbol table */
+struct symbol {         /* a variable name */
+  char *name;
+  double value;
+  struct ast *func;     /* stmt for the function */
+  struct symlist *syms; /* list of dummy args */
+};
+
+/* simple symtab of fixed size */
+#define NHASH 9997
+struct symbol symtab[NHASH];
+
+struct symbol *lookup(char*);
+
+/* list of symbols, for an argument list */
+struct symlist {
+  struct symbol *sym;
+  struct symlist *next;
+};
+
+struct symlist *newsymlist(struct symbol *sym, struct symlist *next);
+void symlistfree(struct symlist *sl);</pre></div></div><p>The symbol table is adapted from the one used in the previous
+      chapter. In the calculator, each symbol can potentially be both a
+      variable and a user-defined function. The <code class="literal">value</code> field holds the symbol’s value as a
+      variable, the <code class="literal">func</code> field points to
+      the AST for the user code for the function, and <code class="literal">syms</code> points to a linked list of the dummy
+      arguments, which are themselves symbols. (In the previous example,
+      <code class="literal">avg</code> is the function, and <code class="literal">a</code> and <code class="literal">b</code> are
+      the dummy arguments.) The C functions <code class="literal">newsymlist</code> and <code class="literal">symlistfree</code> create and free them.</p><a id="I_programlisting3_d1e4297"/><pre class="programlisting">/* node types
+ *  + - * / |
+ *  0-7 comparison ops, bit coded 04 equal, 02 less, 01 greater
+ *  M unary minus
+ *  L expression or statement list
+ *  I IF statement
+ *  W WHILE statement
+ *  N symbol ref
+ *  = assignment
+ *  S list of symbols
+ *  F built in function call
+ *  C user function call
+ */ 
+
+enum bifs {                     /* built-in functions */
+  B_sqrt = 1,
+  B_exp,
+  B_log,
+  B_print
+};
+
+/* nodes in the abstract syntax tree */
+/* all have common initial nodetype */
+
+struct ast {
+  int nodetype;
+  struct ast *l;
+  struct ast *r;
+};
+
+struct fncall {                 /* built-in function */
+  int nodetype;                 /* type F */
+  struct ast *l;
+  enum bifs functype;
+};
+
+struct ufncall {                /* user function */
+  int nodetype;                 /* type C */
+  struct ast *l;                /* list of arguments */
+  struct symbol *s;
+};
+
+struct flow {
+  int nodetype;                 /* type I or W */
+  struct ast *cond;             /* condition */
+  struct ast *tl;               /* then branch or do list */
+  struct ast *el;               /* optional else branch */
+};
+
+struct numval {
+  int nodetype;                 /* type K */
+  double number;
+};
+
+struct symref {
+  int nodetype;                 /* type N */
+  struct symbol *s;
+};
+
+struct symasgn {
+  int nodetype;                 /* type = */
+  struct symbol *s;
+  struct ast *v;                /* value */
+};
+
+/* build an AST */
+struct ast *newast(int nodetype, struct ast *l, struct ast *r);
+struct ast *newcmp(int cmptype, struct ast *l, struct ast *r);
+struct ast *newfunc(int functype, struct ast *l);
+struct ast *newcall(struct symbol *s, struct ast *l);
+struct ast *newref(struct symbol *s);
+struct ast *newasgn(struct symbol *s, struct ast *v);
+struct ast *newnum(double d);
+struct ast *newflow(int nodetype, struct ast *cond, struct ast *tl, struct ast *tr);
+
+/* define a function */
+void dodef(struct symbol *name, struct symlist *syms, struct ast *stmts);
+
+/* evaluate an AST */
+double eval(struct ast *);
+
+/* delete and free an AST */
+void treefree(struct ast *);</pre><p>This version has considerably more kinds of nodes in the AST. As
+      before, each kind of node starts with a <code class="literal">nodetype</code> that the tree-walking code can use to
+      tell what kind of node it is.<sup>[<a id="id495422" href="#ftn.id495422" class="footnote">13</a>]</sup> The basic <code class="literal">ast</code> node is
+      also used for comparisons, with each kind of comparison (less,
+      less-equal, equal, etc.) being a different type, and for lists of
+      expressions.</p><p>Built-in functions have a <code class="literal">fncall</code> node with the AST of the argument (the
+      built-ins each take one argument) and an enum that says which built-in
+      function it is. There are three standard functions, <code class="literal">sqrt</code>, <code class="literal">exp</code>,
+      and <code class="literal">log</code>, as well as <code class="literal">print</code>, a function that prints its argument and
+      returns the argument as its value. Calls to user functions have a
+      <code class="literal">ufncall</code> node with a pointer to the
+      function, which is an entry in the symbol table, and an AST, which is a
+      list of the arguments.</p><p>Flow control expressions if/then/else and while/do use a <code class="literal">flow</code> node with the control expression, the
+      then branch or do list, and the optional else branch.</p><p>Constants are <code class="literal">numval</code> as before;
+      references to symbols are <code class="literal">symref</code> with
+      a pointer to the symbol in the symbol table; and assignments are
+      <code class="literal">symasgn</code> with a pointer to the symbol
+      to be assigned and the AST of the value to assign to it.</p><p>Every AST has a value. The value of an if/then/else is the value
+      of the branch taken; the value of while/do is the last value of the do
+      list; and the value of a list of expressions is the last
+      expression.<sup>[<a id="id485251" href="#ftn.id485251" class="footnote">14</a>]</sup> Finally, we have C procedures to create each kind of AST
+      node and a procedure to create a user-defined function.</p><div class="sect2" title="Advanced Calculator Parser"><div class="titlepage"><div><div><h2 class="title"><a id="id548685"/>Advanced Calculator Parser</h2></div></div></div><p><a class="xref" href="ch03.xhtml#fb32y" title="Example 3-6. Advanced calculator parser fb3-2.y">Example 3-6</a> shows the parser for the advanced AST
+        calculator.</p><div class="example"><a id="fb32y"/><p class="title">Example 3-6. Advanced calculator parser fb3-2.y</p><div class="example-contents"><pre class="programlisting">/* calculator with AST */
+
+%{
+#  include &lt;stdio.h&gt;
+#  include &lt;stdlib.h&gt;
+#  include "fb3-2.h"
+%}
+
+%union {
+  struct ast *a;
+  double d;
+  struct symbol *s;             /* which symbol */
+  struct symlist *sl;
+  int fn;                       /* which function */
+}
+
+/* declare tokens */
+%token &lt;d&gt; NUMBER
+%token &lt;s&gt; NAME
+%token &lt;fn&gt; FUNC
+%token EOL
+
+%token IF THEN ELSE WHILE DO LET
+
+%nonassoc &lt;fn&gt; CMP
+%right '='
+%left '+' '-'
+%left '*' '/'
+%nonassoc '|' UMINUS
+
+%type &lt;a&gt; exp stmt list explist
+%type &lt;sl&gt; symlist
+
+%start calclist
+%%</pre></div></div><p>The <code class="literal">%union</code><a id="I_indexterm3_d1e4372" class="indexterm"/> here defines many kinds of symbol values, which is
+        typical in realistic bison parsers. As well as a pointer to an AST and
+        a numeric value, a value can be a pointer to the symbol table for a
+        user symbol, a list of symbols, or a subtype of a comparison or
+        function token. (We use the word <span class="emphasis"><em>symbol</em></span> somewhat
+        confusingly here, both for names used in the bison grammar and for
+        names that the user types into the compiled program. We’ll say
+        <span class="emphasis"><em>user symbol</em></span> for the latter when the context isn’t
+        otherwise clear.)</p><p>There’s a new token <code class="literal">FUNC</code> for
+        the built-in functions, with the value indicating which function, and
+        six reserved words, <code class="literal">IF</code> through
+        <code class="literal">LET</code>. The token <code class="literal">CMP</code> is any of the six comparison operators,
+        with the value indicating which operator. (This trick of using one
+        token for several syntactically similar operators helps keep down the
+        size of the grammar.)</p><p>The list of precedence declarations starts with the new <code class="literal">CMP</code> and <code class="literal">=</code>
+        operators.</p><p>A <code class="literal">%start</code> declaration
+        identifies the top-level rule, so we don’t have to put it at the
+        beginning of the parser.</p></div><div class="sect2" title="Calculator Statement Syntax"><div class="titlepage"><div><div><h2 class="title"><a id="id439792"/>Calculator Statement Syntax</h2></div></div></div><a id="I_programlisting3_d1e4416"/><pre class="programlisting">stmt: IF exp THEN list           { $$ = newflow('I', $2, $4, NULL); }
+   | IF exp THEN list ELSE list  { $$ = newflow('I', $2, $4, $6); }
+   | WHILE exp DO list           { $$ = newflow('W', $2, $4, NULL); }
+   | exp
+;
+
+list: /* nothing */ { $$ = NULL; }
+   | stmt ';' list { if ($3 == NULL)
+                        $$ = $1;
+                      else
+                        $$ = newast('L', $1, $3);
+                    }
+   ;</pre><p><a id="I_indexterm3_d1e4419" class="indexterm"/><a id="index-542H402WG8R" class="indexterm"/>Our grammar distinguishes between statements (<code class="literal">stmt</code>) and expressions (<code class="literal">exp</code>). A statement is either a flow of
+        control (if/then/else or while/do) or an expression. The if and while
+        statements take lists of statements, with each statement in the list
+        being followed by a semicolon. Each rule that matches a statement
+        calls a routine to build an appropriate AST node.</p><p>The design of the syntax here is largely arbitrary, and one of
+        the nice things about using bison to build a parser is that it’s easy
+        to experiment with variations. The interplay among bits of the syntax
+        can be quite subtle; if, for example, the definition of <code class="literal">list</code> had put semicolons between rather than
+        after each statement, the grammar would be ambiguous unless the
+        grammar also added closing <code class="literal">FI</code> and
+        <code class="literal">ENDDO</code> tokens to indicate the end of
+        if/then and while/do statements.</p><p>The definition of <code class="literal">list</code> is
+        right recursive,<a id="I_indexterm3_d1e4452" class="indexterm"/> that is, <code class="literal">stmt ; list</code>
+        rather than <code class="literal">list stmt ;</code>. It doesn’t
+        make any difference to the language recognized, but it makes it easier
+        to build the list of statements linked from head to tail rather than
+        from tail to head. Each time the <code class="literal">stmt ;
+        list</code> rule is reduced, it creates a link that adds the
+        statement to the head of the list so far. If the rule were <code class="literal">list stmt ;</code>, the statement would need to go
+        at the tail of the list, which would require either a more complex
+        circularly linked list or else reversing the list at the end (as we
+        did with the list of references in <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>).</p><p>One disadvantage of right recursion rather than left is that
+        right recursion puts up all of the yet-to-be-reduced statements on the
+        parser stack and then reduces them all at the end of the list, while
+        left recursion builds the list a statement at a time as the input is
+        parsed. In a situation like this, where the list is unlikely to be
+        more than a few items long, it doesn’t matter, but in a language where
+        the list might be a list of thousands of items, it’s worth making the
+        list with a left recursive<a id="I_indexterm3_d1e4473" class="indexterm"/> rule and then reversing it to prevent parser stack
+        overflow. Some programmers also find left recursion to be easier to
+        debug, since it tends to produce output after each statement rather
+        than all at once at the end.</p></div><div class="sect2" title="Calculator Expression Syntax"><div class="titlepage"><div><div><h2 class="title"><a id="id456207"/>Calculator Expression Syntax</h2></div></div></div><a id="I_programlisting3_d1e4480"/><pre class="programlisting">exp: exp CMP exp          { $$ = newcmp($2, $1, $3); }
+   | exp '+' exp          { $$ = newast('+', $1,$3); }
+   | exp '-' exp          { $$ = newast('-', $1,$3);}
+   | exp '*' exp          { $$ = newast('*', $1,$3); }
+   | exp '/' exp          { $$ = newast('/', $1,$3); }
+   | '|' exp              { $$ = newast('|', $2, NULL); }
+   | '(' exp ')'          { $$ = $2; }
+   | '-' exp %prec UMINUS { $$ = newast('M', $2, NULL); }
+   | NUMBER               { $$ = newnum($1); }
+   | NAME                 { $$ = newref($1); }
+   | NAME '=' exp         { $$ = newasgn($1, $3); }
+   | FUNC '(' explist ')' { $$ = newfunc($1, $3); }
+   | NAME '(' explist ')' { $$ = newcall($1, $3); }
+;
+
+explist: exp
+ | exp ',' explist  { $$ = newast('L', $1, $3); }
+;
+symlist: NAME       { $$ = newsymlist($1, NULL); }
+ | NAME ',' symlist { $$ = newsymlist($1, $3); }
+;</pre><p><a id="I_indexterm3_d1e4483" class="indexterm"/>The expression syntax is a modestly expanded version of
+        the expression syntax in the previous example. A new rule for <code class="literal">CMP</code> handles the six comparison operators,
+        using the value of the <code class="literal">CMP</code> to tell
+        which operator it was, and a rule for assignments creates an
+        assignment node.</p><p>There are separate rules for built-in functions identified by a
+        reserved name (<code class="literal">FUNC</code>) and user
+        functions identified by a user symbol (<code class="literal">NAME</code>).</p><p>A rule for <code class="literal">explist</code>, a list of
+        expressions, builds an AST of the expressions used for the actual
+        arguments to a function call. A separate rule for <code class="literal">symlist</code>, a list of symbols, builds a linked
+        list of symbols for the dummy arguments in a function definition. Both
+        are right recursive to make it easier to build the list in the desired
+        order.</p></div><div class="sect2" title="Top-Level Calculator Grammar"><div class="titlepage"><div><div><h2 class="title"><a id="id457099"/>Top-Level Calculator Grammar</h2></div></div></div><a id="I_programlisting3_d1e4514"/><pre class="programlisting">calclist: /* nothing */
+  | calclist stmt EOL {
+     printf("= %4.4g\n&gt; ", eval($2));
+     treefree($2);
+    }
+  | calclist LET NAME '(' symlist ')' '=' list EOL {
+                       dodef($3, $5, $8);
+                       printf("Defined %s\n&gt; ", $3-&gt;name); }
+
+  | calclist error EOL { yyerrok; printf("&gt; "); }
+ ;</pre><p>The last bit of grammar is the top level, which recognizes a
+        list of statements and function declarations. As before, the top level
+        evaluates the AST for a statement, prints the result, and then frees
+        the AST. A function definition is just saved for future use.<a id="I_indexterm3_d1e4518" class="indexterm"/></p></div><div class="sect2" title="Basic Parser Error Recovery"><div class="titlepage"><div><div><h2 class="title"><a id="id502077"/>Basic Parser Error Recovery</h2></div></div></div><p><a id="I_indexterm3_d1e4523" class="indexterm"/>The last rule in the parser provides a small amount of
+        error recovery. Because of the way that bison parsers work, it’s
+        rarely worth the effort to try to correct errors, but it’s at least
+        possible to recover to a state where the parser can continue. The
+        special pseudo-token <code class="literal">error</code>
+        indicates an error recovery point. When a bison parser encounters an
+        error, it starts discarding symbols from the parser stack until it
+        reaches a point where an <code class="literal">error</code>
+        token would be valid; then it discards input tokens until it finds one
+        it can shift in its current state, and then continues parsing from
+        there. If the parse fails again, it discards more stack symbols and
+        input tokens until either it can resume parsing or the stack is empty
+        and the parse fails. To avoid a cascade of misleading error messages,
+        the parser normally suppresses any parse error messages after the
+        first one until it has successfully shifted three tokens in a row. The
+        macro <code class="literal">yyerrok</code> in an action tells
+        the parser that recovery is done, so subsequent error messages will be
+        produced.</p><p>Although it’s possible in principle to add lots of error rules
+        to try to do lots of error recovery, in practice it’s rare to have
+        more than one or two error rules. The error token is almost always
+        used to resynchronize at a punctuation character in a top-level
+        recursive rule as we do here.</p><p>If the symbols discarded in error recovery from the stack have
+        values that point to allocated storage, the error recovery process
+        will leak storage, since the discarded values are never freed. In this
+        example, we don’t worry about it, but bison does provide a feature to
+        tell the parser to call your code to free discarded values, described
+        in <a class="xref" href="ch06.xhtml" title="Chapter 6. A Reference for Bison Specifications">Chapter 6</a>.</p></div><div class="sect2" title="The Advanced Calculator Lexer"><div class="titlepage"><div><div><h2 class="title"><a id="id484495"/>The Advanced Calculator Lexer</h2></div></div></div><div class="example"><a id="fb32l"/><p class="title">Example 3-7. Advanced calculator lexer fb3-2.l</p><div class="example-contents"><pre class="programlisting">/* recognize tokens for the calculator */
+%option noyywrap nodefault yylineno
+%{
+# include "fb3-2.h"
+# include "fb3-2.tab.h"
+%}
+
+/* float exponent */
+EXP     ([Ee][-+]?[0-9]+)
+
+%%
+ /* single character ops */
+"+" |
+"-" |
+"*" |
+"/" |
+"=" |
+"|" |
+"," |
+";" |
+"(" |
+")"     { return yytext[0]; }
+
+ /* comparison ops, all are a CMP token */
+"&gt;"     { yylval.fn = 1; return CMP; }
+"&lt;"     { yylval.fn = 2; return CMP; }
+"&lt;&gt;"    { yylval.fn = 3; return CMP; }
+"=="    { yylval.fn = 4; return CMP; }
+"&gt;="    { yylval.fn = 5; return CMP; }
+"&lt;="    { yylval.fn = 6; return CMP; }
+
+ /* keywords */
+
+"if"    { return IF; }
+"then"  { return THEN; }
+"else"  { return ELSE; }
+"while" { return WHILE; }
+"do"    { return DO; }
+"let"   { return LET;}
+
+ /* built-in functions */
+"sqrt"  { yylval.fn = B_sqrt; return FUNC; }
+"exp"   { yylval.fn = B_exp; return FUNC; }
+"log"   { yylval.fn = B_log; return FUNC; }
+"print" { yylval.fn = B_print; return FUNC; }
+
+ /* names */
+[a-zA-Z][a-zA-Z0-9]*  { yylval.s = lookup(yytext); return NAME; }
+
+[0-9]+"."[0-9]*{EXP}? |
+"."?[0-9]+{EXP}? { yylval.d = atof(yytext); return NUMBER; }
+
+"//".*  
+[ \t]  /* ignore whitespace */ 
+
+\\\n { printf("c&gt; "); } /* ignore line continuation */
+
+\n   { return EOL; }
+
+.       { yyerror("Mystery character %c\n", *yytext); }
+%%</pre></div></div><p><a id="I_indexterm3_d1e4554" class="indexterm"/>The lexer, shown in <a class="xref" href="ch03.xhtml#fb32l" title="Example 3-7. Advanced calculator lexer fb3-2.l">Example 3-7</a>, adds a few
+        new rules to the previous example. There are a few new
+        single-character operators. The six comparison operators all return a
+        <code class="literal">CMP</code> token with a lexical value to
+        distinguish them.</p><p>The six keywords and four built-in functions are recognized by
+        literal patterns. Note that they have to precede the general pattern
+        to match a name so that they’re matched in preference to the general
+        pattern. The name pattern looks up the name in the symbol table and
+        returns a pointer to the symbol.</p><p>As before, a newline (<code class="literal">EOL</code>)
+        marks the end of an input string. Since a function or expression might
+        be too long to type on a single line, we allow continuation lines. A
+        new lexer rule matches a backslash and newline and doesn’t return
+        anything to the parser, making the continuation invisible to the
+        parser. But it does print a prompt for the user.</p></div><div class="sect2" title="Reserved Words"><div class="titlepage"><div><div><h2 class="title"><a id="id484497"/>Reserved Words</h2></div></div></div><p><a id="I_indexterm3_d1e4576" class="indexterm"/><a id="I_indexterm3_d1e4581" class="indexterm"/>In this grammar, the words <code class="literal">if</code>, <code class="literal">then</code>,
+        <code class="literal">else</code>, <code class="literal">while</code>, <code class="literal">do</code>, <code class="literal">let</code>,
+        <code class="literal">sqrt</code>, <code class="literal">exp</code>, <code class="literal">log</code>,
+        and <code class="literal">print</code> are
+        <span class="emphasis"><em>reserved</em></span> and can’t be used as user symbols.
+        Whether you want to allow users to use the same name for two things in
+        the same program is debatable. On the one hand, it can make programs
+        harder to understand, but on the other hand, users are otherwise
+        forced to invent names that do not conflict with the reserved
+        names.</p><p>Either can be taken to extremes. COBOL has more than 300
+        reserved words, so nobody can remember them all, and programmers
+        resort to strange conventions like starting every variable name with a
+        digit to be sure it doesn’t conflict with a reserved word. On the
+        other hand, PL/I has no reserved words at all, so you can write the
+        following:</p><a id="I_programlisting3_d1e4624"/><pre class="programlisting">  IF IF = THEN THEN ELSE = THEN; ELSE ELSE = IF;</pre><p>Bison parsers are a lot easier to write if you reserve the
+        keywords; otherwise, you need to carefully design your language so at
+        each point where the lexer is reading a token, either a name or a
+        keyword is valid, but not both, and you have to provide extensive
+        feedback to the lexer so it knows which to do. Having written lexers
+        for Fortran, which has no reserved words and (in its classic versions)
+        ignores all whitespace, I strongly encourage you to reserve your
+        keywords.</p></div><div class="sect2" title="Building and Interpreting ASTs"><div class="titlepage"><div><div><h2 class="title"><a id="id469302"/>Building and Interpreting ASTs</h2></div></div></div><p>Finally, we have the file of helper code, shown in <a class="xref" href="ch03.xhtml#fb32func" title="Example 3-8. Advanced calculator helper functions fb3-2func.c">Example 3-8</a>. Some of this file is the same as the previous
+        example; the <code class="literal">main</code> and <code class="literal">yyerror</code> are unchanged and aren’t repeated
+        here.</p><p>The key code builds and evaluates the ASTs. First, we have the
+        symbol table management, which should be familiar from the examples in
+        <a class="xref" href="ch02.xhtml" title="Chapter 2. Using Flex">Chapter 2</a>.</p><div class="example"><a id="fb32func"/><p class="title">Example 3-8. Advanced calculator helper functions fb3-2func.c</p><div class="example-contents"><pre class="programlisting">/*
+ * helper functions for fb3-2
+ */
+#  include &lt;stdio.h&gt;
+#  include &lt;stdlib.h&gt;
+#  include &lt;stdarg.h&gt;
+#  include &lt;string.h&gt;
+#  include &lt;math.h&gt;
+#  include "fb3-2.h"
+
+/* symbol table */
+/* hash a symbol */
+static unsigned
+symhash(char *sym)
+{
+  unsigned int hash = 0;
+  unsigned c;
+
+  while(c = *sym++) hash = hash*9 ^ c;
+
+  return hash;
+}
+
+struct symbol *
+lookup(char* sym)
+{
+  struct symbol *sp = &amp;symtab[symhash(sym)%NHASH];
+  int scount = NHASH;           /* how many have we looked at */
+
+  while(--scount &gt;= 0) {
+    if(sp-&gt;name &amp;&amp; !strcmp(sp-&gt;name, sym)) { return sp; }
+
+    if(!sp-&gt;name) {             /* new entry */
+      sp-&gt;name = strdup(sym);
+      sp-&gt;value = 0;
+      sp-&gt;func = NULL;
+      sp-&gt;syms = NULL;
+      return sp;
+    }
+
+    if(++sp &gt;= symtab+NHASH) sp = symtab; /* try the next entry */
+  }
+  yyerror("symbol table overflow\n");
+  abort(); /* tried them all, table is full */
+
+}</pre></div></div><p>Next come the procedures to build the AST nodes and symlists.
+        They all allocate a node and then fill in the fields appropriately for
+        the node type. An extended version of <code class="literal">treefree</code> recursively walks an AST and frees
+        all of the nodes in the tree.</p><a id="I_programlisting3_d1e4655"/><pre class="programlisting">struct ast *
+newast(int nodetype, struct ast *l, struct ast *r)
+{
+  struct ast *a = malloc(sizeof(struct ast));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = nodetype;
+  a-&gt;l = l;
+  a-&gt;r = r;
+  return a;
+}
+
+struct ast *
+newnum(double d)
+{
+  struct numval *a = malloc(sizeof(struct numval));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = 'K';
+  a-&gt;number = d;
+  return (struct ast *)a;
+}
+
+struct ast *
+newcmp(int cmptype, struct ast *l, struct ast *r)
+{
+  struct ast *a = malloc(sizeof(struct ast));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = '0' + cmptype;
+  a-&gt;l = l;
+  a-&gt;r = r;
+  return a;
+}
+
+struct ast *
+newfunc(int functype, struct ast *l)
+{
+  struct fncall *a = malloc(sizeof(struct fncall));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = 'F';
+  a-&gt;l = l;
+  a-&gt;functype = functype;
+  return (struct ast *)a;
+}
+
+struct ast *
+newcall(struct symbol *s, struct ast *l)
+{
+  struct ufncall *a = malloc(sizeof(struct ufncall));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = 'C';
+  a-&gt;l = l;
+  a-&gt;s = s;
+  return (struct ast *)a;
+}
+
+struct ast *
+newref(struct symbol *s)
+{
+  struct symref *a = malloc(sizeof(struct symref));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = 'N';
+  a-&gt;s = s;
+  return (struct ast *)a;
+}
+
+struct ast *
+newasgn(struct symbol *s, struct ast *v)
+{
+  struct symasgn *a = malloc(sizeof(struct symasgn));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = '=';
+  a-&gt;s = s;
+  a-&gt;v = v;
+  return (struct ast *)a;
+}
+
+struct ast *
+newflow(int nodetype, struct ast *cond, struct ast *tl, struct ast *el)
+{
+  struct flow *a = malloc(sizeof(struct flow));
+  
+  if(!a) {
+    yyerror("out of space");
+    exit(0);
+  }
+  a-&gt;nodetype = nodetype;
+  a-&gt;cond = cond;
+  a-&gt;tl = tl;
+  a-&gt;el = el;
+  return (struct ast *)a;
+}
+
+/* free a tree of ASTs */
+void
+treefree(struct ast *a)
+{
+  switch(a-&gt;nodetype) {
+
+    /* two subtrees */
+  case '+':
+  case '-':
+  case '*':
+  case '/':
+  case '1':  case '2':  case '3':  case '4':  case '5':  case '6':
+  case 'L':
+    treefree(a-&gt;r);
+
+    /* one subtree */
+  case '|':
+  case 'M': case 'C': case 'F':
+    treefree(a-&gt;l);
+
+    /* no subtree */
+  case 'K': case 'N':
+    break;
+
+  case '=':
+    free( ((struct symasgn *)a)-&gt;v);
+    break;
+
+    /* up to three subtrees */
+  case 'I': case 'W':
+    free( ((struct flow *)a)-&gt;cond);
+    if( ((struct flow *)a)-&gt;tl) treefree( ((struct flow *)a)-&gt;tl);
+    if( ((struct flow *)a)-&gt;el) treefree( ((struct flow *)a)-&gt;el);
+    break;
+
+  default: printf("internal error: free bad node %c\n", a-&gt;nodetype);
+  }       
+  
+  free(a); /* always free the node itself */
+}
+
+struct symlist *
+newsymlist(struct symbol *sym, struct symlist *next)
+{
+  struct symlist *sl = malloc(sizeof(struct symlist));
+  
+  if(!sl) {
+    yyerror("out of space");
+    exit(0);
+  }
+  sl-&gt;sym = sym;
+  sl-&gt;next = next;
+  return sl;
+}
+
+/* free a list of symbols */
+void
+symlistfree(struct symlist *sl)
+{
+  struct symlist *nsl;
+
+  while(sl) {
+    nsl = sl-&gt;next;
+    free(sl);
+    sl = nsl;
+  }
+}</pre><p>The heart of the calculator is <code class="literal">eval</code>, which evaluates an AST built up in the
+        parser. Following the practice in C, comparisons return 1 or 0
+        depending on whether the comparison succeeds, and tests in
+        if/then/else and while/do treat any nonzero as true.</p><p>For expressions, we do the familiar depth-first tree walk to
+        compute the value. An AST makes it straightforward to implement
+        if/then/else: Evaluate the condition AST to decide which branch to
+        take, and then evaluate the AST for the path to be taken. To evaluate
+        while/do loops, a loop in eval evaluates the condition AST, then the
+        body AST, repeating as long as the condition AST remains true. Any AST
+        that references variables that are changed by an assignment will have
+        a new value each time it’s evaluated.</p><a id="I_programlisting3_d1e4664"/><pre class="programlisting">static double callbuiltin(struct fncall *);
+static double calluser(struct ufncall *);
+
+double
+eval(struct ast *a)
+{
+  double v;
+
+  if(!a) {
+    yyerror("internal error, null eval");
+    return 0.0;
+  }
+
+  switch(a-&gt;nodetype) {
+    /* constant */
+  case 'K': v = ((struct numval *)a)-&gt;number; break;
+
+    /* name reference */
+  case 'N': v = ((struct symref *)a)-&gt;s-&gt;value; break;
+
+    /* assignment */
+  case '=': v = ((struct symasgn *)a)-&gt;s-&gt;value =
+      eval(((struct symasgn *)a)-&gt;v); break;
+
+    /* expressions */
+  case '+': v = eval(a-&gt;l) + eval(a-&gt;r); break;
+  case '-': v = eval(a-&gt;l) - eval(a-&gt;r); break;
+  case '*': v = eval(a-&gt;l) * eval(a-&gt;r); break;
+  case '/': v = eval(a-&gt;l) / eval(a-&gt;r); break;
+  case '|': v = fabs(eval(a-&gt;l)); break;
+  case 'M': v = -eval(a-&gt;l); break;
+
+    /* comparisons */
+  case '1': v = (eval(a-&gt;l) &gt; eval(a-&gt;r))? 1 : 0; break;
+  case '2': v = (eval(a-&gt;l) &lt; eval(a-&gt;r))? 1 : 0; break;
+  case '3': v = (eval(a-&gt;l) != eval(a-&gt;r))? 1 : 0; break;
+  case '4': v = (eval(a-&gt;l) == eval(a-&gt;r))? 1 : 0; break;
+  case '5': v = (eval(a-&gt;l) &gt;= eval(a-&gt;r))? 1 : 0; break;
+  case '6': v = (eval(a-&gt;l) &lt;= eval(a-&gt;r))? 1 : 0; break;
+
+  /* control flow */
+  /* null expressions allowed in the grammar, so check for them */
+
+  /* if/then/else */
+  case 'I': 
+    if( eval( ((struct flow *)a)-&gt;cond) != 0) { <em class="lineannotation"><span class="lineannotation">check the condition</span></em>
+      if( ((struct flow *)a)-&gt;tl) {             <em class="lineannotation"><span class="lineannotation">the true branch</span></em>
+        v = eval( ((struct flow *)a)-&gt;tl);
+      } else
+        v = 0.0;                /* a default value */
+    } else {
+      if( ((struct flow *)a)-&gt;el) {             <em class="lineannotation"><span class="lineannotation">the false branch</span></em>
+        v = eval(((struct flow *)a)-&gt;el);
+      } else
+        v = 0.0;                /* a default value */
+    }
+    break;
+
+  /* while/do */
+  case 'W':
+    v = 0.0;            /* a default value */
+    
+    if( ((struct flow *)a)-&gt;tl) {
+      while( eval(((struct flow *)a)-&gt;cond) != 0) <em class="lineannotation"><span class="lineannotation">evaluate the condition</span></em>
+        v = eval(((struct flow *)a)-&gt;tl);         <em class="lineannotation"><span class="lineannotation">evaluate the target statements</span></em>
+    }
+    break;                      /* value of last statement is value of while/do */
+                      
+  /* list of statements */
+  case 'L': eval(a-&gt;l); v = eval(a-&gt;r); break;
+
+  case 'F': v = callbuiltin((struct fncall *)a); break;
+
+  case 'C': v = calluser((struct ufncall *)a); break;
+
+  default: printf("internal error: bad node %c\n", a-&gt;nodetype);
+  }
+  return v;
+}</pre></div><div class="sect2" title="Evaluating Functions in the Calculator"><div class="titlepage"><div><div><h2 class="title"><a id="id535023"/>Evaluating Functions in the Calculator</h2></div></div></div><p><a id="I_indexterm3_d1e4685" class="indexterm"/><a id="I_indexterm3_d1e4690" class="indexterm"/>The trickiest bits of code in the evaluator handle
+        functions. Built-in functions are relatively straightforward: They
+        determine which function it is and call specific code to do the
+        function.</p><a id="I_programlisting3_d1e4696"/><pre class="programlisting">static double
+callbuiltin(struct fncall *f)
+{
+  enum bifs functype = f-&gt;functype;
+  double v = eval(f-&gt;l);
+
+ switch(functype) {
+ case B_sqrt:
+   return sqrt(v);
+ case B_exp:
+   return exp(v);
+ case B_log:
+   return log(v);
+ case B_print:
+   printf("= %4.4g\n", v);
+   return v;
+ default:
+   yyerror("Unknown built-in function %d", functype);
+   return 0.0;
+ }
+}</pre></div><div class="sect2" title="User-Defined Functions"><div class="titlepage"><div><div><h2 class="title"><a id="id457476"/>User-Defined Functions</h2></div></div></div><p><a id="I_indexterm3_d1e4702" class="indexterm"/><a id="I_indexterm3_d1e4707" class="indexterm"/>A function definition consists of the name of the
+        function, a list of dummy arguments, and an AST that represents the
+        body of the function. Defining the function simply saves the argument
+        list and AST in the function’s symbol table entry, replacing any
+        previous version.</p><a id="I_programlisting3_d1e4713"/><pre class="programlisting">/* define a function */
+void
+dodef(struct symbol *name, struct symlist *syms, struct ast *func)
+{
+  if(name-&gt;syms) symlistfree(name-&gt;syms);
+  if(name-&gt;func) treefree(name-&gt;func);
+  name-&gt;syms = syms;
+  name-&gt;func = func;
+}</pre><p>Say you define a function to calculate the maximum of its two
+        arguments:</p><a id="I_programlisting3_d1e4717"/><pre class="programlisting">&gt; let max(x,y) = if x &gt;= y then x; else y;;
+&gt; max(4+5,6+7)</pre><p>The function has two dummy arguments, x and y. When the function
+        is called, the evaluator does this:</p><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>Evaluate the actual arguments, 4+5 and 6+7 in this
+            case.</p></li><li class="listitem"><p>Save the current values of the dummy arguments and assign
+            the values of the actual arguments to them.</p></li><li class="listitem"><p>Evaluate the body of the function, which will now use the
+            actual argument values when it refers to the dummy
+            arguments.</p></li><li class="listitem"><p>Put back the old values of the dummies.</p></li><li class="listitem"><p>Return the value of the body expression.</p></li></ol></div><p>The code to do this counts the arguments, allocates two
+        temporary arrays for the old and new values of the dummy arguments,
+        and then does the steps described earlier.</p><a id="I_programlisting3_d1e4739"/><pre class="programlisting">static double
+calluser(struct ufncall *f)
+{
+  struct symbol *fn = f-&gt;s;     /* function name */
+  struct symlist *sl;           /* dummy arguments */
+  struct ast *args = f-&gt;l;      /* actual arguments */
+  double *oldval, *newval;      /* saved arg values */
+  double v;
+  int nargs;
+  int i;
+
+  if(!fn-&gt;func) {
+    yyerror("call to undefined function %s", fn-&gt;name);
+    return 0;
+  }
+
+  /* count the arguments */
+  sl = fn-&gt;syms;
+  for(nargs = 0; sl; sl = sl-&gt;next)
+    nargs++;
+
+  /* prepare to save them */
+  oldval = (double *)malloc(nargs * sizeof(double));
+  newval = (double *)malloc(nargs * sizeof(double));
+  if(!oldval || !newval) {
+    yyerror("Out of space in %s", fn-&gt;name); return 0.0;
+  }
+  
+  /* evaluate the arguments */
+  for(i = 0; i &lt; nargs; i++) {
+    if(!args) {
+      yyerror("too few args in call to %s", fn-&gt;name);
+      free(oldval); free(newval);
+      return 0.0;
+    }
+
+    if(args-&gt;nodetype == 'L') { /* if this is a list node */
+      newval[i] = eval(args-&gt;l);
+      args = args-&gt;r;
+    } else {                    /* if it's the end of the list */
+      newval[i] = eval(args);
+      args = NULL;
+    }
+  }
+                     
+  /* save old values of dummies, assign new ones */
+  sl = fn-&gt;syms;
+  for(i = 0; i &lt; nargs; i++) {
+    struct symbol *s = sl-&gt;sym;
+
+    oldval[i] = s-&gt;value;
+    s-&gt;value = newval[i];
+    sl = sl-&gt;next;
+  }
+
+  free(newval);
+
+  /* evaluate the function */
+  v = eval(fn-&gt;func);
+
+  /* put the real values of the dummies back */
+  sl = fn-&gt;syms;
+  for(i = 0; i &lt; nargs; i++) {
+    struct symbol *s = sl-&gt;sym;
+
+    s-&gt;value = oldval[i];
+    sl = sl-&gt;next;
+  }
+
+  free(oldval);
+  return v;
+}</pre></div></div><div class="sect1" title="Using the Advanced Calculator"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e4741"/>Using the Advanced Calculator</h1></div></div></div><p>This calculator is flexible enough to do some useful calculations.
+      <a class="xref" href="ch03.xhtml#fb32sqrt" title="Example 3-9. Computing square roots with the calculator">Example 3-9</a> shows the function <code class="literal">sq</code> to compute square roots iteratively using
+      Newton’s method, as well as an auxiliary function <code class="literal">avg</code> to compute the average of two
+      numbers.<a id="I_indexterm3_d1e4754" class="indexterm"/><a id="I_indexterm3_d1e4755" class="indexterm"/><a id="I_indexterm3_d1e4756" class="indexterm"/><a id="I_indexterm3_d1e4757" class="indexterm"/><a id="I_indexterm3_d1e4759" class="indexterm"/></p><div class="example"><a id="fb32sqrt"/><p class="title">Example 3-9. Computing square roots with the calculator</p><div class="example-contents"><pre class="programlisting">&gt; <span class="bold"><strong>let sq(n)=e=1; while |((t=n/e)-e)&gt;.001 do e=avg(e,t);;</strong></span>
+Defined sq
+&gt; <span class="bold"><strong>let avg(a,b)=(a+b)/2;</strong></span>
+Defined avg
+&gt; <span class="bold"><strong>sq(10)</strong></span>
+= 3.162
+&gt; <span class="bold"><strong>sqrt(10)</strong></span>
+= 3.162
+&gt; <span class="bold"><strong>sq(10)-sqrt(10)</strong></span>
+= 0.000178    <em class="lineannotation"><span class="lineannotation">accurate to better than the .001 cutoff</span></em></pre></div></div></div><div class="sect1" title="Exercises"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect13_d1e4783"/>Exercises</h1></div></div></div><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>Try some variants of the syntax in the enhanced calculator. In
+          the previous example, the <code class="literal">sq</code>
+          function has to end with two semicolons to close off both the while
+          loop and the let statement, which is pretty clunky. Can you change
+          the syntax to make it more intuitive? If you add closing symbols to
+          conditional statements if/then/else/fi and loops while/do/done, can
+          you make the syntax of statement lists more flexible?</p></li><li class="listitem"><p>In the last example, user functions evaluate all of the actual
+          arguments, put them in a temporary array, and then assign them to
+          the dummy arguments. Why not just do them one at a time and set the
+          dummies as the actuals are evaluated?<a id="I_indexterm3_d1e4798" class="indexterm"/></p></li></ol></div></div><div class="footnotes"><br/><hr/><div class="footnote"><p><sup>[<a id="ftn.id531036" href="#id531036" class="para">10</a>] </sup>It is possible to have rules with empty right-hand sides, in
+          which case a reduction ends up with one more item than it started
+          with, but we call them reductions anyway.</p></div><div class="footnote"><p><sup>[<a id="ftn.id470504" href="#id470504" class="para">11</a>] </sup>Then we’ll stop; the world has plenty of script interpreter
+          programs already. For practical purposes, you’ll be much better off
+          adding a few extensions to an existing well-debugged scripting
+          language such as Python, Perl, or Lua rather than writing yet
+          another one.</p></div><div class="footnote"><p><sup>[<a id="ftn.id439281" href="#id439281" class="para">12</a>] </sup>These could have gone in the third section of the parser,
+            but it’s easier to debug your program if you don’t put a lot of
+            extra code in the parser file.</p></div><div class="footnote"><p><sup>[<a id="ftn.id495422" href="#id495422" class="para">13</a>] </sup>This is a classic C trick that doesn’t work in C++. If you
+          write your parser in C++, as we describe in <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>, you’ll have to use an explicit union of
+          structures within the AST structure to get a similar result.</p></div><div class="footnote"><p><sup>[<a id="ftn.id485251" href="#id485251" class="para">14</a>] </sup>This design is vaguely based on the ancient BLISS system
+          programming language. It would be perfectly possible to design an
+          AST that treated expressions and statements separately, but the
+          implementation is a little simpler this way.</p></div></div></div></div></body>
+</html>

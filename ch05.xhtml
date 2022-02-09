@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 5. A Reference for Flex Specifications"><div class="titlepage"><div><div><h1 class="title"><a id="flexref"/>Chapter 5. A Reference for Flex Specifications</h1></div></div></div><p><a id="index-043G837SW3H" class="indexterm"/>In this chapter we describe the syntax of flex programs,
+    along with the various options and support functions available. POSIX lex
+    <a id="I_indexterm5_d1e6922" class="indexterm"/>is almost an exact subset of flex, so we note which parts of
+    flex are extensions beyond what POSIX requires.</p><p>After the section on the structure of a lex program, the sections in
+    this chapter are in alphabetical order by feature.</p><div class="sect1" title="Structure of a Flex Specification"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e6930"/>Structure of a Flex Specification</h1></div></div></div><p><a id="I_indexterm5_d1e6934" class="indexterm"/>A flex program consists of three parts: the definition
+      section, the rules section, and the user subroutines.</p><a id="I_programlisting5_d1e6938"/><pre class="programlisting">...definition section ...
+%%
+            
+... rules section ...
+%%
+... user subroutines ...</pre><p>The parts are separated by lines consisting of two percent
+      signs.<a id="I_indexterm5_d1e6942" class="indexterm"/><a id="I_indexterm5_d1e6945" class="indexterm"/> The first two parts are required, although a part may be
+      empty. The third part and the preceding <code class="literal">%%</code> line may be omitted.</p><div class="sect2" title="Definition Section"><div class="titlepage"><div><div><h2 class="title"><a id="id487961"/>Definition Section</h2></div></div></div><p><a id="I_indexterm5_d1e6956" class="indexterm"/>The definition section can include options, the literal
+        block, definitions, start conditions, and translations. (There is a
+        section on each in this reference.) Lines that start with whitespace
+        are copied verbatim to the C file. Typically this is used to include
+        comments enclosed in <code class="literal">/*</code> and
+        <code class="literal">*/</code>, preceded by whitespace.</p></div><div class="sect2" title="Rules Section"><div class="titlepage"><div><div><h2 class="title"><a id="id536096"/>Rules Section</h2></div></div></div><p><a id="I_indexterm5_d1e6972" class="indexterm"/>The rules section contains pattern lines and C
+        code.<a id="I_indexterm5_d1e6978" class="indexterm"/> Lines that start with whitespace, or material enclosed
+        in <code class="literal">%{</code> and <code class="literal">%}</code>,<a id="I_indexterm5_d1e6990" class="indexterm"/><a id="I_indexterm5_d1e6993" class="indexterm"/> are C code that is copied verbatim to <code class="literal">yylex()</code><a id="I_indexterm5_d1e7000" class="indexterm"/><a id="I_indexterm5_d1e7003" class="indexterm"/>. C code at the beginning of the rules section will be
+        at the beginning of <code class="literal">yylex()</code> and can
+        include declarations of variables used in the scanner, and code to run
+        each time <code class="literal">yylex()</code> is called.</p><p>C code lines are copied verbatim to the generated C file. Lines
+        at the beginning of the rules section are placed near the beginning of
+        the generated <code class="literal">yylex()</code> function and
+        should be declarations of variables used by code associated with the
+        patterns and initialization code for the scanner. C code lines
+        anywhere else should contain only comments, since it’s unpredictable
+        where in the scanner they’ll be. (This is how you put comments in the
+        rules section outside of actions.)</p><p>A line that starts with anything else is a pattern line. Pattern
+        lines contain a pattern followed by some whitespace and C code to
+        execute when the input matches the pattern. If the C code is more than
+        one statement or spans multiple lines, it must be enclosed in braces
+        (<code class="literal">{ }</code> or <code class="literal">%{
+        %}</code>).<a id="I_indexterm5_d1e7028" class="indexterm"/><a id="I_indexterm5_d1e7031" class="indexterm"/></p><p>When a flex scanner runs, it matches the input against the
+        patterns in the rules section. Every time it finds a match (the
+        matched input is called a <span class="emphasis"><em>token</em></span>), it executes the
+        C code associated with that pattern. If a pattern is followed by a
+        single vertical bar<a id="I_indexterm5_d1e7039" class="indexterm"/><a id="I_indexterm5_d1e7042" class="indexterm"/>, instead of C code, the pattern uses the same C code as
+        the next pattern in the file. When an input character matches no
+        pattern, the lexer acts as though it matched a pattern whose code is
+        <code class="literal">ECHO;</code>, which writes a copy of the
+        token to the output.</p></div><div class="sect2" title="User Subroutines"><div class="titlepage"><div><div><h2 class="title"><a id="id495678"/>User Subroutines</h2></div></div></div><p><a id="I_indexterm5_d1e7053" class="indexterm"/>The contents of the user subroutines section are copied
+        verbatim by flex to the C file. This section typically includes
+        routines called from the rules. If you redefine <code class="literal">yywrap()</code>, the new version or supporting
+        subroutines might be here.</p><p>In a large program, it is often more convenient to put the
+        supporting code in a separate source file to minimize the amount of
+        material that is recompiled when you change the lex file.</p></div></div><div class="sect1" title="BEGIN"><div class="titlepage"><div><div><h1 class="title"><a id="begin"/>BEGIN</h1></div></div></div><p><a id="I_indexterm5_d1e7068" class="indexterm"/><a id="I_indexterm5_d1e7073" class="indexterm"/><a id="I_indexterm5_d1e7076" class="indexterm"/>The <code class="literal">BEGIN</code> macro
+      switches among start states. You invoke it, usually in the action code
+      for a pattern, as follows:</p><a id="I_programlisting5_d1e7085"/><pre class="programlisting">BEGIN statename;</pre><p>The scanner starts in state 0 (zero), also known as <code class="literal">INITIAL</code>. All other states must be named in
+      <code class="literal">%s</code> or <code class="literal">%x</code> lines in the definition section. (See <a class="xref" href="ch05.xhtml#startstates" title="Start States">Start States</a>.)</p><p>Notice that even though <code class="literal">BEGIN</code>
+      is a macro, the macro itself doesn’t take any arguments, and the state
+      name need not be enclosed in parentheses, although it is good style
+      to do so.</p></div><div class="sect1" title="C++ Scanners"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7107"/>C++ Scanners</h1></div></div></div><p><a id="I_indexterm5_d1e7111" class="indexterm"/><a id="I_indexterm5_d1e7116" class="indexterm"/><a id="I_indexterm5_d1e7121" class="indexterm"/>Although flex has an option to create a C++ scanner, the
+      manual says it’s experimental, and the code is buggy and doesn’t work
+      very well.<sup>[<a id="id531514" href="#ftn.id531514" class="footnote">19</a>]</sup> All is not lost for C++ programmers, though. If you
+      generate a C lexer, it will compile with a C++ compiler, and you can
+      tell a C++ bison parser to call a C lexer.</p></div><div class="sect1" title="Context Sensitivity"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7131"/>Context Sensitivity</h1></div></div></div><p><a id="I_indexterm5_d1e7135" class="indexterm"/><a id="I_indexterm5_d1e7140" class="indexterm"/>Flex provides several ways to make your patterns sensitive
+      to left and right context, that is, to the text that precedes or follows
+      the token.</p><div class="sect2" title="Left Context"><div class="titlepage"><div><div><h2 class="title"><a id="id469551"/>Left Context</h2></div></div></div><p><a id="I_indexterm5_d1e7150" class="indexterm"/>There are three ways to handle left context: the special
+        beginning-of-line pattern character, start states, and explicit
+        code.</p><p>The character <code class="literal">^</code> <a id="I_indexterm5_d1e7161" class="indexterm"/><a id="I_indexterm5_d1e7164" class="indexterm"/>at the beginning of a pattern tells lex to match the
+        pattern only at the beginning of the line. The <code class="literal">^</code> doesn’t match any characters; it just
+        specifies the context.</p><p>Start states can be used to require that one token precede
+        another:</p><a id="I_programlisting5_d1e7173"/><pre class="programlisting">%s MYSTATE
+%%
+first { BEGIN MYSTATE; }
+. . .
+&lt;MYSTATE&gt;second  { BEGIN 0; }</pre><p>In this lexer, the second token is recognized only after the
+        first token. There may be intervening tokens between the first and
+        second.</p><p>In some cases you can fake left context sensitivity by setting
+        flags to pass context information from one token’s routine to
+        another:</p><a id="I_programlisting5_d1e7179"/><pre class="programlisting"> %{
+  int flag = 0;
+ %}
+ %%
+ a     { flag = 1; }
+ b     { flag = 2; }
+ zzz   {
+         switch(flag) {
+          case 1:     a_zzz_token(); break;
+          case 2:     b_zzz_token(); break;
+          default: plain_zzz_token(); break;
+         }
+         flag = 0;
+        }</pre></div><div class="sect2" title="Right Context"><div class="titlepage"><div><div><h2 class="title"><a id="id478943"/>Right Context</h2></div></div></div><p><a id="I_indexterm5_d1e7185" class="indexterm"/>There are three ways to make token recognition depend on
+        the text to the right of the token: the special end-of-line pattern
+        character, the slash operator, and <code class="literal">yyless()</code>.</p><p>The <code class="literal">$</code> character<a id="I_indexterm5_d1e7199" class="indexterm"/><a id="I_indexterm5_d1e7202" class="indexterm"/> at the end of a pattern makes the token match only at
+        the end of a line, that is, immediately before a <code class="literal">\n</code> character. Like the <code class="literal">^</code> character, <code class="literal">$</code> doesn’t match any characters; it just
+        specifies context. It is exactly equivalent to <code class="literal">/\n</code> and, therefore, can’t be used with
+        trailing context.</p><p>The <code class="literal">/</code><a id="I_indexterm5_d1e7223" class="indexterm"/><a id="I_indexterm5_d1e7226" class="indexterm"/> character in a pattern lets you include explicit
+        trailing context. For instance, the pattern <code class="literal">abc/de</code> matches the token <code class="literal">abc</code>, but only if it is immediately followed
+        by <code class="literal">de</code>. The <code class="literal">/</code> itself matches no characters. Lex counts
+        trailing context characters when deciding which of several patterns
+        has the longest match, but the characters do not appear in <code class="literal">yytext</code>, nor are they counted in <code class="literal">yyleng</code>.</p><p>The <code class="literal">yyless()</code> function
+        <a id="I_indexterm5_d1e7254" class="indexterm"/><a id="I_indexterm5_d1e7257" class="indexterm"/>tells lex to “push back” part of the token that was just
+        read. The argument to <code class="literal">yyless()</code> is
+        the number of token characters to keep. For example:</p><a id="I_programlisting5_d1e7266"/><pre class="programlisting">abcde { yyless(3); }</pre><p>The previous has nearly the same effect as <code class="literal">abc/de</code> does because the call to <code class="literal">yyless()</code> keeps three characters of the token
+        and puts back the other two. The only differences are that in this
+        case the token in <code class="literal">yytext</code> contains
+        all five characters and <code class="literal">yyleng</code>
+        contains five instead of three.</p></div></div><div class="sect1" title="Definitions (Substitutions)"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7282"/>Definitions (Substitutions)</h1></div></div></div><p><a id="I_indexterm5_d1e7286" class="indexterm"/><a id="I_indexterm5_d1e7291" class="indexterm"/><a id="I_indexterm5_d1e7296" class="indexterm"/>Definitions (or substitutions) allow you to give a name to
+      all or part of a regular expression and refer to it by name in the rules
+      section. This can be useful to break up complex expressions and to
+      document what your expressions are supposed to be doing. A definition
+      takes this form:</p><a id="I_programlisting5_d1e7302"/><pre class="programlisting">NAME   expression</pre><p>The name can contain letters, digits, hyphens, and underscores,
+      and it must not start with a digit.</p><p>In the rules section, patterns may include references to
+      substitutions with the name in braces,<a id="I_indexterm5_d1e7308" class="indexterm"/><a id="I_indexterm5_d1e7311" class="indexterm"/> for example, <code class="literal">{NAME}</code>.
+      The expression corresponding to the name is substituted into the pattern
+      as though it were enclosed in parentheses. For example:</p><a id="I_programlisting5_d1e7318"/><pre class="programlisting">DIG       [0-9]
+...
+%%
+{DIG}+            process_integer();
+{DIG}+\.{DIG}*   |
+\.{DIG}+         process_real() ;</pre></div><div class="sect1" title="ECHO"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7320"/>ECHO</h1></div></div></div><p><a id="I_indexterm5_d1e7324" class="indexterm"/><a id="I_indexterm5_d1e7329" class="indexterm"/><a id="I_indexterm5_d1e7334" class="indexterm"/>In the C code associated with a pattern, the macro
+      <code class="literal">ECHO</code> writes the token to the current
+      output file <code class="literal">yyout</code>. It is equivalent
+      to the following:</p><a id="I_programlisting5_d1e7346"/><pre class="programlisting">fprintf(yyout, "%s", yytext);</pre><p>The default action in flex for input text that doesn’t match any
+      pattern is to write the text to the output, equivalent to <code class="literal">ECHO</code>. In flex, <code class="literal">%option nodefault</code> or the command-line flag
+      <code class="literal">-s</code> or <code class="literal">--nodefault</code> makes the default action abort,
+      which is useful in the common case that the scanner is supposed to
+      include patterns to handle all possible input.</p></div><div class="sect1" title="Input Management"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7362"/>Input Management</h1></div></div></div><p><a id="I_indexterm5_d1e7366" class="indexterm"/><a id="I_indexterm5_d1e7371" class="indexterm"/>Flex offers a variety of ways to manage the source of the
+      text to be scanned. At the beginning of your program, you can assign any
+      open stdio file to <code class="literal">yyin</code> to have the
+      scanner read from that file. If that’s not adequate, flex provides
+      several different ways to change the input source.</p><div class="sect2" title="Stdio File Chaining"><div class="titlepage"><div><div><h2 class="title"><a id="stdiochain"/>Stdio File Chaining</h2></div></div></div><p><a id="I_indexterm5_d1e7384" class="indexterm"/>You can tell the lexer to read from any stdio file by
+        calling <code class="literal">yyrestart(file)</code>. Also, when
+        a lexer built with <code class="literal">%option yywrap</code>
+        reaches the end of the input file, it calls <code class="literal">yywrap()</code>, which can switch to a different
+        input file. See the sections <a class="xref" href="ch05.xhtml#yyrestart" title="yyrestart()"/> and <a class="xref" href="ch05.xhtml#yywrap" title="yywrap()">yywrap()</a> for more
+        details.</p></div><div class="sect2" title="Input Buffers"><div class="titlepage"><div><div><h2 class="title"><a id="id506614"/>Input Buffers</h2></div></div></div><p><a id="I_indexterm5_d1e7407" class="indexterm"/><a id="I_indexterm5_d1e7412" class="indexterm"/>Flex scanners read input from an input buffer. An input
+        buffer can be associated with a stdio file, in which case the lexer
+        reads input from the file, or it can just be associated with a string
+        in memory. The type <code class="literal">YY_BUFFER_STATE</code>
+        is a pointer to a flex input buffer.</p><a id="I_programlisting5_d1e7421"/><pre class="programlisting">YY_BUFFER_STATE bp;
+FILE *f;
+
+f = fopen(..., "r");
+bp = yy_create_buffer(f,YY_BUF_SIZE ); <em class="lineannotation"><span class="lineannotation"> new buffer reading from f</span></em>
+
+yy_switch_to_buffer(bp); <em class="lineannotation"><span class="lineannotation"> use the buffer we just made</span></em>
+...
+yy_flush_buffer(bp); <em class="lineannotation"><span class="lineannotation">discard buffer contents</span></em>
+...
+void yy_delete_buffer (bp); <em class="lineannotation"><span class="lineannotation"> free buffer</span></em></pre><p>Call <code class="literal">yy_create_buffer</code> to make
+        a new input buffer associated with an open stdio file. Its second
+        argument is the size of the buffer, which should be <code class="literal">YY_BUF_SIZE</code>.</p><p>Call <code class="literal">yy_switch_to_buffer</code> to
+        make the scanner read from a buffer. You can switch buffers as needed. The current buffer is
+        <code class="literal">YY_CURRENT_BUFFER</code>. You can call
+        <code class="literal">yy_flush_buffer</code> to discard whatever is
+        in the buffer, which is occasionally useful in error recovery in
+        interactive scanners to get back to a known state. Call <code class="literal">yy_delete_buffer</code> to
+        free a buffer no longer in use.</p></div><div class="sect2" title="Input from Strings"><div class="titlepage"><div><div><h2 class="title"><a id="inputstrings"/>Input from Strings</h2></div></div></div><p><a id="I_indexterm5_d1e7467" class="indexterm"/>Normally flex reads from a file, but sometimes you want
+        it to read from some other source, such as a string in memory.</p><a id="I_programlisting5_d1e7473"/><pre class="programlisting">bp = yy_scan_bytes(char *bytes, len); <em class="lineannotation"><span class="lineannotation">scan a copy of bytes</span></em>
+bp = yy_scan_string("string");  <em class="lineannotation"><span class="lineannotation">scan a copy of null-terminated string</span></em>
+
+bp = yy_scan_buffer (char *base, yy_size_t size); <em class="lineannotation"><span class="lineannotation">scan (size-2) bytes in place</span></em></pre><p>The routines <code class="literal">yy_scan_bytes</code>
+        and <code class="literal">yy_scan_string</code> create a buffer
+        with a copy of the text to be scanned. A slightly faster routine is
+        <code class="literal">yy_scan_buffer</code>, which scans text in
+        place, but the last two bytes of the buffer <span class="emphasis"><em>must</em></span>
+        be nulls (\0), which are not scanned. The type <code class="literal">yy_size_t</code> is flex’s internal type used for
+        sizes of objects.</p><p>Once a string buffer is created, use <code class="literal">yy_switch_to_buffer</code> to tell the scanner to
+        read from it, and use <code class="literal">yy_delete_buffer</code> to free the buffer and (if
+        appropriate) the copy of the text. The scanner treats the end of the
+        buffer as an end-of-file.</p></div><div class="sect2" title="File Nesting"><div class="titlepage"><div><div><h2 class="title"><a id="id468084"/>File Nesting</h2></div></div></div><p><a id="I_indexterm5_d1e7512" class="indexterm"/><a id="I_indexterm5_d1e7517" class="indexterm"/>Many input languages have features to allow input files
+        to include other files, such as <code class="literal">#include</code> in C. Flex provides a pair of
+        functions to manage a stack of input buffers:</p><a id="I_programlisting5_d1e7526"/><pre class="programlisting">void yypush_buffer_state(bp); <em class="lineannotation"><span class="lineannotation">switch to bp, stack old buf</span></em>
+
+void yypop_buffer_state(); <em class="lineannotation"><span class="lineannotation">delete current buffer, return to previous</span></em></pre><p>In practice, these functions are inadequate for any but the
+        simplest input nesting, since they don’t maintain any auxiliary
+        information such as the line number or name of the current file.
+        Maintaining your own stack of input files is not hard. See <a class="xref" href="ch02.xhtml#includeskel" title="Example 2-3. Skeleton for include files">Example 2-3</a> for sample code.</p><p>Also helpful to maintain an input stack is the special token
+        pattern <code class="literal">&lt;&lt;EOF&gt;&gt;</code>, which
+        matches at the end of a file after the call to <code class="literal">yywrap()</code>.</p></div><div class="sect2" title="input()"><div class="titlepage"><div><div><h2 class="title"><a id="id548089"/>input()</h2></div></div></div><p><a id="I_indexterm5_d1e7549" class="indexterm"/><a id="I_indexterm5_d1e7552" class="indexterm"/>The <code class="literal">input()</code> function
+        conceptually provides characters to the lexer. When the lexer matches
+        characters, it conceptually calls <code class="literal">input()</code> to fetch each character. Flex
+        bypasses <code class="literal">input()</code> for performance
+        reasons, but the effect is the same.</p><p>The most likely place to call <code class="literal">input()</code> is in an action routine to do
+        something special with the text that follows a particular token. For
+        example, here is a way to handle C comments:</p><a id="I_programlisting5_d1e7572"/><pre class="programlisting">"/*" {   int c1 = 0, c2 = input ();
+
+         for(;;) {
+               if(c2 == EOF)
+                     break;
+               if(c1 == '*' &amp;&amp; c2 == '/')
+                     break;
+               c1 = c2;
+               c2 = input();
+         }
+     }</pre><p>The calls to <code class="literal">input()</code> process
+        the characters until either end-of-file or the characters <code class="literal">*/</code> occur. This approach is an alternative to
+        exclusive start states (see <a class="xref" href="ch05.xhtml#startstates" title="Start States">Start States</a>) to handle
+        C-style comments. It is the best way to handle very long quoted
+        strings and other tokens that might be too long for flex to buffer
+        itself in its typical 16K input buffer.</p><p>If you use a C++ compiler, <code class="literal">input</code> is called <code class="literal">yyinput</code> instead to avoid name collisions
+        with C++ libraries.</p></div><div class="sect2" title="YY_INPUT"><div class="titlepage"><div><div><h2 class="title"><a id="id438336"/>YY_INPUT</h2></div></div></div><p><a id="I_indexterm5_d1e7596" class="indexterm"/><a id="I_indexterm5_d1e7599" class="indexterm"/>Flex scanners read input into a buffer using the macro
+        <code class="literal">YY_INPUT(buf,result, max_size)</code>.
+        Whenever the scanner needs more input and the buffer is empty, it
+        invokes <code class="literal">YY_INPUT</code>, where <code class="literal">buf</code> and <code class="literal">maxsize</code> are the buffer and its size,
+        respectively, and <code class="literal">result</code> is where
+        to put the actual amount read or zero at EOF. (Since this is a macro,
+        it’s <code class="literal">result</code>, not <code class="literal">*result</code>.) When the buffer is first set up,
+        it calls <code class="literal">isatty()</code> to see whether
+        the input source is the console and, if so, reads one character at a
+        time rather than large chunks.</p><p>The main situation where redefining <code class="literal">YY_INPUT</code> is useful is when reading from an
+        input source that is neither a string nor a stdio file.</p></div></div><div class="sect1" title="Flex Library"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7635"/>Flex Library</h1></div></div></div><p><a id="I_indexterm5_d1e7639" class="indexterm"/><a id="I_indexterm5_d1e7644" class="indexterm"/>Flex comes with a small library of helpful routines. You
+      can link in the library by giving the <code class="literal">-lfl</code> flag at the end of the <code class="literal">cc</code> command line on Unix systems, or the
+      equivalent on other systems. It contains versions of <code class="literal">main()</code> and <code class="literal">yywrap()</code>.</p><p>Flex comes with a minimal <code class="literal">main</code>
+      program, which can be useful for quickie programs and for testing, and
+      comes with a stub <code class="literal">yywrap</code>. They’re so
+      simple we reproduce them
+      here:</p><a id="I_programlisting5_d1e7672"/><pre class="programlisting">main(int ac,  char **av)
+{
+       return yylex();
+}
+
+int yywrap() { return 1; }</pre></div><div class="sect1" title="Interactive and Batch Scanners"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7675"/>Interactive and Batch Scanners</h1></div></div></div><p><a id="I_indexterm5_d1e7679" class="indexterm"/><a id="I_indexterm5_d1e7684" class="indexterm"/>A flex scanner sometimes needs to look ahead one character
+      in the input to see whether the current token is done. (Think of a
+      number that is a string of digits.) It turns out that the scanner runs a
+      little faster if it always looks ahead even when it doesn’t need to, but
+      that would cause very unpleasant results when a scanner is reading
+      directly from the console. For example, if the current token is a
+      newline, <code class="literal">\n</code>, and it reads ahead, the
+      scanner will wait until you type another new line before going
+      ahead.</p><p>To minimize the unpleasantness, the scanner can run either in
+      batch mode, where it always looks ahead, or in interactive mode, where
+      it looks ahead only when it needs to do so (which is slightly slower).
+      If you use the standard input routines, the scanner will check to see
+      whether the input source is a terminal using <code class="literal">isatty()</code> and, if so, switch to interactive
+      mode. You can use <code class="literal">%option batch</code> or
+      <code class="literal">%option interactive</code> to force it
+      always to use one or the other mode. Forcing batch mode can make sense
+      if you know that your scanner will never need to be interactive, for
+      example, if you read the input yourself or if it always reads from a
+      file.</p></div><div class="sect1" title="Line Numbers and yylineno"><div class="titlepage"><div><div><h1 class="title"><a id="yylineno"/>Line Numbers and yylineno</h1></div></div></div><p><a id="I_indexterm5_d1e7708" class="indexterm"/><a id="I_indexterm5_d1e7713" class="indexterm"/><a id="I_indexterm5_d1e7718" class="indexterm"/>If you keep track of the line number in the input file,
+      you can report it in error messages. If you set <code class="literal">%option yylineno</code>, flex defines <code class="literal">yylineno</code> to contain the current line number
+      and automatically updates it each time it reads a <code class="literal">\n</code> character. The lexer does not initialize
+      <code class="literal">yylineno</code>, so you need to set it to 1
+      each time you start reading a file. Lexers that handle nested include
+      files have to save and restore the line number associated with each file
+      if they want to track line numbers per file.</p></div><div class="sect1" title="Literal Block"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7734"/>Literal Block</h1></div></div></div><p><a id="I_indexterm5_d1e7738" class="indexterm"/><a id="I_indexterm5_d1e7743" class="indexterm"/>A literal block in the definition section is C code
+      bracketed by the lines <code class="literal">%{</code> and
+      <code class="literal">%}</code>.</p><a id="I_programlisting5_d1e7755"/><pre class="programlisting">%{
+... C code and declarations...
+%}</pre><p>The contents of each literal block are copied verbatim to the
+      generated C source file. Literal blocks in the definition section are
+      copied before the beginning of <code class="literal">yylex()</code>. The literal block usually contains
+      declarations of variables and functions used by code in the rules
+      section, as well as <code class="literal">#include</code> lines
+      for header files.</p><p>If a literal block starts with <code class="literal">%top{</code> rather than <code class="literal">%{</code>, it’s copied near the front of the
+      generated program, typically for <code class="literal">#include</code> files or <code class="literal">#define</code> lines to set <code class="literal">YY_BUF_SIZE</code>.</p><p>A literal block at the beginning of the rules section is copied
+      near the beginning of <code class="literal">yylex()</code> after
+      the declarations of local variables, so it can contain more declarations
+      and setup code. A literal block elsewhere in the rules section is copied
+      to an unspecified place in <code class="literal">yylex</code>, so
+      it should contain only comments.</p><p>See also <a class="xref" href="ch05.xhtml#yyuseraction" title="YY_USER_ACTION">YY_USER_ACTION</a>.</p></div><div class="sect1" title="Multiple Lexers in One Program"><div class="titlepage"><div><div><h1 class="title"><a id="multilex"/>Multiple Lexers in One Program</h1></div></div></div><p><a id="I_indexterm5_d1e7798" class="indexterm"/><a id="I_indexterm5_d1e7803" class="indexterm"/>You may want to have lexers for two partially or entirely
+      different token syntaxes in the same program. For example, an
+      interactive debugging interpreter might have one lexer for the
+      programming language and use another for the debugger commands.</p><p>There are two basic approaches to handling two lexers in one
+      program: combine them into a single lexer or put two complete lexers
+      into the program.</p><div class="sect2" title="Combined Lexers"><div class="titlepage"><div><div><h2 class="title"><a id="id480323"/>Combined Lexers</h2></div></div></div><p>You can combine two lexers into one by using start states. All
+        of the patterns for each lexer are prefixed by a unique set of start
+        states. When the lexer starts, you need a little code to put the lexer
+        into the appropriate initial state for the particular lexer in use,
+        for example, the following code (which will be copied at the front of
+        <code class="literal">yylex()</code>):</p><a id="I_programlisting5_d1e7819"/><pre class="programlisting">%s INITA INITB INITC
+%%
+%{
+     extern first_tok, first_lex;
+
+     if(first_lex) {
+           BEGIN first_lex;
+           first_lex = 0;
+     }
+     if(first_tok) {
+           int holdtok = first_tok;
+           first_tok = 0;
+           return holdtok;
+     }
+%}</pre><p>In this case, before you call the lexer, you set <code class="literal">first_lex</code> to the initial state for the
+        lexer. You will usually use a combined lexer in conjunction with a
+        combined yacc parser, so you’ll also usually have code to force an
+        initial token to tell the parser which grammar to use. See <a class="xref" href="ch06.xhtml#multiparse" title="Variant and Multiple Grammars">Variant and Multiple Grammars</a>.</p><p>The advantages of this approach are that the object code is
+        somewhat smaller, since there is only one copy of the lexer code, and
+        the different rule sets can share rules. The disadvantages are that
+        you have to be careful to use the correct start states everywhere, you
+        cannot have both lexers active at once (i.e., you can’t call <code class="literal">yylex()</code> recursively unless you use the
+        reentrant lexer option), and it is difficult to use different input
+        sources for the different lexers.</p></div><div class="sect2" title="Multiple Lexers"><div class="titlepage"><div><div><h2 class="title"><a id="id494438"/>Multiple Lexers</h2></div></div></div><p>The other approach is to include two complete lexers in your
+        program. The trick is to change the names that lex uses for its
+        functions and variables so the two lexers can be generated separately
+        by flex and then compiled together into one program.</p><p>Flex provides a command-line switch and program option to change
+        the prefix used on the names in the scanner generated by lex. For
+        example, these options tell flex to use the prefix “foo” rather than
+        “yy” and to put the generated scanner in <code class="literal">foolex.c</code>.</p><a id="I_programlisting5_d1e7843"/><pre class="programlisting">  %option prefix="foo" 
+  %option outfile="foolex.c"</pre><p>You can also set options on the command line:</p><a id="I_programlisting5_d1e7847"/><pre class="programlisting">  $ flex --outfile=foolex.c --prefix=foo foo.l</pre><p>Either way, the generated scanner has entry point <code class="literal">foolex()</code>, reads from stdio file <code class="literal">fooin</code>, and so forth. Somewhat confusingly,
+        flex will generate a set of <code class="literal">#define</code>
+        macros at the front of the lexer that redefine the standard “yy” names
+        to the chosen prefix. This lets you write your lexer using the
+        standard names, but the externally visible names will all use the
+        chosen prefix.</p><a id="I_programlisting5_d1e7860"/><pre class="programlisting">#define yy_create_buffer foo_create_buffer
+#define yy_delete_buffer foo_delete_buffer
+#define yy_flex_debug foo_flex_debug
+#define yy_init_buffer foo_init_buffer
+#define yy_flush_buffer foo_flush_buffer
+#define yy_load_buffer_state foo_load_buffer_state
+#define yy_switch_to_buffer foo_switch_to_buffer
+#define yyin fooin
+#define yyleng fooleng
+#define yylex foolex
+#define yylineno foolineno
+#define yyout fooout
+#define yyrestart foorestart
+#define yytext footext
+#define yywrap foowrap
+#define yyalloc fooalloc
+#define yyrealloc foorealloc
+#define yyfree foofree</pre></div></div><div class="sect1" title="Options When Building a Scanner"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7862"/>Options When Building a Scanner</h1></div></div></div><p><a id="I_indexterm5_d1e7866" class="indexterm"/><a id="I_indexterm5_d1e7871" class="indexterm"/>Flex offers several hundred options when building a
+      scanner. Most can be written as</p><a id="I_programlisting5_d1e7877"/><pre class="programlisting">%option name</pre><p>at the front of the scanner or as <code class="literal">--name</code> on the command line. To turn an option
+      off, precede it with <code class="literal">no</code>, as in
+      <code class="literal">%option noyywrap</code> or <code class="literal">--noyywrap</code>. In most cases, putting the options
+      in <code class="literal">%option</code> lines is preferable to
+      putting them on the command line, since a scanner typically won’t work
+      if the options are wrong. For a full list of options, see the section
+      “Index of Scanner Options” in the info documentation that comes with
+      flex.</p></div><div class="sect1" title="Portability of Flex Lexers"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7896"/>Portability of Flex Lexers</h1></div></div></div><p><a id="I_indexterm5_d1e7900" class="indexterm"/><a id="I_indexterm5_d1e7905" class="indexterm"/>Flex lexers are fairly portable among C implementations.
+      There are two levels at which you can port a lexer: the original flex
+      specification or the C source file generated by flex.</p><div class="sect2" title="Porting Generated C Lexers"><div class="titlepage"><div><div><h2 class="title"><a id="id467021"/>Porting Generated C Lexers</h2></div></div></div><p><a id="I_indexterm5_d1e7915" class="indexterm"/>Flex generates portable C code, and you can usually move
+        the code to any C compiler without trouble. Be sure to use <code class="literal">%option noyywrap</code> or to include your own
+        version of <code class="literal">yywrap()</code> to avoid
+        needing the flex library. For portability to very old C compilers,
+        <code class="literal">%option noansi-definitions</code> and
+        <code class="literal">%option noansi-prototypes</code> tell flex
+        to generate K&amp;R procedure
+        definitions and prototypes, respectively.</p><div class="sect3" title="Buffer sizes"><div class="titlepage"><div><div><h3 class="title"><a id="id538202"/>Buffer sizes</h3></div></div></div><p><a id="I_indexterm5_d1e7940" class="indexterm"/>You may want to adjust the size of some buffers. Flex
+          uses two input buffers, each by default 16K, which may be too big
+          for some microcomputer implementations. You can define the macro
+          <code class="literal">YY_BUF_SIZE</code><a id="I_indexterm5_d1e7948" class="indexterm"/> in the definition section:</p><a id="I_programlisting5_d1e7952"/><pre class="programlisting"> %{
+ #define YY_BUF_SIZE 4096
+ %}</pre><p>If your lexer uses <code class="literal">REJECT</code>,
+          it will also allocate a backup state buffer four times as large as
+          <code class="literal">YY_BUF_SIZE</code> (eight times on
+          64-bit machines). Don’t use <code class="literal">REJECT</code> if space is an issue.</p></div><div class="sect3" title="Character sets"><div class="titlepage"><div><div><h3 class="title"><a id="id531978"/>Character sets</h3></div></div></div><p><a id="I_indexterm5_d1e7969" class="indexterm"/>The knottiest portability problem involves character
+          sets. The C code generated by every flex implementation uses
+          character codes as indexes into tables in the lexer. If both the
+          original and target machines use the same character code, such as
+          ASCII, the ported lexer will work. You may have to deal with
+          different line end conventions: Unix systems end a line with a plain
+          <code class="literal">\n</code>, while Microsoft Windows and
+          other systems use <code class="literal">\r\n</code>. You often
+          can have lexers ignore <code class="literal">\r</code> and
+          treat <code class="literal">\n</code> as the line end in
+          either case.</p><p>When the original and target machines use different character
+          sets, for example, ASCII and EBCDIC, the lexer won’t work at all,
+          since all of the character codes used as indexes will be wrong.
+          Sophisticated users have sometimes been able to post-process the
+          tables to rebuild them for other character sets, but in general the
+          only reasonable approach is to find a version of flex that runs on
+          the target machine or else to redefine the lexer’s input routine to
+          translate the input characters into the original character set. See
+          <a class="xref" href="ch05.xhtml#inputstrings" title="Input from Strings">Input from Strings</a> for how to change the input
+          routine.</p></div></div></div><div class="sect1" title="Reentrant Scanners"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e7991"/>Reentrant Scanners</h1></div></div></div><p><a id="I_indexterm5_d1e7995" class="indexterm"/><a id="I_indexterm5_d1e8000" class="indexterm"/><a id="I_indexterm5_d1e8005" class="indexterm"/>The normal code for a flex scanner places its state
+      information in static variables so that each call to <code class="literal">yylex()</code><a id="I_indexterm5_d1e8013" class="indexterm"/><a id="I_indexterm5_d1e8016" class="indexterm"/> resumes where the previous one left off, using the
+      existing input buffer, input file, start state, and so forth. In some
+      situations, it can be useful to have multiple copies of the scanner
+      active at once, typically in threaded programs that handle multiple independent input sources.
+      For this situation, flex provides <code class="literal">%option reentrant</code> or <code class="literal">--reentrant</code>.</p><a id="I_programlisting5_d1e8032"/><pre class="programlisting">yyscan_t scanner;
+
+if(yylex_init(&amp;scanner)) { printf("no scanning today\n"); abort(); }
+while((yylex(scanner))
+   ... do something ...;
+yylex_destroy(scanner);</pre><p>In a reentrant scanner, all of the state information about the
+      scan in progress is kept in a <code class="literal">yyscan_t</code> variable, which is actually a pointer
+      to the structure with all the state. You create the scanner with
+      <code class="literal">yylex_init()</code>, passing the address of
+      the <code class="literal">yyscan_t</code> as an argument, and it
+      returns 0 on success or 1 if it can’t allocate the structure. Then you
+      pass the <code class="literal">yyscan_t</code> to every call to
+      <code class="literal">yylex()</code> and finally delete it with
+      <code class="literal">yylex_destroy</code>. Each call to <code class="literal">yylex_init</code> creates a separate scanner, and
+      several scanners can be active at once, passing the appropriate
+      structure to each call to <code class="literal">yylex()</code>.</p><p>In a reentrant scanner, some variables commonly used in <code class="literal">yylex</code> are redefined as macros, so you can use
+      them the same as in an ordinary scanner. These variables are <code class="literal">yyin</code>, <code class="literal">yyout</code>, <code class="literal">yyextra</code>, <code class="literal">yyleng</code>, <code class="literal">yytext</code>, <code class="literal">yylineno</code>, <code class="literal">yycolumn</code>, and <code class="literal">yy_flex_debug</code>. The macros <code class="literal">BEGIN</code>, <code class="literal">YY_START</code>, <code class="literal">YYSTATE</code>, <code class="literal">yymore()</code>, <code class="literal">unput()</code>, and <code class="literal">yyless()</code> are also modified, so you can use
+      them the same as in an ordinary scanner. All of the routines that create
+      and manipulate input buffers take an additional <code class="literal">yyscan_t</code> argument, for example, <code class="literal">yyrestart(file, scanner)</code>. The other routines
+      that take a <code class="literal">yyscan_t</code> argument are
+      <code class="literal">yy_switch_to_buffer</code>, <code class="literal">yy_create_buffer</code>, <code class="literal">yy_delete_buffer</code>, <code class="literal">yy_flush_buffer</code>, <code class="literal">yypush_buffer_state</code>, <code class="literal">yypop_buffer_state</code>, <code class="literal">yy_scan_buffer</code>, <code class="literal">yy_scan_string</code>, and <code class="literal">yy_scan_bytes</code>.</p><div class="sect2" title="Extra Data for Reentrant Scanners"><div class="titlepage"><div><div><h2 class="title"><a id="id491739"/>Extra Data for Reentrant Scanners</h2></div></div></div><p>When using a reentrant scanner, you’ll often have some other
+        per-scanner data, such as a symbol table for the names the scanner has
+        matched. You can use <code class="literal">yylex_init_extra</code> rather than <code class="literal">yylex_init</code>, passing it a pointer to your own
+        per-scanner data. Within <code class="literal">yylex()</code>,
+        your pointer is available as <code class="literal">yyextra</code>. The extra data is of type <code class="literal">YY_EXTRA_TYPE</code>, which is normally <code class="literal">void *</code>, but you can <code class="literal">#define</code> it to another type if you want.</p><a id="I_programlisting5_d1e8178"/><pre class="programlisting">yyscan_t scanner;
+symbol *symp;
+
+symp = symtabinit(); <em class="lineannotation"><span class="lineannotation"> make per-scanner symbol table </span></em>
+
+if(yylex_init_extra(symp, &amp;scanner)) { printf("no scanning today\n"); abort(); }
+while((yylex(scanner))
+   ... do something ...;
+yylex_destroy(scanner);
+
+... inside yylex ...
+[a-z]+  { symlookup(yyextra, yylval); }</pre></div><div class="sect2" title="Access to Reentrant Scanner Data"><div class="titlepage"><div><div><h2 class="title"><a id="id479861"/>Access to Reentrant Scanner Data</h2></div></div></div><p>In a normal scanner, code outside <code class="literal">yylex()</code> can refer directly to <code class="literal">yyin</code>, <code class="literal">yyout</code>, and other global variables, but in a
+        reentrant scanner, they’re part of the per-scanner data structure.
+        Flex provides access routines to get and set the major
+        variables.</p><a id="I_programlisting5_d1e8197"/><pre class="programlisting">YY_EXTRA_TYPE yyget_extra (yyscan_t yyscanner ); <em class="lineannotation"><span class="lineannotation">yyextra</span></em>
+void yyset_extra (YY_EXTRA_TYPE user_defined ,yyscan_t yyscanner );
+
+FILE *yyget_in (yyscan_t yyscanner ); <em class="lineannotation"><span class="lineannotation">yyin</span></em>
+void yyset_in  (FILE * in_str ,yyscan_t yyscanner );
+
+FILE *yyget_out (yyscan_t yyscanner ); <em class="lineannotation"><span class="lineannotation">yyout</span></em>
+void yyset_out  (FILE * out_str ,yyscan_t yyscanner );
+
+int yyget_lineno (yyscan_t yyscanner );
+void yyset_lineno (int line_number ,yyscan_t yyscanner );
+
+int yyget_leng(yyscan_t yyscanner); <em class="lineannotation"><span class="lineannotation">yyleng, read only</span></em>
+
+char *yyget_text(yyscan_t yyscanner); <em class="lineannotation"><span class="lineannotation">yytext</span></em></pre><p>These functions are all available in nonreentrant scanners,
+        without the <code class="literal">yyscanner</code> argument,
+        although there’s little need for them since they are entirely
+        equivalent to reading or setting the appropriate variable.</p></div><div class="sect2" title="Reentrant Scanners, Nested Files, and Multiple Scanners"><div class="titlepage"><div><div><h2 class="title"><a id="id525196"/>Reentrant Scanners, Nested Files, and Multiple Scanners</h2></div></div></div><p><a id="I_indexterm5_d1e8222" class="indexterm"/><a id="I_indexterm5_d1e8227" class="indexterm"/>Reentrant scanners, nested files, and multiple scanners
+        all address sort of the same issue, more than one scanner in the same
+        program, but they each do very different things.</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>Reentrant scanners allow you to have multiple instances
+            simultaneously active that are applying the same set of patterns
+            to separate input sources.</p></li><li class="listitem"><p>Nested files (using <code class="literal">yy_switch_to_buffer</code> and related
+            routines) allow you to have a single scanner that reads from one
+            file, then another, and then perhaps returns to the first
+            file.</p></li><li class="listitem"><p>Multiple scanners allow you to apply different sets of
+            patterns to different input sources.</p></li></ul></div><p>You can combine all three of these as needed. For example, you
+        can call <code class="literal">yy_switch_to_buffer</code> in a
+        reentrant scanner to change the input source for a particular
+        instance. You can say <code class="literal"> %option reentrant
+        prefix="foo"</code> to create a scanner that can be invoked
+        multiple times (call <code class="literal">foolex_init</code> to
+        get started) and can be linked into the same program with other
+        reentrant or nonreentrant scanners.</p></div><div class="sect2" title="Using Reentrant Scanners with Bison"><div class="titlepage"><div><div><h2 class="title"><a id="id471039"/>Using Reentrant Scanners with Bison</h2></div></div></div><p><a id="I_indexterm5_d1e8261" class="indexterm"/>Bison has its own option to create a reentrant parser,
+        known as <code class="literal">pure-parser</code><a id="I_indexterm5_d1e8269" class="indexterm"/>, which can, with some effort, be used along with a
+        reentrant scanner. A pure parser normally gets tokens by calling
+        <code class="literal">yylex</code>, with a pointer to the place
+        to put the token value, but without the <code class="literal">yyscan_t</code> value that flex needs. (Flex and
+        bison developers don’t always talk to each other.) Flex provides
+        <code class="literal">%option reentrant bison-bridge</code>,
+        which changes the declaration of <code class="literal">yylex</code> to be</p><a id="I_programlisting5_d1e8286"/><pre class="programlisting"> int yylex (YYSTYPE * yylval_param ,yyscan_t yyscanner);</pre><p>and also sets <code class="literal">yylval</code>
+        automatically from the argument. One important difference from normal
+        scanners is that <code class="literal">yylval</code> is now a
+        pointer to a union rather than a union, so a reference that was
+        <code class="literal">yylval.member</code> is now <code class="literal">yylval-&gt;member</code>. See <a class="xref" href="ch09.xhtml#pure" title="Pure Scanners and Parsers">Pure Scanners and Parsers</a> for an example of a pure bison parser calling a
+        reentrant scanner.</p></div></div><div class="sect1" title="Regular Expression Syntax"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e8304"/>Regular Expression Syntax</h1></div></div></div><p><a id="index-112B675WO3G" class="indexterm"/><a id="index-006I318WF6T" class="indexterm"/>Flex patterns are an extended version of the regular
+      expressions used by editors and utilities such as grep. Regular
+      expressions are composed of normal characters, which represent
+      themselves, and metacharacters, which have special meaning in a pattern.
+      All characters other than those listed in the following section are
+      regular characters. Whitespace (spaces and tabs) separate the pattern
+      from the action and so must be quoted to include them in a
+      pattern.</p><div class="sect2" title="Metacharacters"><div class="titlepage"><div><div><h2 class="title"><a id="id501146"/>Metacharacters</h2></div></div></div><p><a id="index-803Q551OU7P" class="indexterm"/>The metacharacters in a flex expression include the
+        following:</p><div class="variablelist"><dl><dt><span class="term"><code class="literal">.</code></span></dt><dd><p><a id="I_indexterm5_d1e8336" class="indexterm"/><a id="I_indexterm5_d1e8339" class="indexterm"/>Matches any single character except the newline
+              character <code class="literal">\n</code>.</p></dd><dt><span class="term"><code class="literal">[]</code></span></dt><dd><p><a id="I_indexterm5_d1e8352" class="indexterm"/><a id="I_indexterm5_d1e8355" class="indexterm"/>Match any one of the characters within the
+              brackets. A range of characters is indicated with the <code class="literal">-</code> (dash), for example, <code class="literal">[0-9]</code> for any of the 10 digits. If the
+              first character after the open bracket is a dash or close
+              bracket, it is not interpreted as a metacharacter. If the first
+              character is a circumflex <code class="literal">^</code>,
+              it changes the meaning to match any character except those
+              within the brackets. (Such a character class will match a
+              newline unless you explicitly exclude it.) Other metacharacters
+              have no special meaning within square brackets except that C
+              escape sequences starting with <code class="literal">\</code> are recognized. POSIX added more
+              special square bracket patterns for internationalization. See
+              the last few items in this list for details.</p></dd><dt><span class="term"><code class="literal">[a-z]{-}[jv]
+            [a-f]{+}[0-9]</code></span></dt><dd><p>Set difference or union of character classes. The pattern
+              matches characters that are in the first class, with the
+              characters in the second class omitted (for <code class="literal">{-}</code>) or added (for <code class="literal">{+}</code>).</p></dd><dt><span class="term"><code class="literal">*</code></span></dt><dd><p><a id="I_indexterm5_d1e8390" class="indexterm"/><a id="I_indexterm5_d1e8393" class="indexterm"/>Matches zero or more of the preceding expression.
+              For example, the pattern <code class="literal">a.*z</code>
+              matches any string that starts with <span class="emphasis"><em>a</em></span> and
+              ends with <span class="emphasis"><em>z</em></span>, such as <span class="emphasis"><em><code class="literal">az</code></em></span>, <span class="emphasis"><em><code class="literal">abz</code></em></span> or <span class="emphasis"><em><code class="literal">alcatraz</code></em></span>.</p></dd><dt><span class="term">+</span></dt><dd><p><a id="I_indexterm5_d1e8424" class="indexterm"/><a id="I_indexterm5_d1e8427" class="indexterm"/>Matches one or more occurrence of the preceding
+              regular expression. For example, <code class="literal">x+</code> matches <span class="emphasis"><em><code class="literal">x</code></em></span>, <span class="emphasis"><em><code class="literal">xxx</code></em></span>, or <span class="emphasis"><em><code class="literal">xxxxxx</code></em></span>, but not an empty
+              string, and <code class="literal">(ab)+</code> matches
+              <span class="emphasis"><em><code class="literal">ab</code></em></span>,
+              <span class="emphasis"><em><code class="literal">abab</code></em></span>,
+              <span class="emphasis"><em><code class="literal">ababab</code></em></span>,
+              and so forth.</p></dd><dt><span class="term">?</span></dt><dd><p><a id="I_indexterm5_d1e8467" class="indexterm"/><a id="I_indexterm5_d1e8470" class="indexterm"/>Matches zero or one occurrence of the preceding
+              regular expression. For example, <code class="literal">-?[0-9]+</code> indicates a number with an
+              optional leading unary minus.</p></dd><dt><span class="term">{}</span></dt><dd><p><a id="I_indexterm5_d1e8482" class="indexterm"/><a id="I_indexterm5_d1e8485" class="indexterm"/>Mean different things depending on what is inside.
+              A single number <code class="literal">{n}</code> means
+              <code class="literal">n</code> repetitions of the
+              preceding pattern; for example, <code class="literal">[A-Z]{3}</code> matches any three uppercase
+              letters. If the braces contain two numbers separated by a comma,
+              <code class="literal">{n,m}</code>, they are the minimum
+              and maximum numbers of repetitions of the preceding pattern. For
+              example, <code class="literal">A{1,3}</code> matches one
+              to three occurrences of the letter <span class="emphasis"><em>A</em></span>. If
+              the second number is missing, it is taken to be infinite, so
+              <span class="emphasis"><em>{1,}</em></span> means the same as
+              <span class="emphasis"><em>+,</em></span> and <span class="emphasis"><em>{0,}</em></span> is the
+              same as <span class="emphasis"><em>*</em></span>. If the braces contain a name, it
+              refers to the substitution by that name.</p></dd><dt><span class="term">\</span></dt><dd><p><a id="I_indexterm5_d1e8525" class="indexterm"/><a id="I_indexterm5_d1e8528" class="indexterm"/>If the following character is a lowercase letter,
+              then it is a C escape sequence such as <code class="literal">\t</code> for tab. Some implementations also
+              allow octal and hex characters in the form <code class="literal">\123</code> and <code class="literal">\x3f</code>. Otherwise, <code class="literal">\</code> quotes the following character, so
+              <code class="literal">\*</code> matches an
+              asterisk.</p></dd><dt><span class="term">()</span></dt><dd><p><a id="I_indexterm5_d1e8553" class="indexterm"/><a id="I_indexterm5_d1e8556" class="indexterm"/>Group a series of regular expressions together.
+              Each of <code class="literal">*</code>, <code class="literal">+</code>, and <code class="literal">[]</code> affects only the expression
+              immediately to its left, and <code class="literal">|</code> normally affects everything to its
+              left and right. Parentheses can change this; for example,
+              <code class="literal">(ab|cd)?ef</code> matches
+              <span class="emphasis"><em>abef</em></span>, <span class="emphasis"><em>cdef</em></span>, or just
+              <span class="emphasis"><em>ef</em></span>.</p></dd><dt><span class="term">|</span></dt><dd><p><a id="I_indexterm5_d1e8590" class="indexterm"/><a id="I_indexterm5_d1e8593" class="indexterm"/>Matches either the preceding regular expression or
+              the subsequent regular expression. For example, <code class="literal">twelve|12</code> matches either
+              <span class="emphasis"><em>twelve</em></span> or <span class="emphasis"><em>12</em></span>.</p></dd><dt><span class="term">“...”</span></dt><dd><p>Match everything within the quotation marks literally.
+              Metacharacters other than <code class="literal">\</code>
+              lose their meaning. For example, <code class="literal">"/*"</code> matches the two characters
+              <code class="literal">/*</code>.</p></dd><dt><span class="term">/</span></dt><dd><p><a id="I_indexterm5_d1e8627" class="indexterm"/><a id="I_indexterm5_d1e8630" class="indexterm"/>Matches the preceding regular expression but only
+              if followed by the following regular expression. For example,
+              <code class="literal">0/1</code> matches “0” in the string
+              “01” but does not match anything in the strings “0” or “02”.
+              Only one slash is permitted per pattern, and a pattern cannot
+              contain both a slash and a trailing <code class="literal">$</code>.</p></dd><dt><span class="term">^</span></dt><dd><p><a id="I_indexterm5_d1e8645" class="indexterm"/><a id="I_indexterm5_d1e8648" class="indexterm"/>As the first character of a regular expression, it
+              matches the beginning of a line; it is also used for negation
+              within square brackets. Otherwise, it’s not special.</p></dd><dt><span class="term">$</span></dt><dd><p><a id="I_indexterm5_d1e8657" class="indexterm"/><a id="I_indexterm5_d1e8660" class="indexterm"/>As the last character of a regular expression, it
+              matches the end of a line—otherwise not special. This has the
+              same meaning as <code class="literal">/\n</code> at the
+              end of an expression.</p></dd><dt><span class="term">&lt;&gt;</span></dt><dd><p><a id="I_indexterm5_d1e8672" class="indexterm"/><a id="I_indexterm5_d1e8675" class="indexterm"/>A name or list of names in angle brackets at the
+              beginning of a pattern makes that pattern apply only in the
+              given start states.</p></dd><dt><span class="term">&lt;&lt;EOF&gt;&gt;</span></dt><dd><p>The special pattern <code class="literal">&lt;&lt;EOF&gt;&gt;</code> matches the end of
+              file.</p></dd><dt><span class="term">(?# comment )</span></dt><dd><p>Perl-style expression comments.</p></dd><dt><span class="term">(?a:pattern) or (?a-x:pattern)</span></dt><dd><p>Perl-style pattern modifiers. Interpret the pattern using
+              modifier <code class="literal">a</code>, but without
+              modifier <code class="literal">x</code>. The modifiers are
+              <code class="literal">i</code> for case insensitive,
+              <code class="literal">s</code> to match as though
+              everything is a single line (in particular, make the <code class="literal">.</code> match a <code class="literal">\n</code> character), and <code class="literal">x</code> to ignore whitespace and C-style
+              comments. The pattern can extend over more than one line.</p></dd><dt><span class="term"/></dt><dd><p><code class="literal">(?i:xyz)
+              [Xx][Yy][Zz]</code></p><p><code class="literal">(?i:x(?-i:y)z)
+              [Xx]y[Zz]</code></p><p><code class="literal">(?s:a.b)
+              a(.|\n)b</code></p><p><code class="literal">(?x:a /* hi */ b)
+              ab</code></p></dd><dt><a id="c"/><span class="term"/></dt><dd><p><a id="charclass"/>Flex also allows a limited set of POSIX character classes
+              inside character class expressions:</p></dd><dt><span class="term"/></dt><dd><p><code class="literal">[:alnum:] [:alpha:] [:blank:]
+              [:cntrl:] [:digit:] [:graph:] [:lower:] [:print:] [:punct:]
+              [:space:] [:upper:] [:xdigit:]</code></p></dd><dt><span class="term"/></dt><dd><p>A character class expression stands for any character of a
+              named type handled by the ctype macros, with the types being
+              <code class="literal">alnum</code>, <code class="literal">alpha</code>, <code class="literal">blank</code>, <code class="literal">cntrl</code>, <code class="literal">digit</code>, <code class="literal">graph</code>, <code class="literal">lower</code>, <code class="literal">print</code>, <code class="literal">punct</code>, <code class="literal">space</code>, <code class="literal">upper</code>, and <code class="literal">xdigit</code>. The class name is enclosed in
+              square brackets and colons and must itself be inside a character
+              class. For example, <code class="literal">[[:digit:]]</code> would be equivalent to
+              <code class="literal">[0123456789]</code>, and <code class="literal">[x[:xdigit:]]</code>, equivalent to <code class="literal">[x0123456789AaBbCcDdEeFf]</code>.<a id="I_indexterm5_d1e8803" class="indexterm"/><a id="I_indexterm5_d1e8805" class="indexterm"/><a id="I_indexterm5_d1e8806" class="indexterm"/></p></dd></dl></div></div></div><div class="sect1" title="REJECT"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e8807"/>REJECT</h1></div></div></div><p><a id="I_indexterm5_d1e8811" class="indexterm"/><a id="I_indexterm5_d1e8816" class="indexterm"/>Usually lex separates the input into nonoverlapping
+      tokens. But sometimes you want all occurrences of a token even if it
+      overlaps with other tokens. The special action <code class="literal">REJECT</code> lets you do this. If an action executes
+      <code class="literal">REJECT</code>, flex conceptually puts back
+      the text matched by the pattern and finds the next best match for it.
+      The example finds all occurrences of the words
+      <span class="emphasis"><em>pink</em></span>, <span class="emphasis"><em>pin</em></span>, and
+      <span class="emphasis"><em>ink</em></span> in a file, even when they overlap:</p><a id="I_programlisting5_d1e8836"/><pre class="programlisting">...
+%%
+pink    { npink++; REJECT;  }
+ink     { nink++; REJECT; }
+pin     { npin++; REJECT; }
+.     |
+\n     ;    /* discard other characters */</pre><p>If the input contains the word <span class="emphasis"><em>pink</em></span>, all
+      three patterns will match. Without the <code class="literal">REJECT</code> statements, only
+      <span class="emphasis"><em>pink</em></span> would match.</p><p>Scanners that use <code class="literal">REJECT</code> are
+      much larger and slower than those that don’t, since they need
+      considerable extra information to allow backtracking and
+      re-lexing.</p></div><div class="sect1" title="Returning Values from yylex()"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e8854"/>Returning Values from yylex()</h1></div></div></div><p><a id="I_indexterm5_d1e8858" class="indexterm"/><a id="I_indexterm5_d1e8863" class="indexterm"/><a id="I_indexterm5_d1e8868" class="indexterm"/>The C code executed when a pattern matches a token can
+      contain a return statement that returns a value from <code class="literal">yylex()</code> to its caller, typically a parser
+      generated by yacc. The next time <code class="literal">yylex()</code> is called, the scanner picks up where
+      it left off. When a scanner matches a token of interest to the parser
+      (e.g., a keyword, variable name, or operator), it returns to pass the
+      token back to the parser. When it matches a token not of interest to the
+      parser (e.g., whitespace or a comment), it does not return, and the
+      scanner immediately proceeds to match another token.</p><p>This means that you cannot restart a lexer just by calling
+      <code class="literal">yylex()</code>. You have to reset it into
+      the default state using <code class="literal">BEGIN INITIAL</code>
+      and reset the input state so that the next call to <code class="literal">input()</code> will start reading the new input. A
+      call to <code class="literal">yyrestart(file)</code>, where
+      <code class="literal">file</code> is a standard I/O file pointer,
+      arranges to start reading from that file.</p></div><div class="sect1" title="Start States"><div class="titlepage"><div><div><h1 class="title"><a id="startstates"/>Start States</h1></div></div></div><p><a id="I_indexterm5_d1e8899" class="indexterm"/><a id="I_indexterm5_d1e8904" class="indexterm"/>You can declare start states, also called <span class="emphasis"><em>start
+      conditions</em></span> or <span class="emphasis"><em>start rules</em></span>, in the
+      definition section. Start states are used to limit the scope of certain
+      rules or to change the way the lexer treats part of the file. Start
+      states come in two versions, inclusive declared with <code class="literal">%s</code> and exclusive declared with <code class="literal">%x</code>. For example, suppose we want to scan the
+      following C preprocessor directive:</p><a id="I_programlisting5_d1e8922"/><pre class="programlisting">#include &lt;somefile.h&gt;</pre><p>Normally, the angle brackets and the filename would be scanned as
+      the five tokens <code class="literal">&lt;</code>, <code class="literal">somefile</code>, <code class="literal">.</code>, <code class="literal">h</code>, and
+      <code class="literal">&gt;</code>, but after <code class="literal">#include</code>, they are a single filename token.
+      You can use a start state to apply a set of rules only at certain times.
+      Be warned that those rules that do not have start states can apply in
+      any inclusive state! The <code class="literal">BEGIN</code>
+      statement (see <a class="xref" href="ch05.xhtml#begin" title="BEGIN">BEGIN</a>) in an action sets the current
+      start state. For example:</p><a id="I_programlisting5_d1e8950"/><pre class="programlisting">%s INCLMODE
+%%
+^"#include" { BEGIN INCLMODE; }
+&lt;INCLMODE&gt;"&lt;" [^&gt;\n]+"&gt;" { ... do something with the name ...  }
+&lt;INCLMODE&gt;\n      { BEGIN INITIAL;  /* return to normal */ }</pre><p>You declare a start state with a <code class="literal">%s</code> or <code class="literal">%x</code>
+      line. For example:</p><a id="I_programlisting5_d1e8960"/><pre class="programlisting">%s  PREPROC</pre><p>The previous code creates the inclusive start state <code class="literal">PREPROC</code>. In the rules section, then, a rule
+      that has <code class="literal">&lt;PREPROC&gt;</code> prepended to
+      it will apply only in state <code class="literal">PREPROC</code>.
+      The standard state in which lex starts is state zero, also known as
+      <code class="literal">INITIAL</code>. The current start state can
+      be found in <code class="literal">YY_START</code> (also called
+      <code class="literal">YYSTATE</code> for compatibility with older
+      versions of lex), which is useful when you have a state that wants to
+      switch back to whatever the previous state was, for example:</p><a id="I_programlisting5_d1e8983"/><pre class="programlisting">%s A B C X
+ int savevar;
+%%
+&lt;A,B,C&gt;start { save = YY_START; BEGIN X; }
+&lt;X&gt;end       { BEGIN save;</pre><p>Flex also has exclusive start states declared with <code class="literal">%x</code>. The difference between regular and
+      exclusive start states is that a rule with no start state is not matched
+      when an exclusive state is active. In practice, exclusive states are a
+      lot more useful than regular states, and you will probably want to use
+      them.</p><p>Exclusive start states make it easy to do things like recognize C
+      language comments:</p><a id="I_programlisting5_d1e8993"/><pre class="programlisting">%x COMMENT
+%%
+"/*"             { BEGIN COMMENT;  /* switch to comment mode */ }
+&lt;COMMENT&gt;.       |
+&lt;COMMENT&gt;\n ;                  /* throw away comment text */
+&lt;COMMENT&gt;"*/"    { BEGIN INITIAL;  /* return to regular mode */ }</pre><p>This wouldn’t work using regular start states since all of the
+      regular token patterns would still be active in <code class="literal">COMMENT</code> state.</p></div><div class="sect1" title="unput()"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e9001"/>unput()</h1></div></div></div><p><a id="I_indexterm5_d1e9005" class="indexterm"/><a id="I_indexterm5_d1e9010" class="indexterm"/><a id="I_indexterm5_d1e9013" class="indexterm"/>The macro <code class="literal">unput(c)</code>
+      returns the character <code class="literal">c</code> to the input
+      stream. Unlike the analogous stdio routine <code class="literal">unputc()</code>, you can call <code class="literal">unput()</code> several times in a row to put several
+      characters back in the input. The limit of data “pushed back” by
+      <code class="literal">unput()</code> varies, but it is always at
+      least as great as the longest token the lexer recognizes.</p><p>For example, when expanding macros such as C’s <code class="literal">#define</code>, you need to insert the text of the
+      macro in place of the macro call. One way to do this is to call <code class="literal">unput()</code> to push back the text, for
+      example:</p><a id="I_programlisting5_d1e9043"/><pre class="programlisting">... in lexer action code...
+char *p = macro_contents () ;
+char *q = p + strlen(p);
+
+while(q &gt; p)
+    unput(*--q);    /* push back right-to-left */</pre></div><div class="sect1" title="yyinput() yyunput()"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e9045"/>yyinput() yyunput()</h1></div></div></div><p><a id="I_indexterm5_d1e9049" class="indexterm"/><a id="I_indexterm5_d1e9054" class="indexterm"/><a id="I_indexterm5_d1e9057" class="indexterm"/>In C++ scanners, the macros <code class="literal">input()</code> and <code class="literal">unput()</code> are called <code class="literal">yyinput()</code> and <code class="literal">yyunput()</code> to avoid colliding with C++ library
+      names.</p></div><div class="sect1" title="yyleng"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e9075"/>yyleng</h1></div></div></div><p><a id="I_indexterm5_d1e9079" class="indexterm"/><a id="I_indexterm5_d1e9084" class="indexterm"/>Whenever a scanner matches a token, the text of the token
+      is stored in the null-terminated
+      string <code class="literal">yytext</code>, and its length is in
+      <code class="literal">yyleng</code>. The length in <code class="literal">yyleng</code> is the same as the value that would be
+      returned by <code class="literal">strlen(yytext)</code>.</p></div><div class="sect1" title="yyless()"><div class="titlepage"><div><div><h1 class="title"><a id="yyless"/>yyless()</h1></div></div></div><p><a id="I_indexterm5_d1e9108" class="indexterm"/><a id="I_indexterm5_d1e9113" class="indexterm"/><a id="I_indexterm5_d1e9116" class="indexterm"/>You can call <code class="literal">yyless(n)</code>
+      from the code associated with a rule to “push back” all but the first
+      <code class="literal">n</code> characters of the token. This can
+      be useful when the rule to determine the boundary between tokens is
+      inconvenient to express as a regular expression. For example, consider a
+      pattern to match quoted strings, but where a quotation mark within a
+      string can be escaped with a backslash:</p><a id="I_programlisting5_d1e9128"/><pre class="programlisting">\" [^"]*\"    { /* is the char before close quote a \ ? */
+                    if(yytext[yyleng-2]   ==  '\\') {
+                         yyless(yyleng-1); /* return last quote */
+                         yymore();         /* append next string */
+                       } else {
+                       ...  /* process string */
+                       }
+                 }</pre><p>If the quoted string ends with a backslash before the closing
+      quotation mark, it uses <code class="literal">yyless()</code> to
+      push back the closing quote, and it uses <code class="literal">yymore()</code> to tell lex to append the next token
+      to this one (see <a class="xref" href="ch05.xhtml#yymore" title="yymore()">yymore()</a>). The next token will be the
+      rest of the quoted string starting with the pushed back quote, so the
+      entire string will end up in <code class="literal">yytext</code>.</p><p>A call to <code class="literal">yyless()</code> has the same
+      effect as calling <code class="literal">unput()</code> with the
+      characters to be pushed back, but <code class="literal">yyless()</code> is often much faster because it can
+      take advantage of the fact that the characters pushed back are the same
+      ones just fetched from the input.</p><p>Another use of <code class="literal">yyless()</code> is to
+      reprocess a token using rules for a different start state:</p><a id="I_programlisting5_d1e9159"/><pre class="programlisting">sometoken  { BEGIN OTHER_STATE; yyless(0); }</pre><p><code class="literal">BEGIN</code> tells lex to use another
+      start state, and the call to <code class="literal">yyless()</code>
+      pushes back all of the token’s characters so they can be reread using
+      the new start state. If the new start state doesn’t enable different
+      patterns that take precedence over the current one, <code class="literal">yyless(0)</code> will cause an infinite loop in the
+      scanner because the same token is repeatedly recognized and pushed back.
+      (This is similar to the function of <code class="literal">REJECT</code> but is considerably faster.) Unlike
+      <code class="literal">REJECT</code>, it will loop and match the
+      same pattern unless you use <code class="literal">BEGIN</code> to
+      change what patterns are active.</p></div><div class="sect1" title="yylex() and YY_DECL"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect15_d1e9180"/>yylex() and YY_DECL</h1></div></div></div><p><a id="I_indexterm5_d1e9184" class="indexterm"/><a id="I_indexterm5_d1e9189" class="indexterm"/><a id="I_indexterm5_d1e9192" class="indexterm"/><a id="I_indexterm5_d1e9197" class="indexterm"/><a id="I_indexterm5_d1e9200" class="indexterm"/><a id="I_indexterm5_d1e9205" class="indexterm"/>Normally, <code class="literal">yylex</code> is
+      called with no arguments and interacts with the rest of the program
+      primarily through global variables. The macro <code class="literal">YY_DECL</code> declares its calling sequence, and you
+      can redefine it to add whatever arguments you want.</p><a id="I_programlisting5_d1e9217"/><pre class="programlisting">%{
+#define YY_DECL int yylex(int *fruitp)
+%}
+
+%%
+
+apple|orange   { (*fruitp)++; }</pre><p>Note that there is no semicolon in <code class="literal">YY_DECL</code>, since it is expanded immediately
+      before the open brace at the beginning of the body of <code class="literal">yylex</code>.</p><p>When using a reentrant or bison-bridge parser, you can still
+      redefine <code class="literal">YY_DECL</code>, but you must be
+      sure to include the parameters that the reentrant code in the lexer is
+      expecting. In a bison-bridge scanner, the normal definition is as
+      follows:</p><a id="I_programlisting5_d1e9232"/><pre class="programlisting">#define YY_DECL int yylex (YYSTYPE * yylval_param , yyscan_t yyscanner)</pre><p>In a plain reentrant scanner there’s no <code class="literal">yylval_param</code>.</p></div><div class="sect1" title="yymore()"><div class="titlepage"><div><div><h1 class="title"><a id="yymore"/>yymore()</h1></div></div></div><p><a id="I_indexterm5_d1e9243" class="indexterm"/><a id="I_indexterm5_d1e9248" class="indexterm"/>You can call <code class="literal">yymore()</code>
+      from the code associated with a rule to tell lex to append the next
+      token to this one. For example:</p><a id="I_programlisting5_d1e9255"/><pre class="programlisting">%%
+hyper yymore ();
+text   printf("Token is %s\n", yytext);</pre><p>If the input string is <code class="literal">hypertext</code>, the output will be “Token is
+      hypertext.”</p><p>Using <code class="literal">yymore()</code> is most often
+      useful where it is inconvenient or impractical to define token
+      boundaries with regular expressions. See <a class="xref" href="ch05.xhtml#yyless" title="yyless()">yyless()</a> for
+      an example.</p></div><div class="sect1" title="yyrestart()"><div class="titlepage"><div><div><h1 class="title"><a id="yyrestart"/>yyrestart()</h1></div></div></div><p><a id="I_indexterm5_d1e9273" class="indexterm"/><a id="I_indexterm5_d1e9278" class="indexterm"/>You can call <code class="literal">yyrestart(f)</code> to make your scanner read from
+      open stdio file <code class="literal">f</code>. See <a class="xref" href="ch05.xhtml#stdiochain" title="Stdio File Chaining">Stdio File Chaining</a>.</p></div><div class="sect1" title="yy_scan_string and yy_scan_buffer"><div class="titlepage"><div><div><h1 class="title"><a id="yyscan"/>yy_scan_string and yy_scan_buffer</h1></div></div></div><p><a id="I_indexterm5_d1e9294" class="indexterm"/><a id="I_indexterm5_d1e9299" class="indexterm"/><a id="I_indexterm5_d1e9304" class="indexterm"/><a id="I_indexterm5_d1e9307" class="indexterm"/>These functions prepare to take the scanner’s input from a
+      string or buffer in memory. See <a class="xref" href="ch05.xhtml#inputstrings" title="Input from Strings">Input from Strings</a>.</p></div><div class="sect1" title="YY_USER_ACTION"><div class="titlepage"><div><div><h1 class="title"><a id="yyuseraction"/>YY_USER_ACTION</h1></div></div></div><p><a id="I_indexterm5_d1e9317" class="indexterm"/><a id="I_indexterm5_d1e9322" class="indexterm"/><a id="I_indexterm5_d1e9327" class="indexterm"/>This macro is expanded just before the code for each
+      scanner action, after <code class="literal">yytext</code> and
+      <code class="literal">yyleng</code> are set up. Its most common
+      use is to set bison token locations. See <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a>.</p></div><div class="sect1" title="yywrap()"><div class="titlepage"><div><div><h1 class="title"><a id="yywrap"/>yywrap()</h1></div></div></div><p><a id="I_indexterm5_d1e9343" class="indexterm"/><a id="I_indexterm5_d1e9348" class="indexterm"/>When a lexer encounters an end of file, it optionally
+      calls the routine <code class="literal">yywrap()</code> to find
+      out what to do next. If <code class="literal">yywrap()</code>
+      returns 0, the scanner continues scanning, while if it returns 1, the
+      scanner returns a zero token to report the end-of-file. If your lexer
+      doesn’t use <code class="literal">yywrap()</code> to switch files,
+      the option <code class="literal">%option noyywrap</code> removes
+      the calls to <code class="literal">yywrap()</code>. The special
+      token <code class="literal">&lt;&lt;EOF&gt;&gt;</code> is usually
+      a better way to handle end-of-file situations.</p><p>The standard version of <code class="literal">yywrap()</code> in the flex library always returns 1,
+      but if you use <code class="literal">yywrap()</code>, you should
+      replace it with one of your own. If <code class="literal">yywrap()</code> returns 0 to indicate that there is
+      more input, it needs first to adjust <code class="literal">yyin</code> to point to a new file, probably using
+      <code class="literal">fopen()</code>.<a id="I_indexterm5_d1e9391" class="indexterm"/></p></div><div class="footnotes"><br/><hr/><div class="footnote"><p><sup>[<a id="ftn.id531514" href="#id531514" class="para">19</a>] </sup>According to the guy who wrote it.</p></div></div></div></div></body>
+</html>

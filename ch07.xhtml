@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 7. Ambiguities and Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="conflict"/>Chapter 7. Ambiguities and Conflicts</h1></div></div></div><p><a id="index-057W650GJ2L" class="indexterm"/>This chapter focuses on finding and correcting
+    <span class="emphasis"><em>conflicts</em></span> within a bison grammar. Conflicts occur
+    when bison reports shift/reduce and reduce/reduce errors. Bison lists any
+    errors in the listing file <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>, which we
+    will describe in this chapter, but it can still be a challenge to figure
+    out what’s wrong with the grammar and how to fix it. Before reading this
+    chapter, you should understand the general way that bison parsers work,
+    described in <a class="xref" href="ch03.xhtml" title="Chapter 3. Using Bison">Chapter 3</a>.</p><div class="sect1" title="The Pointer Model and Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e12485"/>The Pointer Model and Conflicts</h1></div></div></div><p><a id="I_indexterm7_d1e12489" class="indexterm"/><a id="I_indexterm7_d1e12494" class="indexterm"/>To describe what a conflict is in terms of the bison
+      grammar, we introduce a model of bison’s operation. In this model, a
+      <span class="emphasis"><em>pointer</em></span> moves through the bison grammar as each
+      individual token is read. When you start, there is one pointer
+      (represented here as an up arrow, ↑) at the beginning of the start
+      rule:</p><a id="I_programlisting7_d1e12503"/><pre class="programlisting">%token A B C
+%%
+start:     ↑ A B C;</pre><p>As the bison parser reads tokens, the pointer moves. Say it reads
+      <code class="literal">A</code> and <code class="literal">B</code>:</p><a id="I_programlisting7_d1e12513"/><pre class="programlisting">%token A B C
+%%
+start:     A B ↑ C;</pre><p>At times, there may be more than one pointer because of the
+      alternatives in your bison grammar. For example, suppose with the
+      following grammar it reads <code class="literal">A</code> and
+      <code class="literal">B</code>:</p><a id="I_programlisting7_d1e12523"/><pre class="programlisting">%token A B C D E F
+%%
+start:      x
+     |      y;
+x:    A B ↑ C D;
+y:    A B ↑ E F;</pre><p>(For the rest of the examples in this chapter, all capital letters
+      are tokens, so we will leave out the <code class="literal">%token</code> and the <code class="literal">%%</code>.) There are two ways for pointers to
+      disappear. One happens when a subsequent token doesn’t match a partially
+      matched rule. If the next token that the parser reads is <code class="literal">C</code>, the second pointer will disappear, and the
+      first pointer advances:</p><a id="I_programlisting7_d1e12536"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A B C ↑ D;
+    y:    A B E F;</pre><p>The other way for pointers to disappear is for them to merge in a
+      common subrule. In this example, <code class="literal">z</code>
+      appears in both <code class="literal">x</code> and <code class="literal">y</code>:</p><a id="I_programlisting7_d1e12549"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A B z R;
+    y:    A B z S;
+    z:    C D</pre><p>After reading <code class="literal">A</code>, there are two
+      pointers:</p><a id="I_programlisting7_d1e12557"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A ↑ B z R;
+    y:    A ↑ B z S;
+    z:    C D</pre><p>After <code class="literal">A B C</code>, there is only one
+      pointer, in rule <code class="literal">z</code>:</p><a id="I_programlisting7_d1e12567"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A B z R;
+    y:    A B z S;
+    z:    C ↑ D;</pre><p>And after <code class="literal">A B C D</code>, the parser
+      has completed rule <code class="literal">z</code>, and there again
+      are two:</p><a id="I_programlisting7_d1e12577"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A B z ↑ R;
+    y:    A B z ↑ S;
+    z:    C D;</pre><p>When a pointer reaches the end of a rule, the rule is
+      <span class="emphasis"><em>reduced</em></span>. Rule <code class="literal">z</code>
+      was reduced when the pointer got to the end of it after the parser read
+      <code class="literal">D</code>. Then the pointer returns to the
+      rule from which the reduced rule was called, or as in the earlier case,
+      the pointer splits up into the rules from which the reduced rule was
+      called.</p><p>There is a conflict if a rule is reduced when there is more than
+      one pointer. Here is an example of reductions with only one
+      pointer:</p><a id="I_programlisting7_d1e12592"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A ↑ ;
+    y:    B ;</pre><p>After <code class="literal">A</code>, there is only one
+      pointer—in rule <code class="literal">x</code>—and rule <code class="literal">x</code> is reduced. Similarly, after <code class="literal">B</code>, there is only one pointer—in rule <code class="literal">y</code>—and rule <code class="literal">y</code> is reduced.</p><p>Here is an example of a conflict:</p><a id="I_programlisting7_d1e12618"/><pre class="programlisting">    start:     x
+         |     y;
+    x:    A ↑ ;
+    y:    A ↑ ;</pre><p>After <code class="literal">A</code>, there are two
+      pointers, at the ends of rules <code class="literal">x</code> and
+      <code class="literal">y</code>. They both want to reduce, so it is
+      a <span class="emphasis"><em>reduce/reduce</em></span> conflict.<a id="I_indexterm7_d1e12634" class="indexterm"/><a id="I_indexterm7_d1e12639" class="indexterm"/></p><p>There is no conflict if there is only one pointer, even if it is
+      the result of merging pointers into a common subrule and even if the
+      reduction will result in more than one pointer:</p><a id="I_programlisting7_d1e12646"/><pre class="programlisting">    start:       x
+         |       y;
+    x:    z R ;
+    y:    z S ;
+    z:    A B ↑ ;</pre><p>After <code class="literal">A B</code>, there is one
+      pointer, at the end of rule <code class="literal">z</code>, and
+      that rule is reduced, resulting in two pointers:</p><a id="I_programlisting7_d1e12656"/><pre class="programlisting">    start:     x
+         |     y;
+    x:    z ↑ R;
+    y:    z ↑ S;
+    z:    A B;</pre><p>But at the time of the reduction, there is only one pointer, so it
+      is <span class="emphasis"><em>not</em></span> a conflict.</p></div><div class="sect1" title="Kinds of Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e12663"/>Kinds of Conflicts</h1></div></div></div><p>There are two kinds of conflicts, reduce/reduce <a id="I_indexterm7_d1e12668" class="indexterm"/><a id="I_indexterm7_d1e12671" class="indexterm"/>and shift/reduce.<a id="I_indexterm7_d1e12677" class="indexterm"/><a id="I_indexterm7_d1e12682" class="indexterm"/> Conflicts are categorized based upon what is happening
+      with the other pointer when one pointer is reducing. If the other rule
+      is also reducing, it is a reduce/reduce conflict. The following example
+      has a <span class="emphasis"><em>reduce/reduce</em></span> conflict in rules <code class="literal">x</code> and <code class="literal">y</code>:</p><a id="I_programlisting7_d1e12698"/><pre class="programlisting">    start:      x
+         |      y;
+    x:    A ↑ ;
+    y:    A ↑ ;</pre><p>If the other pointer is not reducing, then it is shifting, and the
+      conflict is a <span class="emphasis"><em>shift/reduce</em></span> conflict. The following
+      example has a shift/reduce conflict in rules <code class="literal">x</code> and <code class="literal">y</code>:</p><a id="I_programlisting7_d1e12711"/><pre class="programlisting">    start:     x
+         |     y R;
+    x:    A ↑ R;
+    y:    A ↑ ;</pre><p>After the parser reads <code class="literal">A</code>, rule
+      <code class="literal">y</code> needs to reduce to rule <code class="literal">start</code>, where <code class="literal">R</code> can then be accepted, while rule <code class="literal">x</code> can accept <code class="literal">R</code> immediately.</p><p>If there are more than two pointers at the time of a reduce, bison
+      lists the conflicts. The following example has a reduce/reduce conflict
+      in rules <code class="literal">x</code> and <code class="literal">y</code> and another reduce/reduce conflict in rules
+      <code class="literal">x</code> and <code class="literal">z</code>:</p><a id="I_programlisting7_d1e12748"/><pre class="programlisting">    start:     x
+         |     y
+         |     z;
+    x:    A ↑ ;
+    y:    A ↑ ;
+    z:    A ↑ ;</pre><p>Let’s define exactly when the reduction takes place with respect
+      to token <span class="emphasis"><em>lookahead</em></span> and pointers disappearing so we
+      can keep our simple definition of conflicts correct. Here is a
+      reduce/reduce conflict:</p><a id="I_programlisting7_d1e12755"/><pre class="programlisting">    start:      x B
+         |      y B;
+    x:    A ↑ ;
+    y:    A ↑ ;</pre><p>But there is no conflict here:</p><a id="I_programlisting7_d1e12760"/><pre class="programlisting">    start:     x B
+         |     y C;
+    x:    A ↑ ;
+    y:    A ↑ ;</pre><p>The reason the second example has no conflict is that a bison
+      parser can look ahead one token beyond the <code class="literal">A</code>. If it sees a <code class="literal">B</code>, the pointer in rule <code class="literal">y</code> disappears before rule <code class="literal">x</code> is reduced. Similarly, if it sees a <code class="literal">C</code>, the pointer in rule <code class="literal">x</code> disappears before rule <code class="literal">y</code> is reduced.</p><p>A bison parser can look ahead only one token. The following would
+      not be a conflict in a parser that could look ahead two tokens, but in a
+      bison parser, it is a reduce/reduce conflict:</p><a id="I_programlisting7_d1e12788"/><pre class="programlisting">    start:      x B C
+         |      y B D;
+    x:    A ↑ ;
+    y:    A ↑ ;</pre><p>A GLR parser can resolve this kind of conflict in situations where
+      it’s impractical to rewrite the grammar to avoid the conflict. See <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>.</p></div><div class="sect1" title="Parser States"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e12794"/>Parser States</h1></div></div></div><p><a id="I_indexterm7_d1e12798" class="indexterm"/><a id="I_indexterm7_d1e12803" class="indexterm"/><a id="I_indexterm7_d1e12808" class="indexterm"/>Bison tells you about your grammar’s conflicts in <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>, which
+      is a description of the state machine it is generating. We will discuss
+      what the states are, describe the contents of <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>, and
+      then discuss how to find the problem in your bison grammar given a
+      conflict described in <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>. You
+      can generate <code class="literal"><em class="replaceable"><code>name</code></em>.output</code> by
+      running bison with the <code class="literal">-v</code> (verbose)
+      option.</p><p>Each state corresponds to a unique combination of possible
+      pointers in your bison grammar. Every nonempty bison grammar has at
+      least three unique possible states: one at the beginning when no input
+      has been accepted, one when a complete valid input has been accepted,
+      and a third after the <code class="literal">$end</code> token has
+      been accepted. The following simple example has two more states:</p><a id="I_programlisting7_d1e12843"/><pre class="programlisting">    start:    A <em class="lineannotation"><span class="lineannotation">&lt;one here&gt;</span></em> B <em class="lineannotation"><span class="lineannotation">&lt;another here&gt;</span></em> C;</pre><p>For future examples, we will number the states as a clear means of
+      identification. Bison assigns a number to each state, but the particular
+      numbers are not significant. Different versions of bison may number the
+      states differently.</p><a id="I_programlisting7_d1e12853"/><pre class="programlisting">    start:     A <em class="lineannotation"><span class="lineannotation">&lt;state 1&gt;</span></em> B <em class="lineannotation"><span class="lineannotation">&lt;state 2&gt;</span></em> C;</pre><p>When a given stream of input tokens can correspond to more than
+      one possible pointer position, then all the pointers for a given token
+      stream correspond to one state:</p><a id="I_programlisting7_d1e12863"/><pre class="programlisting">    start:        a
+         |        b;
+    a:    X <em class="lineannotation"><span class="lineannotation">&lt;state 1&gt;</span></em> Y <em class="lineannotation"><span class="lineannotation">&lt;state 2&gt;</span></em> Z;
+    b:    X <em class="lineannotation"><span class="lineannotation">&lt;state 1&gt;</span></em> Y <em class="lineannotation"><span class="lineannotation">&lt;state 2&gt;</span></em> Q;</pre><p>Different input streams can correspond to the same state when they
+      correspond to the same pointer:</p><a id="I_programlisting7_d1e12879"/><pre class="programlisting">    start:      threeAs;
+    threeAs: /* empty */
+           | threeAs A <em class="lineannotation"><span class="lineannotation">&lt;state 1&gt;</span></em> A <em class="lineannotation"><span class="lineannotation">&lt;state2&gt;</span></em> A <em class="lineannotation"><span class="lineannotation">&lt;state3&gt;;</span></em></pre><p>The previous grammar accepts some multiple of three <code class="literal">A</code>s. State 1 corresponds to 1, 4, 7, ...
+      <code class="literal">A</code>s; state 2 corresponds to 2, 5, 8,
+      ...<code class="literal"> A</code>s; and state 3 corresponds to 3,
+      6, 9, ... <code class="literal">A</code>s. We rewrite this as a
+      right-recursive grammar to illustrate the next point.</p><a id="I_programlisting7_d1e12904"/><pre class="programlisting">    start:       threeAs;
+    threeAs:  /* empty */
+           |  A A A threeAs;</pre><p>A position in a rule does not necessarily correspond to only one
+      state. A given pointer in one rule can correspond to different pointers
+      in another rule, making several states:</p><a id="I_programlisting7_d1e12908"/><pre class="programlisting">    start:      threeAs X
+         |      twoAs Y;
+    threeAs: /* empty */
+           | A A A threeAs;
+    twoAs: /* empty */
+         | A A twoAs;</pre><p>The grammar above accepts multiples of 2 or 3 <code class="literal">A</code>s, followed by an <code class="literal">X</code> for multiples of 3, or a <code class="literal">Y</code> for multiples of 2. Without the <code class="literal">X</code> or <code class="literal">Y</code>, the
+      grammar would have a conflict, not knowing whether a multiple of 6
+      <code class="literal">A</code>s satisfied <code class="literal">threeAs</code> or <code class="literal">twoAs</code>. It would also have a conflict if we’d
+      used left recursion, since it would have to reduce <code class="literal">twoAs</code> or <code class="literal">threeAs</code> before it saw a final <code class="literal">X</code> or <code class="literal">Y</code>. If
+      we number the states as follows:</p><a id="I_programlisting7_d1e12950"/><pre class="programlisting">    state 1: 1, 7, ... A's accepted
+    state 2: 2, 8, ... A's accepted
+    ...
+    state 6: 6, 12, ... A's accepted</pre><p>then the corresponding pointer positions are as follows:</p><a id="I_programlisting7_d1e12954"/><pre class="programlisting">    start:      threeAs X
+         |      twoAs Y;
+    threeAs: /* empty */
+           | A <em class="lineannotation"><span class="lineannotation">&lt;1,4&gt;</span></em> A <em class="lineannotation"><span class="lineannotation">&lt;2,5&gt;</span></em> A <em class="lineannotation"><span class="lineannotation">&lt;3,6&gt;</span></em> threeAs;
+    twoAs: /* empty */
+         |  A <em class="lineannotation"><span class="lineannotation">&lt;1,3,5&gt;</span></em> A <em class="lineannotation"><span class="lineannotation">&lt;2,4,6&gt;</span></em> twoAs;</pre><p>That is, after the first <code class="literal">A</code> in
+      <code class="literal">threeAs</code>, the parser could have
+      accepted 6i+1 or 6i+4 <code class="literal">A</code>s, where i is
+      0, 1, etc. Similarly, after the first <code class="literal">A</code> in <code class="literal">twoAs</code>,
+      the parser could have accepted 6i+1, 6i+3, or 6i+5 <code class="literal">A</code>s.</p></div><div class="sect1" title="Contents of name.output"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e12992"/>Contents of name.output</h1></div></div></div><p><a id="I_indexterm7_d1e12996" class="indexterm"/><a id="I_indexterm7_d1e13001" class="indexterm"/>Now that we have defined states, we can look at the
+      conflicts described in <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>. The format of
+      the file has varied among versions of bison, but it always includes a
+      listing of all the rules in the grammar and all the parser states. It
+      usually has a summary of conflicts and other errors at the beginning,
+      including rules that are never used, typically because of conflicts. For
+      each state, it lists the rules and positions that correspond to the
+      state, the shifts and reductions the parser will do when it reads
+      various tokens in that state, and what state it will switch to after a
+      reduction produces a nonterminal in that state. We’ll show some
+      ambiguous grammars and the <code class="literal"><em class="replaceable"><code>name</code></em>.output</code> reports
+      that identify the ambiguities. The files that bison produces show the
+      cursor as a dot, but we’ll show it as an up arrow (↑) to make it easier
+      to read and to be consistent with the examples so far.</p></div><div class="sect1" title="Reduce/Reduce Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e13015"/>Reduce/Reduce Conflicts</h1></div></div></div><p><a id="I_indexterm7_d1e13019" class="indexterm"/><a id="I_indexterm7_d1e13024" class="indexterm"/><a id="I_indexterm7_d1e13029" class="indexterm"/><a id="I_indexterm7_d1e13034" class="indexterm"/>Consider the following ambiguous grammar:</p><a id="I_programlisting7_d1e13040"/><pre class="programlisting">    start:       a Y
+         |       b Y ;
+    a:    X ;
+    b:    X ;</pre><p>When we run it through bison, a typical state description is as
+      follows:</p><a id="I_programlisting7_d1e13044"/><pre class="programlisting">state 3
+
+    1 start: a ↑ Y
+
+    Y  shift, and go to state 6</pre><p>In this state, the parser has already reduced an <code class="literal">a</code>. If it sees a <code class="literal">Y</code>, it shifts the <code class="literal">Y</code> and moves to state 6. Anything else would be
+      an error. The ambiguity produces a reduce/reduce conflict in state
+      1:</p><a id="I_programlisting7_d1e13057"/><pre class="programlisting">state 1
+
+    3 a: X ↑
+    4 b: X ↑
+
+    Y         reduce using rule 3 (a)
+    Y         [reduce using rule 4 (b)]
+    $default  reduce using rule 3 (a)</pre><p>The fourth and fifth lines show a conflict between rule 3 and rule
+      4 when token <code class="literal">Y</code> is read. In this
+      state, it’s reading an <code class="literal">X</code>, which may
+      be an <code class="literal">a</code> or a <code class="literal">b</code>. They show the two rules that might be
+      reduced. The dot shows where in the rule you are before receiving the
+      next token. This corresponds to the pointer in the bison grammar. For
+      reduce conflicts, the pointer is always at the end of the rule. In a
+      conflict, the rule not used is shown in brackets; in this case bison
+      chose to reduce rule 3, since it resolves reduce/reduce conflicts by
+      reducing the rule that appears earlier in the grammar.</p><p>The rules may have tokens or nonterminals in them. The following
+      ambiguous grammar:</p><a id="I_programlisting7_d1e13077"/><pre class="programlisting">    start:      a Z
+         |      b Z;
+    a:   X y;
+    b:   X y;
+    y:   Y;</pre><p>produces a parser with this state:</p><a id="I_programlisting7_d1e13082"/><pre class="programlisting">state 6
+
+    3 a: X y .
+    4 b: X y .
+
+    Z         reduce using rule 3 (a)
+    Z         [reduce using rule 4 (b)]
+    $default  reduce using rule 3 (a)</pre><p>In this state, the parser has already reduced a <code class="literal">Y</code> to a <code class="literal">y</code>,
+      but the <code class="literal">y</code> could complete either an
+      <code class="literal">a</code> or a <code class="literal">b</code>. Transitions on nonterminals can lead to
+      reduce/reduce conflicts just as tokens can. It’s easy to tell the
+      difference if you use uppercase token names, as we have.</p><p>The rules that conflict do not have to be identical. This
+      grammar:</p><a id="I_programlisting7_d1e13103"/><pre class="programlisting">    start:     A B x Z
+         |     y Z;
+    x:    C;
+    y:    A B C;</pre><p>when processed by bison, produces a grammar containing this
+      state:</p><a id="I_programlisting7_d1e13107"/><pre class="programlisting">state 7
+
+    3 x: C .
+    4 y: A B C .
+
+    Z         reduce using rule 3 (x)
+    Z         [reduce using rule 4 (y)]
+    $default  reduce using rule 3 (x)</pre><p>In state 7, the parser has already accepted <code class="literal">A B C</code>. Rule <code class="literal">x</code> has only <code class="literal">C</code> in it, because in the <code class="literal">start</code> rule from which <code class="literal">x</code> is called, <code class="literal">A
+      B</code> is accepted before reaching <code class="literal">x</code>. The <code class="literal">C</code>
+      could complete either an <code class="literal">x</code> or a
+      <code class="literal">y</code>. Bison again resolves the conflict
+      by reducing the earlier rule in the grammar, in this case rule 3.</p></div><div class="sect1" title="Shift/Reduce Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e13142"/>Shift/Reduce Conflicts</h1></div></div></div><p><a id="I_indexterm7_d1e13146" class="indexterm"/><a id="I_indexterm7_d1e13151" class="indexterm"/>Identifying a shift/reduce conflict is a little harder. To
+      identify the conflict, we will do the following:</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>Find the shift/reduce error in <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>.</p></li><li class="listitem"><p>Identify the reduce rule.</p></li><li class="listitem"><p>Identify the relevant shift rule(s).</p></li><li class="listitem"><p>See what state the reduce rule reduces to.</p></li><li class="listitem"><p>Deduce the token stream that will produce the conflict.</p></li></ul></div><p>This grammar contains a shift/reduce conflict:</p><a id="I_programlisting7_d1e13180"/><pre class="programlisting">    start:     x
+         |     y R;
+    x:    A R;
+    y:    A;</pre><p>Bison produces this complaint:</p><a id="I_programlisting7_d1e13184"/><pre class="programlisting">state 1
+
+    3 x: A . R
+    4 y: A .
+
+    R  shift, and go to state 5
+
+    R  [reduce using rule 4 (y)]</pre><p>State 1 has a shift/reduce conflict between shifting token
+      <code class="literal">R</code>, which moves to state 5, and
+      reducing rule 4 when it reads an <code class="literal">R</code>.
+      Rule 4 is rule <code class="literal">y</code>, as shown in this
+      line:</p><a id="I_programlisting7_d1e13197"/><pre class="programlisting">    4 y: A .</pre><p>You can find the reduce rule in a shift/reduce conflict the same
+      way you find both rules in a reduce/reduce conflict. The reduction
+      number is listed in the <code class="literal">reduce using</code>
+      line. In the previous case, the rule with the shift conflict is the only
+      rule left in the state:</p><a id="I_programlisting7_d1e13204"/><pre class="programlisting">    3 x: A . R</pre><p>The parser is in rule <code class="literal">x</code>, having
+      read <code class="literal">A</code> and about to accept <code class="literal">R</code>. The shift conflict rule was easy to find in
+      this case, because it is the only rule left, and it shows that the next
+      token is <code class="literal">R</code>. Bison resolves
+      shift/reduce conflicts in favor of the shift, so in this case if it
+      receives an <code class="literal">R</code>, it shifts to state
+      5.</p><p>The next thing showing may be a rule instead of a token:</p><a id="I_programlisting7_d1e13226"/><pre class="programlisting">    start:      x1
+         |      x2
+         |      y R;
+    x1:   A R;
+    x2:   A z;
+    y:    A;
+    z:    R;</pre><p>Bison reports several conflicts, including this one:</p><a id="I_programlisting7_d1e13230"/><pre class="programlisting">state 1
+
+    4 x1: A ↑ R
+    5 x2: A ↑ z
+    6 y: A ↑
+
+    R  shift, and go to state 6
+
+    R  [reduce using rule 6 (y)]
+
+    z  go to state 7</pre><p>In the previous example, the reduction rule is as follows:</p><a id="I_programlisting7_d1e13234"/><pre class="programlisting">    6 y: A ↑</pre><p>so that leaves two candidates for the shift conflict:</p><a id="I_programlisting7_d1e13238"/><pre class="programlisting">    4 x1: A ↑ R
+    5 x2: A ↑ z</pre><p>Rule <code class="literal">x1</code> uses the next token,
+      <code class="literal">R</code>, so you know it is part of the
+      shift conflict, but rule <code class="literal">x2</code> shows the
+      next symbol (not token). You have to look at the rule for <code class="literal">z</code> to find out whether it starts with an
+      <code class="literal">R</code>. In this case it does, so there is
+      a conflict for an <code class="literal">A</code> followed by an
+      <code class="literal">R</code>: it could be an <code class="literal">x1</code>, an <code class="literal">x2</code>
+      that includes a <code class="literal">z</code>, or a <code class="literal">y</code> followed by an <code class="literal">R</code>.</p><p>There could be more rules in a conflicting state, and they may not
+      all accept an <code class="literal">R</code>. Consider this
+      extended version of the grammar:</p><a id="I_programlisting7_d1e13286"/><pre class="programlisting">    start:      x1
+         |      x2
+         |      x3
+         |      y R;
+   x1:    A R;
+   x2:    A z1;
+   x3:    A z2
+   y:     A;
+   z1:    R;
+   z2:    S;</pre><p>Bison produces a listing with this state:</p><a id="I_programlisting7_d1e13290"/><pre class="programlisting">state 1
+
+    5 x1: A ↑ R
+    6 x2: A ↑ z1
+    7 x3: A ↑ z2
+    8 y: A ↑
+
+    R  shift, and go to state 7
+    S  shift, and go to state 8
+
+    R  [reduce using rule 8 (y)]
+
+    z1  go to state 9
+    z2  go to state 10</pre><p>The conflict is between shifting to state 7 and reducing rule 8.
+      The reduce problem, rule 8, is the rule for <code class="literal">y</code>. The rule for <code class="literal">x1</code> has a shift problem, because the next token
+      after the dot is <code class="literal">R</code>. It is not
+      immediately obvious whether <code class="literal">x2</code> or
+      <code class="literal">x3</code> caused conflicts, because they
+      show rules <code class="literal">z1</code> and <code class="literal">z2</code> following the dots. When you look at rules
+      <code class="literal">z1</code> and <code class="literal">z2</code>, you find that <code class="literal">z1</code> contains an <code class="literal">R</code> next and <code class="literal">z2</code> contains an <code class="literal">S</code> next, so <code class="literal">x2</code> that uses <code class="literal">z1</code> is part of the shift conflict and <code class="literal">x3</code> is not.</p><p>In each of our last two shift/reduce conflict examples, can you
+      also see a reduce/reduce conflict? Run bison, and look in <code class="literal"><code class="literal"><em class="replaceable"><code>name</code></em>.output</code></code>
+      to check your answer.</p></div><div class="sect1" title="Review of Conflicts in name.output"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e13352"/>Review of Conflicts in name.output</h1></div></div></div><p><a id="I_indexterm7_d1e13356" class="indexterm"/><a id="I_indexterm7_d1e13359" class="indexterm"/><a id="I_indexterm7_d1e13364" class="indexterm"/><a id="I_indexterm7_d1e13369" class="indexterm"/>We’ll review the relationship among our pointer model,
+      conflicts, and <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>. First,
+      here is a reduce/reduce conflict:</p><a id="I_programlisting7_d1e13380"/><pre class="programlisting">    start:      A B x Z
+         |      y Z;
+    x:    C;
+    y:    A B C;</pre><p>The bison listing contains the following:</p><a id="I_programlisting7_d1e13384"/><pre class="programlisting">state 7
+
+    3 x: C ↑
+    4 y: A B C ↑
+
+    Z         reduce using rule 3 (x)
+    Z         [reduce using rule 4 (y)]
+    $default  reduce using rule 3 (x)</pre><p>There is a conflict because if the next token is <code class="literal">Z</code>, bison wants to reduce rules 3 and 4, which
+      are the rules for both <code class="literal">x</code> and <code class="literal">y</code>. Or using our pointer model, there are two
+      pointers, and both are reducing:</p><a id="I_programlisting7_d1e13397"/><pre class="programlisting">    start:       A B x z
+         |       y Z;
+    x:    c ↑ ;
+    y:    A B C ↑ ;</pre><p>Here is a shift/reduce conflict example:</p><a id="I_programlisting7_d1e13401"/><pre class="programlisting">    start:     x
+         |     y R;
+    x:         A R;
+    y:         A;</pre><p>Bison reports this conflict:</p><a id="I_programlisting7_d1e13405"/><pre class="programlisting">state 1
+
+    3 x: A ↑ R
+    4 y: A ↑
+
+    R  shift, and go to state 5
+
+    R  [reduce using rule 4 (y)]</pre><p>If the next token is <code class="literal">R</code>, bison
+      wants both to reduce the rule for <code class="literal">y</code>
+      and to shift an <code class="literal">R</code> in the rule for
+      <code class="literal">x</code>, causing a conflict. Or there are
+      two pointers, and one is reducing:</p><a id="I_programlisting7_d1e13422"/><pre class="programlisting">    start:    x
+         |    y R;
+    x:    A ↑ R;
+    y:    A ↑ ;</pre></div><div class="sect1" title="Common Examples of Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e13424"/>Common Examples of Conflicts</h1></div></div></div><p><a id="index-083E868TJ3U" class="indexterm"/><a id="index-484U470FV0I" class="indexterm"/>The three most common situations that produce shift/reduce
+      conflicts are expression grammars, if/then/else, and nested lists of
+      items. After we see how to identify these three situations, we’ll look
+      at ways to get rid of the conflicts.</p><div class="sect2" title="Expression Grammars"><div class="titlepage"><div><div><h2 class="title"><a id="id471144"/>Expression Grammars</h2></div></div></div><p><a id="I_indexterm7_d1e13443" class="indexterm"/>Our first example is adapted from the original 1975 Unix
+        yacc manual.</p><a id="I_programlisting7_d1e13447"/><pre class="programlisting">    expr: TERMINAL
+        | expr '-' expr ;</pre><p>The state with a conflict is as follows:</p><a id="I_programlisting7_d1e13451"/><pre class="programlisting">state 5
+
+    2 expr: expr ↑ '-' expr
+    2     | expr '-' expr ↑
+
+    '-'  shift, and go to state 4
+
+    '-'       [reduce using rule 2 (expr)]
+    $default  reduce using rule 2 (expr)</pre><p>Bison tells us that there is a shift/reduce conflict when it
+        reads the minus token. We can add our pointers to get the
+        following:</p><a id="I_programlisting7_d1e13455"/><pre class="programlisting">    expr: expr ↑ - expr ;
+    expr: expr - expr ↑ ;</pre><p>These are in the same rule, not even different alternatives with
+        the same LHS. You can have a state where your pointers can be in two
+        different places in the same rule, because the grammar is recursive.
+        (In fact, all of the examples in this section are recursive. Most
+        tricky bison problems turn out to involve recursive rules.)</p><p>After accepting two <code class="literal">expr</code>s and
+        <code class="literal">-</code>, the pointer is at the end of
+        rule <code class="literal">expr</code>, as shown in the second
+        line of the earlier pointer example. But <code class="literal">expr
+        - expr</code> is also an <code class="literal">expr</code>,
+        so the pointer can also be just after the first <code class="literal">expr</code>, as shown in the first line of the
+        earlier example. If the next token is not <code class="literal">-</code>, then the pointer in the first line
+        disappears because it wants <code class="literal">-</code> next,
+        so you are back to one pointer. But if the next token is <code class="literal">-</code>, then the second line wants to reduce, and
+        the first line wants to shift, causing a conflict.</p><p>To solve this conflict, look at <code class="literal"><code class="literal"><em class="replaceable"><code>name</code></em>.output</code></code>,
+        shown earlier, to find the source of the conflict. Get rid of
+        irrelevant rules in the state (there are not any in this tiny
+        example), and you get the two pointers we just discussed. It becomes
+        clear that the problem is as follows:</p><a id="I_programlisting7_d1e13497"/><pre class="programlisting">    expr - expr - expr</pre><p>The middle <code class="literal">expr</code> might be the
+        second <code class="literal">expr</code> of an <code class="literal">expr - expr</code>, in which case the input is
+        interpreted as follows:</p><a id="I_programlisting7_d1e13511"/><pre class="programlisting">    (expr - expr) - expr</pre><p>which is left associative, or might be the first <code class="literal">expr</code>, in which case the input is interpreted
+        as follows:</p><a id="I_programlisting7_d1e13518"/><pre class="programlisting">    expr - (expr - expr)</pre><p>which is right associative. After reading <code class="literal">expr - expr</code>, the parser could reduce if
+        using left associativity or shift using right associativity. If not
+        instructed to prefer one or the other, this ambiguity causes a
+        shift/reduce conflict, which bison resolves by choosing the shift.
+        <a class="xref" href="ch07.xhtml#ambig3exp" title="Figure 7-1. Two parses of expr - expr - expr">Figure 7-1</a> shows the two possible parses.</p><p>Later in this chapter, we cover the ways to handle this kind of
+        conflict.</p><div class="figure-float"><div class="figure"><a id="ambig3exp"/><div class="figure-contents"><div class="mediaobject"><a id="I_mediaobject7_d1e13532"/><img src="Images/httpatomoreillycomsourceoreillyimages1740028.png" alt="Two parses of expr - expr - expr" width="625" height="347"/></div></div><p class="title">Figure 7-1. Two parses of expr - expr - expr</p></div></div></div><div class="sect2" title="IF/THEN/ELSE"><div class="titlepage"><div><div><h2 class="title"><a id="ifthenelse"/>IF/THEN/ELSE</h2></div></div></div><p><a id="I_indexterm7_d1e13541" class="indexterm"/>Our next example is also from the Unix yacc manual.
+        Again, we have added a terminal symbol for completeness:</p><a id="I_programlisting7_d1e13545"/><pre class="programlisting">    stmt:  IF '(' cond ')' stmt
+        |  IF '(' cond ')' stmt ELSE stmt
+        |  TERMINAL;
+    cond:  TERMINAL;</pre><p>Bison complains:</p><a id="I_programlisting7_d1e13549"/><pre class="programlisting">State 9 conflicts: 1 shift/reduce
+  ...
+
+state 9
+
+    1 stmt: IF '(' cond ')' stmt ↑
+    2     | IF '(' cond ')' stmt ↑ ELSE stmt
+
+    ELSE  shift, and go to state 10
+
+    ELSE      [reduce using rule 1 (stmt)]
+    $default  reduce using rule 1 (stmt)</pre><p>In terms of pointers this is as follows:</p><a id="I_programlisting7_d1e13553"/><pre class="programlisting">    stmt: IF ( cond ) stmt ↑ ;
+    stmt: IF ( cond ) stmt ↑ ELSE stmt ;</pre><p>The first line is the reduce part of the conflict, and the
+        second is the shift part. This time they are different rules with the
+        same LHS. To figure out what is going wrong, we check to see where the
+        first line reduces to. It has to be a call to <code class="literal">stmt</code>, followed by an <code class="literal">ELSE</code>. There is only one place where that
+        happens:</p><a id="I_programlisting7_d1e13563"/><pre class="programlisting">    stmt: IF ( cond ) stmt <em class="lineannotation"><span class="lineannotation">&lt;return  to here&gt;</span></em> ELSE stmt ;</pre><p>After the reduction, the pointer returns to the same spot where
+        it is for the shift part of the conflict. This problem is very similar
+        to the one with <code class="literal">expr - expr - expr</code>
+        in the previous example. And using similar logic, in order to reduce
+        <code class="literal">IF ( cond ) stmt</code> into <code class="literal">stmt</code> and end up here:</p><a id="I_programlisting7_d1e13579"/><pre class="programlisting">    stmt: IF ( cond ) stmt <em class="lineannotation"><span class="lineannotation">&lt;here&gt;</span></em> ELSE stmt ;</pre><p>you have to have this token stream:</p><a id="I_programlisting7_d1e13587"/><pre class="programlisting">    IF ( cond ) IF ( cond ) stmt ELSE</pre><p>Again, do you want to group it like this:</p><a id="I_programlisting7_d1e13591"/><pre class="programlisting">    IF ( cond ) { IF ( cond ) stmt } ELSE stmt</pre><p>or like this?</p><a id="I_programlisting7_d1e13595"/><pre class="programlisting">    IF ( cond ) { IF ( cond ) stmt ELSE stmt }</pre><p>The next section explains what to do about this kind of
+        conflict.</p></div><div class="sect2" title="Nested List Grammar"><div class="titlepage"><div><div><h2 class="title"><a id="id466513"/>Nested List Grammar</h2></div></div></div><p><a id="I_indexterm7_d1e13603" class="indexterm"/>Our final example is a simple version of a problem that
+        novice bison programmers often encounter:</p><a id="I_programlisting7_d1e13607"/><pre class="programlisting">    start:            outerList Z ;
+    outerList:  /* empty */
+          |     outerList outerListItem ;
+
+    outerListItem:    innerList ;
+
+    innerList:  /* empty */
+          |     innerList innerListItem ;
+
+    innerListItem:    I ;</pre><p>Bison reports this conflict:</p><a id="I_programlisting7_d1e13611"/><pre class="programlisting">state 2
+
+    1 start: outerList ↑ Z
+    3 outerList: outerList ↑ outerListItem
+
+    Z  shift, and go to state 4
+
+    Z         [reduce using rule 5 (innerList)]
+    $default  reduce using rule 5 (innerList)
+
+    outerListItem  go to state 5
+    innerList      go to state 6</pre><p>Once again we can analyze the problem step by step. The reduce
+        rule is the empty alternative of <code class="literal">innerList</code>. That leaves two candidates for
+        the shift problem. Rule <code class="literal">start</code> is
+        one, because it explicitly takes <code class="literal">Z</code>
+        as the next token. The nonempty alternative of <code class="literal">outerList</code> might be a candidate, if it takes
+        <code class="literal">Z</code> next. We see that <code class="literal">outerList</code> includes an <code class="literal">outerListItem</code>, which is an <code class="literal">innerList</code>. In this situation, <code class="literal">innerList</code> can’t include an <code class="literal">innerListItem</code>, because that includes an
+        <code class="literal">I</code>, and this conflict occurs only
+        when the next token is a <code class="literal">Z</code>. But an
+        <code class="literal">innerList</code> can be empty, so the
+        <code class="literal">outerListItem</code> involves no tokens,
+        so we might actually be at the end of the <code class="literal">outerList</code> as well, since as the first line
+        in the conflict report told us, an <code class="literal">outerList</code> can be followed by a <code class="literal">Z</code>.</p><p>This all boils down to this state: We have just finished an
+        <code class="literal">innerList</code>, possibly empty, or an
+        <code class="literal">outerList</code>, possibly empty. How can
+        it not know which list it has just finished? Look at the two list
+        expressions. They can both be empty, and the inner one sits in the
+        outer one without any token to say it is starting or finishing the
+        inner loop. Assume the input stream consists solely of a <code class="literal">Z</code>. Is it an empty <code class="literal">outerList</code>, or is it an <code class="literal">outerList</code> with one item, an empty <code class="literal">innerList</code>? That’s ambiguous.</p><p>The problem with this grammar is that it is redundant. It has to
+        have a loop within a loop, with nothing to separate them. Since this
+        grammar actually accepts a possibly empty list of <code class="literal">I</code>s followed by a <code class="literal">Z</code>, it can easily be rewritten using only one
+        recursive rule:</p><a id="I_programlisting7_d1e13697"/><pre class="programlisting">    start:              outerList Z ;
+    outerList:    /* empty */
+          |       outerList outerListItem ;
+    outerListItem:      I ;</pre><p>But rewriting it this way is rarely the right thing to do. More
+        likely there really are supposed to be two nested lists, but you
+        forgot to include punctuation in <code class="literal">outerListItem</code> to delimit the inner from
+        the outer loop. We offer some suggestions later in this
+        chapter.<a id="I_indexterm7_d1e13704" class="indexterm"/><a id="I_indexterm7_d1e13705" class="indexterm"/></p></div></div><div class="sect1" title="How Do You Fix the Conflict?"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e13706"/>How Do You Fix the Conflict?</h1></div></div></div><p><a id="index-837N726QB7W" class="indexterm"/>The rest of this chapter describes what to do with a
+      conflict once you’ve figured out what it is. We’ll discuss how to fix
+      classes of conflicts that have commonly caused trouble for bison
+      users.</p><p>When trying to resolve conflicts, start with the rules that are
+      involved in the most conflicts, and work your way down the list. More
+      often than not, when you resolve the major conflicts, many of the minor
+      ones will go away, too.</p><p>If you’re writing a parser for a language you’re inventing,
+      conflicts in the parser often indicate ambiguities or inconsistencies in
+      the language’s definition. First figure out what’s causing the conflict,
+      and then decide whether the language is OK and you just need to adjust
+      the grammar to describe the language correctly or whether the language
+      is ambiguous, in which case you may want to change both the language and
+      the grammar to be unambiguous. Languages that bison has trouble parsing
+      are often hard for people to parse in their heads; you’ll often end up
+      with a better language design if you change your language to remove the
+      conflicts.</p><div class="sect2" title="IF/THEN/ELSE (Shift/Reduce)"><div class="titlepage"><div><div><h2 class="title"><a id="id536760"/>IF/THEN/ELSE (Shift/Reduce)</h2></div></div></div><p><a id="I_indexterm7_d1e13724" class="indexterm"/><a id="index-620G777RT4L" class="indexterm"/><a id="index-403L721FD8S" class="indexterm"/>We saw this conflict earlier in this chapter. Here we
+        describe what to do with the shift/reduce conflict once you’ve tracked
+        it down. It turns out that the default way that bison resolves this
+        particular conflict is usually what you want it to do anyway. How do
+        you know it’s doing what you want it to do? Your choices are to (1) be
+        good enough at reading bison descriptions, (2) be masochistic enough
+        to decode the <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>
+        listing, or (3) test the generated code to death. Once you’ve verified
+        that you’re getting what you want, you ought to make bison quit
+        complaining. Conflict warnings may confuse or annoy anyone trying to
+        maintain your code, and if there are other conflicts in the grammar
+        that indicate genuine errors, it’s hard to tell the real problems from
+        the false alarms.</p><p>The standard way to resolve this conflict is to have separate
+        rules for matched and unmatched <code class="literal">IF/THEN</code> statements and to rewrite the
+        grammar this way:</p><a id="I_programlisting7_d1e13748"/><pre class="programlisting">    stmt:       matched
+          |     unmatched
+          ;
+    matched:    other_stmt
+          |     IF expr THEN matched ELSE matched
+          ;
+    unmatched:  IF expr THEN stmt
+          |     IF expr THEN matched ELSE unmatched
+          ;
+    other_stmt: /* rules for other kinds of statement */  ...</pre><p>The nonterminal <code class="literal">other_stmt</code>
+        represents all of the other possible statements in the language.</p><p>It’s also possible to use explicit precedence to tell bison
+        which way to resolve the conflict and to keep it from issuing a
+        warning. If your language uses a <code class="literal">THEN</code> keyword (as Pascal does), you can do
+        this:</p><a id="I_programlisting7_d1e13763"/><pre class="programlisting">    %nonassoc THEN
+    %nonassoc ELSE
+
+    %%
+
+    stmt:     IF expr THEN stmt
+          |   IF expr stmt ELSE stmt
+          ;</pre><p>In languages that don’t have a <code class="literal">THEN</code> keyword, you can use a fake token and
+        <code class="literal">%prec</code> to accomplish the same
+        result:</p><a id="I_programlisting7_d1e13773"/><pre class="programlisting">    %nonassoc LOWER_THAN_ELSE
+    %nonassoc ELSE
+
+    %%
+
+    stmt:       IF expr stmt          %prec LOWER_THAN_ELSE ;
+           |    IF expr stmt ELSE stmt;</pre><p>The shift/reduce conflict here is a conflict between shifting an
+        <code class="literal">ELSE</code> token and reducing a <code class="literal">stmt</code> rule. You need to assign a precedence
+        to the token (<code class="literal">%nonassoc ELSE</code>) and
+        to the rule, with <code class="literal">%nonassoc THEN</code> or
+        <code class="literal">%nonassoc LOWER_THAN_ELSE</code> and
+        <code class="literal">%prec LOWER_THAN_ELSE</code>. The
+        precedence of the token to shift must be higher than the precedence of
+        the rule to reduce, so <code class="literal">%nonassoc ELSE</code> must come after <code class="literal">%nonassoc THEN</code> or <code class="literal">%nonassoc LOWER_THAN_ELSE</code>. It makes no
+        difference for this application if you use <code class="literal">%nonassoc</code>, <code class="literal">%left</code>, or <code class="literal">%right</code>, since there’s no situation with a
+        conflict that involves shifting a token and reducing a rule containing
+        the same token.</p><p>The goal here is to hide a conflict you know about and
+        understand, <span class="emphasis"><em>not</em></span> to hide any others. When you’re
+        trying to mute bison’s warnings about other shift/reduce conflicts,
+        the further you get from the previous example, the more careful you
+        should be. Use <code class="literal">%nonassoc</code>, so if you
+        accidentally do add other rules that create such a conflict, bison
+        will still report it. Other shift/reduce conflicts may be amenable to
+        a simple change in the bison description. And, as we mentioned,
+        <span class="emphasis"><em>any</em></span> conflict can be fixed by changing the
+        language. For example, the <code class="literal">IF/THEN/ELSE</code> conflict can be eliminated by
+        insisting on <code class="literal">BEGIN-END</code> or braces
+        around the <code class="literal">stmt</code>.</p><p>What would happen if you swapped the precedence of the token to
+        shift and the rule to reduce? The normal <code class="literal">IF-ELSE</code> handling makes the following two
+        equivalent:</p><a id="I_programlisting7_d1e13845"/><pre class="programlisting">    if expr if expr stmt else stmt
+    if expr { if expr stmt else stmt }</pre><p>It seems only fair that swapping the precedence would make the
+        following two equivalent, right?</p><a id="I_programlisting7_d1e13849"/><pre class="programlisting">    if expr if expr stmt else stmt
+    if expr { if expr stmt } else stmt</pre><p>Nope. That’s not what it does. Having higher precedence on the
+        shift (normal <code class="literal">IF-ELSE</code>) makes it always shift the
+        <code class="literal">ELSE</code>. Swapping the precedence makes
+        it <span class="emphasis"><em>never</em></span> shift the <code class="literal">ELSE</code>, so your <code class="literal">IF-ELSE</code> can no longer have an else.</p><p>Normal <code class="literal">IF-ELSE</code> processing
+        associates the <code class="literal">ELSE</code> with the most
+        recent <code class="literal">IF</code>. Suppose you want it some
+        other way. One possibility is that you allow only one <code class="literal">ELSE</code> with a sequence of <code class="literal">IF</code>s, and the <code class="literal">ELSE</code> is associated with the first <code class="literal">IF</code>. This would require a two-level statement
+        definition, as follows:</p><a id="I_programlisting7_d1e13892"/><pre class="programlisting">    %nonassoc LOWER_THAN_ELSE
+    %nonassoc ELSE
+
+    %%
+
+    stmt:       IF expr stmt2 %prec LOWER_THAN_ELSE
+          |     IF expr stmt2 ELSE stmt;
+
+   stmt2:  IF expr stmt2;</pre><p>But don’t do that, since a language is extremely
+        counterintuitive.</p></div><div class="sect2" title="Loop Within a Loop (Shift/Reduce)"><div class="titlepage"><div><div><h2 class="title"><a id="id471222"/>Loop Within a Loop (Shift/Reduce)</h2></div></div></div><p>This conflict occurs when the grammar has two nested
+        list-creating loops,<a id="I_indexterm7_d1e13901" class="indexterm"/> with no punctuation to say where the boundaries between
+        entries in the outer list are.</p><a id="I_programlisting7_d1e13907"/><pre class="programlisting">    start:           outerList Z ;
+    outerList: /* empty */
+          |    outerList outerListItem ;
+
+    outerListItem:   innerList ;
+    innerList: /* empty */
+          |    innerList innerListItem ;
+
+    innerListItem:   I ;</pre><p>Assuming that’s really what you want, the resolution of this
+        conflict depends on whether you want repetitions to be treated as one
+        outer loop and many inner loops or as many outer loops of one inner
+        loop each. The difference is whether the code associated with <code class="literal">outerListItem</code> gets executed once for each
+        repetition or once for each set of repetitions. If it makes no
+        difference, choose one or the other arbitrarily. If you want many
+        outer loops, remove the inner loop:</p><a id="I_programlisting7_d1e13914"/><pre class="programlisting">    start:              outerList Z ;
+
+    outerList:    /* empty */
+          |       outerList innerListItem ;
+
+    innerListItem:      I ;</pre><p>If you want many inner loops, remove the outer loop:</p><a id="I_programlisting7_d1e13918"/><pre class="programlisting">    start:              innerList Z ;
+
+    innerList:    /* empty */
+          |       innerList innerListItem ;
+
+    innerListItem:  I ;</pre><p>In practice, it’s pretty rare to have a pair of nested lists
+        with no punctuation. It’s confusing to bison, and it’s confusing to us
+        humans, too. If the outer list is something like a list of statements
+        in a programming language, if you change the language and put a
+        semicolon after each <code class="literal">outerListItem</code>,
+        the conflicts go away:</p><a id="I_programlisting7_d1e13925"/><pre class="programlisting">    start:           outerList Z ;
+    outerList: /* empty */
+          |    outerList outerListItem ';' ;
+
+    outerListItem:   innerList ;
+    innerList: /* empty */
+          |    innerList innerListItem ;
+
+    innerListItem:   I ;</pre></div><div class="sect2" title="Expression Precedence (Shift/Reduce)"><div class="titlepage"><div><div><h2 class="title"><a id="id483219"/>Expression Precedence (Shift/Reduce)</h2></div></div></div><a id="I_programlisting7_d1e13930"/><pre class="programlisting">    expr:        expr  '+'  expr
+          |      expr  '-'  expr
+          |      expr  '*'  expr
+          |      ...
+            ;</pre><p><a id="I_indexterm7_d1e13933" class="indexterm"/>If you describe an expression grammar but forget to
+        define the precedence with <code class="literal">%left</code>
+        and <code class="literal">%right</code>, you get a truckload of
+        shift/reduce conflicts. Assigning precedence to all of the operators
+        should resolve the conflicts. Keep in mind that if you use any of the
+        operators in other ways, for example, using a <code class="literal">-</code> to indicate a range of values, the
+        precedence can also mask conflicts in the other contexts.</p></div><div class="sect2" title="Limited Lookahead (Shift/Reduce or Reduce/Reduce)"><div class="titlepage"><div><div><h2 class="title"><a id="id502192"/>Limited Lookahead (Shift/Reduce or Reduce/Reduce)</h2></div></div></div><p><a id="I_indexterm7_d1e13952" class="indexterm"/><a id="index-762F822IO7P" class="indexterm"/><a id="index-723M136IH5K" class="indexterm"/>Most shift/reduce conflicts are because of bison’s
+        limited lookahead. That is, a parser that could look further ahead
+        would not have a conflict. For example:</p><a id="I_programlisting7_d1e13968"/><pre class="programlisting">    statement: command optional_keyword '('  identifier_list ')'
+          ;
+
+    optional_keyword: /* blank */
+          |      '(' keyword ')'
+          ;</pre><p>The example describes a command line that starts with a required
+        command, ends with a required identifier list in parentheses, and has
+        in the middle an optional keyword in parentheses. Bison gets a
+        shift/reduce conflict with this when it gets to the first parenthesis
+        in the input stream, because it can’t tell whether it is part of the
+        optional keyword or the identifier list. In the first case, the parser
+        would shift the parenthesis within the <code class="literal">optional_keyword</code> rule, and in the second, it
+        would reduce an empty <code class="literal">optional_keyword</code> and move on to the
+        identifier list. If a bison parser could look further ahead, it could
+        tell the difference between the two. But a parser using the regular
+        bison parsing algorithm can’t.</p><p>The default is for bison to choose the shift, which means it
+        always assumes the optional keyword is there. (You can’t really call
+        it optional in that case.) If you apply precedence, you could get the
+        conflict to resolve in favor of the reduction, which would mean you
+        could never have the optional keyword.</p><p>We can <span class="emphasis"><em>flatten</em></span><a id="I_indexterm7_d1e13984" class="indexterm"/> the description, expanding the <code class="literal">optional_keyword</code> rule where it occurs in
+        <code class="literal">statement</code>:</p><a id="I_programlisting7_d1e13996"/><pre class="programlisting">    statement:     command '(' keyword ')' '(' identifier_list  ')'
+           |  command '('  identifier_list ')'
+           ;</pre><p>By flattening the list, we allow the parser to scan ahead with
+        multiple possible pointers until it sees a keyword or identifier, at
+        which point it can tell which rule to use.</p><p>Flattening is a practical solution in this example, but when
+        more rules are involved, it rapidly becomes impractical because of the
+        exponential expansion of the bison description. You may run into a
+        shift/reduce conflict from limited lookahead for which your only
+        practical solution is to change the language or use a GLR
+        parser.</p><p>It’s also possible to get a reduce/reduce conflict because of
+        limited lookahead. One way is to have an overlap of
+        alternatives:</p><a id="I_programlisting7_d1e14004"/><pre class="programlisting">    statement:  command_type_1 ':' '[' ...
+          |     command_type_2 ':' '(' ...
+
+    command_type_1:  CMD_1  | CMD_2 | CMD_COMMON  ;
+
+    command_type_2:  CMD_A  | CMD_B | CMD_COMMON  ;</pre><p>If the input includes <code class="literal">CMD_COMMON</code>, the parser can’t tell whether
+        it’s parsing a <code class="literal">command_type_1</code> or <code class="literal">command_type_2</code> until it sees the bracket or
+        parenthesis, but that’s two tokens ahead. The solution for this is
+        flattening, as we did earlier, or making the alternatives disjoint, as
+        described in the following section.</p><p>You can also get a reduce/reduce conflict from limited lookahead
+        because actions in the middle of a rule are really anonymous rules
+        that must be reduced:</p><a id="I_programlisting7_d1e14020"/><pre class="programlisting">    statement: command_list {<em class="lineannotation"><span class="lineannotation"> &lt;action for '['form&gt;</span></em> }':' '[' ...
+          |    command_list {<em class="lineannotation"><span class="lineannotation"> &lt;action for '('form&gt;</span></em> }':' '(' ...</pre><p>This is already flattened, so there’s nothing you can do to get
+        it to work without using a GLR parser. It simply needs a two-token
+        lookahead, and LALR(1) parsers don’t have that. Unless you’re doing
+        some sort of exotic communication between the parser and lexer, you
+        can just move the action over:</p><a id="I_programlisting7_d1e14030"/><pre class="programlisting">    statement:  command_list ':' '[' { <em class="lineannotation"><span class="lineannotation">&lt;action for '['  form&gt;</span></em> } ...
+           |    command_list ':' '(' { <em class="lineannotation"><span class="lineannotation">&lt;action for '('  form&gt;</span></em> } ...</pre></div><div class="sect2" title="Overlap of Alternatives (Reduce/Reduce)"><div class="titlepage"><div><div><h2 class="title"><a id="id502182"/>Overlap of Alternatives (Reduce/Reduce)</h2></div></div></div><p><a id="I_indexterm7_d1e14042" class="indexterm"/>In this case, you have two alternative rules with the
+        same LHS, and the inputs accepted by them overlap partially. The
+        easiest way to make this work in a regular bison parser is to make the
+        two input sets disjoint. For example:</p><a id="I_programlisting7_d1e14048"/><pre class="programlisting">    person:     girls
+           |    boys
+           ;
+
+    girls:      ALICE
+           |    BETTY
+           |    CHRIS
+           |    DARRYL
+           ;
+
+    boys:       ALLEN
+           |    BOB
+           |    CHRIS
+           |    DARRYL
+           ;</pre><p>You will get a reduce/reduce conflict on <code class="literal">CHRIS</code> and <code class="literal">DARRYL</code> because bison can’t tell whether
+        they’re intended to be <code class="literal">girls</code> or
+        <code class="literal">boys</code>. There are several ways to
+        resolve the conflict. One is as follows:</p><a id="I_programlisting7_d1e14064"/><pre class="programlisting">    person:    girls  | boys | either;
+
+    girls:     ALICE
+          |    BETTY
+          ;
+
+    boys:      ALLEN
+          |    BOB
+          ;
+
+    either:    CHRIS
+          |    DARRYL
+          ;</pre><p>But what if these lists were really long or were complex rules
+        rather than just lists of keywords? What would you do if you wanted to
+        minimize duplication and <code class="literal">girls</code> and
+        <code class="literal">boys</code> were referenced many other
+        places in the bison description? Here’s one possibility:</p><a id="I_programlisting7_d1e14074"/><pre class="programlisting">    person:     just_girls
+          |     just_boys
+          |     either
+          ;
+
+    girls:      just_girls
+          |     either
+          ;
+
+    boys:       just_boys
+          |     either
+          ;
+
+    just_girls: ALICE
+          |     BETTY
+          ;
+
+    just_boys:  ALLEN
+          |     BOB
+          ;
+
+    either:     CHRIS
+          |     DARRYL
+          ;</pre><p>All references to <code class="literal">boys |
+        girls</code> have to be fixed. GLR doesn’t help much here since the
+        original grammar is ambiguous, so you’d still have to deal with the
+        ambiguity.</p><p>But what if it’s impractical to make the alternatives disjoint?
+        If you just can’t figure out a clean way to break up the overlap, then
+        you’ll have to leave the reduce/reduce conflict, use a GLR parser, and
+        deal explicitly with the ambiguity using the techniques discussed in
+        <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>.</p><p>If you don’t use a GLR parser, bison will use its default
+        disambiguating rule for reduce/reduce, which is to choose the first
+        definition in the bison description. So in the first <code class="literal">girls | boys</code> example earlier, <code class="literal">CHRIS</code> and <code class="literal">DARRYL</code> would always be <code class="literal">girls</code>. Swap the positions of the <code class="literal">boys</code> and <code class="literal">girls</code> lists, and <code class="literal">CHRIS</code> and <code class="literal">DARRYL</code> are always <code class="literal">boys</code>. You’ll still get the reduce/reduce
+        warning, and bison will make the alternatives disjoint for you,
+        exactly what you were trying to avoid.<a id="I_indexterm7_d1e14115" class="indexterm"/><a id="I_indexterm7_d1e14116" class="indexterm"/><a id="I_indexterm7_d1e14117" class="indexterm"/><a id="I_indexterm7_d1e14119" class="indexterm"/><a id="I_indexterm7_d1e14120" class="indexterm"/></p></div></div><div class="sect1" title="Summary"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e14122"/>Summary</h1></div></div></div><p>Ambiguities and conflicts within the bison grammar are just one
+      type of coding error, one that is problematic to find and correct. This
+      chapter has presented some techniques for correcting these errors. In
+      the chapter that follows, we will look at other sources of
+      errors.</p><p>Our goal in this chapter has been for you understand the problem
+      at a high enough level that you can fix it. To review how to get to that
+      point:</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>Find the shift/reduce error in <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>.</p></li><li class="listitem"><p>Identify the reduce rule.</p></li><li class="listitem"><p>Identify the relevant shift rule(s).</p></li><li class="listitem"><p>See where the reduce rule will reduce back to.</p></li><li class="listitem"><p>With this much information, you should be able to identify the
+          token stream leading up to the conflict.</p></li></ul></div><p>Seeing where the reduce rule reduces to is typically
+      straightforward, as we have shown. Sometimes a grammar is so complicated
+      that it is not practical to use our “hunt-around” method, and you will
+      need to learn the detailed operation of the state machine to find the
+      states to which you reduce.</p></div><div class="sect1" title="Exercises"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect17_d1e14152"/>Exercises</h1></div></div></div><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>All reduce/reduce conflicts and many shift/reduce conflicts
+          are caused by ambiguous grammars. Beyond the fact that bison doesn’t
+          like them, why are ambiguous grammars usually a bad idea?</p></li><li class="listitem"><p>Find a grammar for a substantial programming language like C,
+          C++, or Fortran, and run it through bison. Does the grammar have
+          conflicts? (Nearly all of them do.) Go through the <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>
+          listing, and determine what causes the conflicts. How hard would
+          they be to fix?</p></li><li class="listitem"><p>After doing the previous exercise, opine about why languages
+          are usually defined and implemented with ambiguous
+          grammars.<a id="I_indexterm7_d1e14170" class="indexterm"/></p></li></ol></div></div></div></div></body>
+</html>

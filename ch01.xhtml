@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 1. Introducing Flex and Bison"><div class="titlepage"><div><div><h1 class="title"><a id="intro"/>Chapter 1. Introducing Flex and Bison</h1></div></div></div><p>Flex and Bison are tools for building programs that handle
+    structured input. They were originally tools for building compilers, but
+    they have proven to be useful in many other areas. In this first chapter,
+    we’ll start by looking at a little (but not too much) of the theory behind
+    them, and then we’ll dive into some examples of their use.</p><div class="sect1" title="Lexical Analysis and Parsing"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e469"/>Lexical Analysis and Parsing</h1></div></div></div><p><a id="I_indexterm1_d1e473" class="indexterm"/><a id="I_indexterm1_d1e478" class="indexterm"/>The earliest compilers back in the 1950s used utterly ad
+      hoc techniques to analyze the syntax of the source code of programs they
+      were compiling. During the 1960s, the field got a lot of academic
+      attention, and by the early 1970s, syntax analysis was a well-understood
+      field.</p><p>One of the key insights was to break the job into two parts:
+      <span class="emphasis"><em>lexical analysis</em></span> (also called
+      <span class="emphasis"><em>lexing</em></span> or <span class="emphasis"><em>scanning</em></span>) and
+      <span class="emphasis"><em>syntax analysis</em></span> (or
+      <span class="emphasis"><em>parsing</em></span>).</p><p><a id="I_indexterm1_d1e502" class="indexterm"/>Roughly speaking, scanning divides the input into
+      meaningful chunks, called <span class="emphasis"><em>tokens</em></span>, and parsing
+      figures out how the tokens relate to each other. For example, consider
+      this snippet of C code:</p><a id="I_programlisting1_d1e511"/><pre class="programlisting">alpha = beta + gamma ;</pre><p>A scanner divides this into the tokens <code class="literal">alpha</code>, <code class="literal">equal
+      sign</code>, <code class="literal">beta</code>, <code class="literal">plus sign</code>, <code class="literal">gamma</code>, and <code class="literal">semicolon</code>. Then the parser determines that
+      <code class="literal">beta + gamma</code> is an expression, and
+      that the expression is assigned to <code class="literal">alpha</code>.</p><div class="sidebar"><a id="I_sidebar1_d1e540"/><p class="title">Getting Flex and Bison</p><p><a id="I_indexterm1_d1e544" class="indexterm"/><a id="I_indexterm1_d1e549" class="indexterm"/>Most Linux and BSD systems come with flex and bison as
+        part of the base system. If your system doesn’t have them, or has
+        out-of-date versions, they’re both easy to install.</p><p>Flex is a Sourceforge project, at <a class="ulink" href="http://flex.sourceforge.net/">http://flex.sourceforge.net/</a>. The current version as of
+        early 2009 was 2.5.35. Changes from version to version are usually
+        minor, so it’s not essential to update your version if it’s close to
+        .35, but some systems still ship with version 2.5.4 or 2.5.4a, which
+        is more than a decade old.</p><p>Bison is available from <a class="ulink" href="http://www.gnu.org/software/bison/">http://www.gnu.org/software/bison/</a>. The current version
+        as of early 2009 was 2.4.1. Bison is under fairly active development,
+        so it’s worth getting an up-to-date version to see what’s new. Version
+        2.4 added support for parsers in Java, for example. BSD users can
+        generally install a current version of flex or bison using the ports
+        collection. Linux users may be able to find current RPMs. If not, flex
+        and bison both use the standard GNU build process, so to install them,
+        download and unpack the current flex and bison tarballs from the web
+        sites, run <code class="literal">./configure</code> and then
+        <code class="literal">make</code> to build each, then become
+        superuser and <code class="literal">make install</code> to
+        install them.</p><p>Flex and bison both depend on the GNU m4 macroprocessor. Linux
+        and BSD should all have m4, but in case they don’t, or they have an
+        ancient version, the current GNU m4 is at <a class="ulink" href="http://www.gnu.org/software/m4/">http://www.gnu.org/software/m4/</a>.</p><p>For Windows users, both bison and flex are included in the
+        Cygwin Linux emulation environment available at <a class="ulink" href="http://www.cygwin.com/">http://www.cygwin.com/</a>. You can use the C or C++ code
+        they generate either with the Cygwin development tools or with native
+        Windows development tools.</p></div></div><div class="sect1" title="Regular Expressions and Scanning"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e580"/>Regular Expressions and Scanning</h1></div></div></div><p><a id="index-176C101EI2F" class="indexterm"/><a id="index-415Q211WK2M" class="indexterm"/><a id="index-053H100RU7M" class="indexterm"/>Scanners generally work by looking for patterns of
+      characters in the input. For example, in a C program, an integer
+      constant is a string of one or more digits, a variable name is a letter
+      followed by zero or more letters or digits, and the various operators
+      are single characters or pairs of characters. A straightforward way to
+      describe these patterns is <span class="emphasis"><em>regular expressions</em></span>,
+      often shortened to <span class="emphasis"><em>regex</em></span> or
+      <span class="emphasis"><em>regexp</em></span>. These are the same kind of patterns that
+      the editors ed and vi and the search program egrep use to describe text
+      to search for. A flex program basically consists of a list of regexps
+      with instructions about what to do when the input matches any of them,
+      known as <span class="emphasis"><em>actions</em></span><a id="I_indexterm1_d1e612" class="indexterm"/>. A flex-generated scanner reads through its input,
+      matching the input against all of the regexps and doing the appropriate
+      action on each match. Flex translates all of the regexps into an
+      efficient internal form that lets it match the input against all the
+      patterns simultaneously, so it’s just as fast for 100 patterns as for
+      one.<sup>[<a id="id464485" href="#ftn.id464485" class="footnote">1</a>]</sup></p><div class="sect2" title="Our First Flex Program"><div class="titlepage"><div><div><h2 class="title"><a id="id538388"/>Our First Flex Program</h2></div></div></div><p><a id="I_indexterm1_d1e625" class="indexterm"/><a id="I_indexterm1_d1e630" class="indexterm"/><a id="I_indexterm1_d1e635" class="indexterm"/><a id="I_indexterm1_d1e638" class="indexterm"/><a id="I_indexterm1_d1e641" class="indexterm"/>Unix systems (by which I also mean Unix-ish systems
+        including Linux and the BSDs) come with a word count program, which
+        reads through a file and reports the number of lines, words, and
+        characters in the file. Flex lets us write <code class="literal">wc</code> in a few dozen lines, shown in <a class="xref" href="ch01.xhtml#pgmwc" title="Example 1-1. Word count fb1-1.l">Example 1-1</a>.</p><div class="example"><a id="pgmwc"/><p class="title">Example 1-1. Word count fb1-1.l</p><div class="example-contents"><pre class="programlisting">/* just like Unix wc */
+%{
+int chars = 0;
+int words = 0;
+int lines = 0;
+%}
+
+%%
+
+[a-zA-Z]+  { words++; chars += strlen(yytext); }
+\n         { chars++; lines++; }
+.          { chars++; }
+
+%%
+
+main(int argc, char **argv)
+{
+  yylex();
+  printf("%8d%8d%8d\n", lines, words, chars);
+}</pre></div></div><p>Much of this program should look familiar to C programmers,
+        since most of it is C. A flex program consists of three sections,
+        separated by <code class="literal">%%</code> lines. The first
+        section contains declarations and option settings. The second section
+        is a list of patterns and actions, and the third section is C code
+        that is copied to the generated scanner, usually small routines
+        related to the code in the actions.</p><p>In the declaration section, code inside of <code class="literal">%{</code> and <code class="literal">%}</code>
+        is copied through verbatim near the beginning of the generated C
+        source file. In this case it just sets up variables for lines, words,
+        and characters.</p><p>In the second section, each pattern is at the beginning of a
+        line, followed by the C code to execute when the pattern matches. The
+        C code can be one statement or possibly a multiline block in braces,
+        <code class="literal">{ }</code>. (Each pattern
+        <span class="emphasis"><em>must</em></span> start at the beginning of the line, since
+        flex considers any line that starts with whitespace to be code to be
+        copied into the generated C program.)</p><p>In this program, there are only three patterns. The first one,
+        <code class="literal">[a-zA-Z]+</code>, matches a word. The
+        characters in brackets, known as a <span class="emphasis"><em>character
+        class</em></span>, match any single upper- or lowercase letter, and the
+        <code class="literal">+</code> sign means to match one or more
+        of the preceding thing, which here means a string of letters or a
+        word. The action code updates the number of words and characters seen.
+        In any flex action, the variable <code class="literal">yytext</code> is set to point to the input text
+        that the pattern just matched. In this case, all we care about is how
+        many characters it was so we can update the character count
+        appropriately.</p><p>The second pattern, <code class="literal">\n</code>, just
+        matches a new line. The action updates the number of lines and
+        characters.</p><p>The final pattern is a dot, which is regex-ese for any
+        character. (It’s similar to a <code class="literal">?</code> in
+        shell scripts.) The action updates the number of characters. And
+        that’s all the patterns we need.<sup>[<a id="id490463" href="#ftn.id490463" class="footnote">2</a>]</sup></p><p>The C code at the end is a main program that calls <code class="literal">yylex()</code>, the name that flex gives to the
+        scanner routine, and then prints the results. In the absence of any
+        other arrangements, the scanner reads from the standard input. So
+        let’s run it.</p><a id="I_programlisting1_d1e710"/><pre class="programlisting">$ <span class="bold"><strong>flex fb1-1.l</strong></span>
+$ <span class="bold"><strong>cc lex.yy.c -lfl</strong></span>
+$ <span class="bold"><strong>./a.out</strong></span>
+<span class="bold"><strong>The boy stood on the burning deck</strong></span>
+<span class="bold"><strong>shelling peanuts by the peck</strong></span>
+<span class="bold"><strong>^D</strong></span>
+2 12 63
+$</pre><p>First we tell flex to translate our program, and in classic Unix
+        fashion since there are no errors, it does so and says nothing. Then
+        we compile <code class="literal">lex.yy.c</code>, the C program
+        it generated; link it with the flex library, <code class="literal">-lfl</code>; run it; and type a little input for it
+        to count. Seems to work.</p><p>The actual <code class="literal">wc</code> program uses a
+        slightly different definition of a word, a string of non-whitespace
+        characters. Once we look up what all the whitespace characters are, we
+        need only replace the line that matches words with one that matches a
+        string of non-whitespace characters:</p><a id="I_programlisting1_d1e745"/><pre class="programlisting">[^ \t\n\r\f\v]+  { words++; chars += strlen(yytext); }</pre><p>The <code class="literal">^</code> at the beginning of the
+        character class means to match any character other than the ones in
+        the class, and the <code class="literal">+</code> once again
+        means to match one or more of the preceding patterns. This
+        demonstrates one of flex’s strengths—it’s easy to make small changes
+        to patterns and let flex worry about how they might affect the
+        generated code.</p></div><div class="sect2" title="Programs in Plain Flex"><div class="titlepage"><div><div><h2 class="title"><a id="id498465"/>Programs in Plain Flex</h2></div></div></div><p>Some applications are simple enough that you can write the whole
+        thing in flex, or in flex with a little bit of C. For example, <a class="xref" href="ch01.xhtml#etoalex" title="Example 1-2. English to American fb1-2.l">Example 1-2</a> shows the skeleton of a translator from English
+        to American.</p><div class="example"><a id="etoalex"/><p class="title">Example 1-2. English to American fb1-2.l</p><div class="example-contents"><pre class="programlisting">/* English -&gt; American */
+%%
+"colour" { printf("color"); }
+"flavour" { printf("flavor"); }
+"clever" { printf("smart"); }
+"smart" { printf("elegant"); }
+"conservative" { printf("liberal"); }
+ <em class="lineannotation"><span class="lineannotation">… lots of other words …</span></em>
+. { printf("%s", yytext); }
+%%</pre></div></div><p>It reads through its input, printing the American version when
+        it matches an English word and passing everything else through. This
+        example is somewhat unrealistic (<span class="emphasis"><em>smart</em></span> can also
+        mean hurt, after all), but flex is not a bad tool to use for doing
+        modest text transformations and for programs that collect statistics
+        on input. More often than not, though, you’ll want to use flex to
+        generate a scanner that divides the input into tokens that are then
+        used by other parts of your program.</p></div><div class="sect2" title="Putting Flex and Bison Together"><div class="titlepage"><div><div><h2 class="title"><a id="id475837"/>Putting Flex and Bison Together</h2></div></div></div><p><a id="I_indexterm1_d1e779" class="indexterm"/><a id="I_indexterm1_d1e784" class="indexterm"/>The first program we’ll write using both flex and bison
+        is a desk calculator. First we’ll write a scanner, and then we’ll
+        write a parser and splice the two of them together.</p><p>To keep things simple, we’ll start by recognizing only integers,
+        four basic arithmetic operators, and a unary absolute value operator
+        (<a class="xref" href="ch01.xhtml#calclex1" title="Example 1-3. A simple flex scanner fb1-3.l">Example 1-3</a>).</p><div class="example"><a id="calclex1"/><p class="title">Example 1-3. A simple flex scanner fb1-3.l</p><div class="example-contents"><pre class="programlisting">/* recognize tokens for the calculator and print them out */
+%%
+"+"    { printf("PLUS\n"); }
+"-"    { printf("MINUS\n"); }
+"*"    { printf("TIMES\n"); }
+"/"    { printf("DIVIDE\n"); }
+"|"    { printf("ABS\n"); }
+[0-9]+ { printf("NUMBER %s\n", yytext); }
+\n     { printf("NEWLINE\n"); }
+[ \t]  { }
+.      { printf("Mystery character %s\n", yytext); }
+%%</pre></div></div><p>The first five patterns are literal operators, written as quoted
+        strings, and the actions, for now, just print a message saying what
+        matched. The quotes tell flex to use the strings as is, rather than
+        interpreting them as regular expressions.</p><p>The sixth pattern matches an integer. The bracketed pattern
+        <code class="literal">[0-9]</code>matches any single digit, and
+        the following <code class="literal">+</code> sign means to match
+        one or more of the preceding item, which here means a string of one or
+        more digits. The action prints out the string that’s matched, using
+        the pointer <code class="literal">yytext</code> that the scanner
+        sets after each match.</p><p>The seventh pattern matches a newline character, represented by
+        the usual C <code class="literal">\n</code> sequence.</p><p>The eighth pattern ignores whitespace. It matches any single
+        space or tab (<code class="literal">\t</code>), and the empty
+        action code does nothing.</p><p>The final pattern is the catchall to match anything the other
+        patterns didn’t. Its action code prints a suitable complaint.</p><p>These nine patterns now provide rules to match anything that the
+        user might enter. As we continue to develop the calculator, we’ll add
+        more rules to match more tokens, but these will do to get us
+        started.</p><p>In this simple flex program, there’s no C code in the third
+        section. The flex library (<code class="literal">-lfl</code>) provides a tiny main program
+        that just calls the scanner, which is adequate for this
+        example.</p><p>So let’s try out our scanner:</p><a id="I_programlisting1_d1e837"/><pre class="programlisting">$ <span class="bold"><strong>flex fb1-3.l</strong></span>
+$ <span class="bold"><strong>cc lex.yy.c -lfl</strong></span>
+$ <span class="bold"><strong>./a.out</strong></span>
+<span class="bold"><strong>12+34</strong></span>
+NUMBER 12
+PLUS
+NUMBER 34
+NEWLINE
+<span class="bold"><strong> 5 6 / 7q</strong></span>
+NUMBER 5
+NUMBER 6
+DIVIDE
+NUMBER 7
+Mystery character q
+NEWLINE
+<span class="bold"><strong>^D</strong></span>
+$</pre><p>First we run flex, which translates the scanner into a C program
+        called <code class="literal">lex.yy.c</code>, then we compile
+        the C program, and finally we run it. The output shows that it
+        recognizes numbers as numbers, it recognizes operators as operators,
+        and the <code class="literal">q</code> in the last line of input
+        is caught by the catchall pattern at the end. (That <code class="literal">^D</code> is a Unix/Linux end-of-file character. On
+        Windows you’d type <code class="literal">^Z</code>.)</p></div><div class="sect2" title="The Scanner as Coroutine"><div class="titlepage"><div><div><h2 class="title"><a id="id470841"/>The Scanner as Coroutine</h2></div></div></div><p><a id="I_indexterm1_d1e876" class="indexterm"/>Most programs with flex scanners use the scanner to
+        return a stream of tokens that are handled by a parser. Each time the
+        program needs a token, it calls <code class="literal">yylex()</code>, which reads a little input and
+        returns the token. When it needs another token, it calls <code class="literal">yylex()</code> again. The scanner acts as a
+        coroutine; that is, each time it returns, it remembers where it was,
+        and on the next call it picks up where it left off.</p><p>Within the scanner, when the action code has a token ready, it
+        just returns it as the value from <code class="literal">yylex()</code>. The next time the program calls
+        <code class="literal">yylex()</code>, it resumes scanning with
+        the next input characters. Conversely, if a pattern doesn’t produce a
+        token for the calling program and doesn’t return, the scanner will
+        just keep going within the same call to <code class="literal">yylex()</code>, scanning the next input characters.
+        This incomplete snippet shows two patterns that return tokens, one for
+        the <code class="literal">+</code> operator and one for a
+        number, and a whitespace pattern that does nothing, thereby ignoring
+        what it matched.</p><a id="I_programlisting1_d1e902"/><pre class="programlisting">"+"    { return ADD; }
+[0-9]+ { return NUMBER; }
+[ \t] { /* ignore whitespace */ }</pre><p>This apparent casualness about whether action code returns often
+        confuses new flex users, but the rule is actually quite simple: If
+        action code returns, scanning resumes on the next call to <code class="literal">yylex()</code>; if it doesn’t return, scanning
+        resumes immediately.</p><p>Now we’ll modify our scanner so it returns tokens that a parser
+        can use to implement a calculator.</p></div><div class="sect2" title="Tokens and Values"><div class="titlepage"><div><div><h2 class="title"><a id="id487687"/>Tokens and Values</h2></div></div></div><p><a id="I_indexterm1_d1e915" class="indexterm"/><a id="I_indexterm1_d1e920" class="indexterm"/>When a flex scanner returns a stream of tokens, each
+        token actually has two parts, the token and the token’s
+        <span class="emphasis"><em>value</em></span>. The token is a small integer. The token
+        numbers are arbitrary, except that token zero always means
+        end-of-file. When bison creates a parser, bison assigns the token
+        numbers automatically starting at 258 (this avoids collisions with
+        literal character tokens, discussed later) and creates a <code class="literal">.h</code> with definitions of the tokens numbers.
+        But for now, we’ll just define a few tokens by hand:</p><a id="I_programlisting1_d1e932"/><pre class="programlisting">NUMBER = 258,
+ADD = 259,
+SUB = 260,
+MUL = 261,
+DIV = 262,
+ABS = 263,
+EOL = 264 <em class="lineannotation"><span class="lineannotation">end of line</span></em></pre><p>(Well, actually, it’s the list of token numbers that bison will
+        create, as we’ll see a few pages ahead. But these token numbers are as
+        good as any.)</p><p>A token’s value identifies which of a group of similar tokens
+        this one is. In our scanner, all numbers are <code class="literal">NUMBER</code> tokens, with the value saying what
+        number it is. When parsing more complex input with names,
+        floating-point numbers, string literals, and the like, the value says
+        which name, number, literal, or whatever, this token is. Our first
+        version of the calculator’s scanner, with a small main program for
+        debugging, is in <a class="xref" href="ch01.xhtml#clex1" title="Example 1-4. Calculator scanner fb1-4.l">Example 1-4</a>.</p><div class="example"><a id="clex1"/><p class="title">Example 1-4. Calculator scanner fb1-4.l</p><div class="example-contents"><pre class="programlisting">/* recognize tokens for the calculator and print them out */
+%{
+   enum yytokentype {
+     NUMBER = 258,
+     ADD = 259,
+     SUB = 260,
+     MUL = 261,
+     DIV = 262,
+     ABS = 263,
+     EOL = 264
+   };
+
+   int yylval;
+%}
+
+%%
+"+"    { return ADD; }
+"-"    { return SUB; }
+"*"    { return MUL; }
+"/"    { return DIV; }
+"|"    { return ABS; }
+[0-9]+ { yylval = atoi(yytext); return NUMBER; }
+\n     { return EOL; }
+[ \t]  { /* ignore whitespace */ }
+.      { printf("Mystery character %c\n", *yytext); }
+%%
+main(int argc, char **argv)
+{
+  int tok;
+
+  while(tok = yylex()) {
+    printf("%d", tok);
+    if(tok == NUMBER) printf(" = %d\n", yylval);
+    else printf("\n");
+  }
+}</pre></div></div><p>We define the token numbers in a C <code class="literal">enum</code>. Then we make <code class="literal">yylval</code>, the variable that stores the token
+        value, an integer, which is adequate for the first version of our
+        calculator. (Later we’ll see that the value is usually defined as a
+        union so that different kinds of tokens can have different kinds of
+        values, e.g., a floating-point number or a pointer to a symbol’s entry
+        in a symbol table.)</p><p>The list of patterns is the same as in the previous example, but
+        the action code is different. For each of the tokens, the scanner
+        returns the appropriate code for the token; for numbers, it turns the
+        string of digits into an integer and stores it in <code class="literal">yylval</code> before returning. The pattern that
+        matches whitespace doesn’t return, so the scanner just continues to
+        look for what comes next.</p><p>For testing only, a small main program calls <code class="literal">yylex()</code>, prints out the token values, and,
+        for <code class="literal">NUMBER</code> tokens, also prints
+        <code class="literal">yylval</code>.</p><a id="I_programlisting1_d1e974"/><pre class="programlisting">$ <span class="bold"><strong>flex fb1-4.l</strong></span>
+$ <span class="bold"><strong>cc lex.yy.c -lfl</strong></span>
+$ <span class="bold"><strong>./a.out</strong></span>
+<span class="bold"><strong>a / 34 + |45</strong></span>
+<span class="bold"><strong>Mystery character a</strong></span>
+<span class="bold"><strong>262</strong></span>
+<span class="bold"><strong>258 = 34</strong></span>
+<span class="bold"><strong>259</strong></span>
+<span class="bold"><strong>263</strong></span>
+<span class="bold"><strong>258 = 45</strong></span>
+<span class="bold"><strong>264</strong></span>
+<span class="bold"><strong>^D</strong></span>
+$</pre><p>Now that we have a working scanner, we turn our attention to
+        parsing.</p><div class="sidebar"><a id="I_sidebar1_d1e1017"/><p class="title">Where Did Flex and Bison Come From?</p><p>Bison is descended from yacc, a parser generator written
+          between 1975 and 1978 by Stephen C. Johnson at Bell Labs. As its
+          name, short for “yet another compiler compiler,” suggests, many
+          people were writing parser generators at the time. Johnson’s tool
+          combined a firm theoretical foundation from parsing work by D. E.
+          Knuth, which made its parsers extremely reliable, and a convenient
+          input syntax. These made it extremely popular among users of Unix
+          systems, although the restrictive license under which Unix was
+          distributed at the time limited its use outside of academia and the
+          Bell System. In about 1985, Bob Corbett, a graduate student at the
+          University of California, Berkeley, reimplemented yacc using
+          somewhat improved internal algorithms, which evolved into Berkeley
+          yacc. Since his version was faster than Bell’s yacc and was
+          distributed under the flexible Berkeley license, it quickly became
+          the most popular version of yacc. Richard Stallman of the Free Software
+          Foundation (FSF) adapted Corbett’s work for use in the GNU project,
+          where it has grown to include a vast number of new features as it
+          has evolved into the current version of bison. Bison is now
+          maintained as a project of the FSF and is distributed under the GNU
+          Public License.</p><p>In 1975, Mike Lesk and summer intern Eric Schmidt wrote lex, a
+          lexical analyzer generator, with most of the programming being done
+          by Schmidt. They saw it both as a standalone tool and as a companion
+          to Johnson’s yacc. Lex also became quite popular, despite being
+          relatively slow and buggy. (Schmidt nonetheless went on to have a
+          fairly successful career in the computer industry where he is now
+          the CEO of Google.)</p><p>In about 1987, Vern Paxson of the Lawrence Berkeley Lab took a
+          version of lex written in ratfor (an extended Fortran popular at the
+          time) and translated it into C, calling it flex, for
+          “<span class="emphasis"><em>F</em></span>ast <span class="emphasis"><em>Lex</em></span>ical Analyzer
+          Generator.” Since it was faster and more reliable than AT&amp;T lex
+          and, like Berkeley yacc, available under the Berkeley license, it
+          has completely supplanted the original lex. Flex is now a
+          SourceForge project, still under the Berkeley license.<a id="I_indexterm1_d1e1035" class="indexterm"/><a id="I_indexterm1_d1e1036" class="indexterm"/><a id="I_indexterm1_d1e1037" class="indexterm"/></p></div></div></div><div class="sect1" title="Grammars and Parsing"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e1038"/>Grammars and Parsing</h1></div></div></div><p><a id="index-575E338NF8N" class="indexterm"/><a id="index-380S612EL3D" class="indexterm"/>The parser’s job is to figure out the relationship among
+      the input tokens. A common way to display such relationships is a
+      <span class="emphasis"><em>parse tree</em></span>. For example, under the usual rules of
+      arithmetic, the arithmetic expression <code class="literal">1 * 2 + 3
+      * 4 + 5</code> would have the parse tree in <a class="xref" href="ch01.xhtml#ptree1" title="Figure 1-1. Expression parse tree">Figure 1-1</a>.</p><div class="figure-float"><div class="figure"><a id="ptree1"/><div class="figure-contents"><div class="mediaobject"><a id="I_mediaobject1_d1e1064"/><img src="Images/httpatomoreillycomsourceoreillyimages1740020.png" alt="Expression parse tree" width="441" height="220"/></div></div><p class="title">Figure 1-1. Expression parse tree</p></div></div><p>Multiplication has higher precedence than addition, so the first
+      two expressions are <code class="literal">1 *
+      2</code> and <code class="literal">3 * 4</code>. Then those two
+      expressions are added together, and that sum is then added to 5. Each
+      branch of the tree shows the relationship between the tokens or subtrees
+      below it. The structure of this particular tree is quite simple and
+      regular with two descendants under each node (that’s why we use a
+      calculator as the first example), but any bison parser makes a parse
+      tree as it parses its input. In some applications, it creates the tree
+      as a data structure in memory for later use. In others, the tree is just
+      implicit in the sequence of operations the parser does.</p><div class="sect2" title="BNF Grammars"><div class="titlepage"><div><div><h2 class="title"><a id="id498884"/>BNF Grammars</h2></div></div></div><p><a id="I_indexterm1_d1e1081" class="indexterm"/>In order to write a parser, we need some way to describe
+        the rules the parser uses to turn a sequence of tokens into a parse
+        tree. The most common kind of language that computer parsers handle is
+        a <span class="emphasis"><em>context-free grammar</em></span> (CFG).<sup>[<a id="id484473" href="#ftn.id484473" class="footnote">3</a>]</sup> The standard form to write down a CFG is
+        <span class="emphasis"><em>Backus-Naur Form</em></span> (BNF), created around 1960 to
+        describe Algol 60 and named after two members of the Algol 60
+        committee.</p><p>Fortunately, BNF is quite simple. Here’s BNF for simple
+        arithmetic expressions enough to handle <code class="literal">1 * 2
+        + 3 * 4 + 5</code>:</p><a id="I_programlisting1_d1e1108"/><pre class="programlisting">&lt;exp&gt; ::= &lt;factor&gt; 
+      | &lt;exp&gt; + &lt;factor&gt;
+&lt;factor&gt; ::= NUMBER
+      | &lt;factor&gt; * NUMBER</pre><p>Each line is a <span class="emphasis"><em>rule</em></span> that says how to create
+        a branch of the parse tree. In BNF, <code class="literal">::=</code> can be read “is a” or “becomes,” and
+        <code class="literal">|</code> is “or,” another way to create a
+        branch of the same kind. The name on the left side of a rule is a
+        <span class="emphasis"><em>symbol</em></span> or <span class="emphasis"><em>term</em></span>. By
+        convention, all tokens are considered to be symbols, but there are
+        also symbols that are not tokens.</p><p>Useful BNF is invariably quite recursive, with rules that refer
+        to themselves directly or indirectly. These simple rules can match an
+        arbitrarily complex sequence of additions and multiplications by
+        applying them recursively.</p></div><div class="sect2" title="Bison’s Rule Input Language"><div class="titlepage"><div><div><h2 class="title"><a id="id480816"/>Bison’s Rule Input Language</h2></div></div></div><p><a id="I_indexterm1_d1e1133" class="indexterm"/><a id="I_indexterm1_d1e1138" class="indexterm"/>Bison rules are basically BNF, with the punctuation
+        simplified a little to make them easier to type. <a class="xref" href="ch01.xhtml#calc1" title="Example 1-5. Simple calculator fb1-5.y">Example 1-5</a> shows the bison code, including the BNF, for the
+        first version of our calculator.</p><div class="example"><a id="calc1"/><p class="title">Example 1-5. Simple calculator fb1-5.y</p><div class="example-contents"><pre class="programlisting">/* simplest version of calculator */
+%{
+#include &lt;stdio.h&gt;
+%}
+
+/* declare tokens */
+%token NUMBER
+%token ADD SUB MUL DIV ABS
+%token EOL
+
+%%
+
+calclist: /* nothing */                       <em class="lineannotation"><span class="lineannotation">matches at beginning of input</span></em>
+ | calclist exp EOL { printf("= %d\n", $2); } <em class="lineannotation"><span class="lineannotation">EOL is end of an expression</span></em>
+ ;
+
+exp: factor       <em class="lineannotation"><span class="lineannotation">default $$ = $1 </span></em>
+ | exp ADD factor { $$ = $1 + $3; }
+ | exp SUB factor { $$ = $1 - $3; }
+ ;
+
+factor: term       <em class="lineannotation"><span class="lineannotation">default $$ = $1 </span></em>
+ | factor MUL term { $$ = $1 * $3; }
+ | factor DIV term { $$ = $1 / $3; }
+ ;
+
+term: NUMBER  <em class="lineannotation"><span class="lineannotation">default $$ = $1 </span></em>
+ | ABS term   { $$ = $2 &gt;= 0? $2 : - $2; }
+;
+%%
+main(int argc, char **argv)
+{
+  yyparse();
+}
+
+yyerror(char *s)
+{
+  fprintf(stderr, "error: %s\n", s);
+}</pre></div></div><p>Bison programs have (not by coincidence) the same three-part
+        structure as flex programs, with declarations, rules, and C code. The
+        declarations here include C code to be copied to the beginning of the
+        generated C parser, again enclosed in <code class="literal">%{</code> and <code class="literal">%}</code>. Following that are <code class="literal">%token</code> token declarations, telling bison the
+        names of the symbols in the parser that are tokens. By convention,
+        tokens have uppercase names, although bison doesn’t require it. Any
+        symbols not declared as tokens have to appear on the left side of at
+        least one rule in the program. (If a symbol neither is a token nor
+        appears on the left side of a rule, it’s like an unreferenced variable
+        in a C program. It doesn’t hurt anything, but it probably means the
+        programmer made a mistake.)</p><p>The second section contains the rules in simplified BNF. Bison
+        uses a single colon rather than <code class="literal">::=</code>, and since line boundaries are not
+        significant, a semicolon marks the end of a rule. Again, like flex,
+        the C action code goes in braces at the end of each rule.</p><p>Bison automatically does the parsing for you, remembering what
+        rules have been matched, so the action code maintains the values
+        associated with each symbol. Bison parsers also perform side effects
+        such as creating data structures for later use or, as in this case,
+        printing out results. The symbol on the left side of the first rule is
+        the <span class="emphasis"><em>start symbol</em></span>, the one that the entire input
+        has to match. There can be, and usually are, other rules with the same
+        start symbol on the left.</p><p>Each symbol in a bison rule has a value; the value of the target
+        symbol (the one to the left of the colon) is called <code class="literal">$$</code> in the action code, and the values on the
+        right are numbered <code class="literal">$1</code>, <code class="literal">$2</code>, and so forth, up to the number of
+        symbols in the rule. The values of tokens are whatever was in <code class="literal">yylval</code> when the scanner returned the token;
+        the values of other symbols are set in rules in the parser. In this
+        parser, the values of the <code class="literal">factor</code>,
+        <code class="literal">term</code>, and <code class="literal">exp</code> symbols are the value of the expression
+        they represent.</p><p>In this parser, the first two rules, which define the symbol
+        <code class="literal">calclist</code>, implement a loop that
+        reads an expression terminated by a newline and prints its value. The
+        definition of <code class="literal">calclist</code> uses a
+        common two-rule recursive idiom to implement a sequence or list: the
+        first rule is empty and matches nothing; the second adds an item to
+        the list. The action in the second rule prints the value of the
+        <code class="literal">exp</code> in $2.</p><p>The rest of the rules implement the calculator. The rules with
+        operators such as <code class="literal">exp ADD factor</code>
+        and <code class="literal">ABS term</code> do the appropriate
+        arithmetic on the symbol values. The rules with a single symbol on the
+        right side are syntactic glue to put the grammar together; for
+        example, an <code class="literal">exp</code> is a <code class="literal">factor</code>. In the absence of an explicit action
+        on a rule, the parser assigns <code class="literal">$1</code> to
+        <code class="literal">$$</code>. This is a hack, albeit a very
+        useful one, since most of the time it does the right thing.</p><div class="sidebar"><a id="I_sidebar1_d1e1243"/><p class="title">How About Parsing English?</p><p>For a very long time, as far back as the 1950s, people have
+          been trying to program computers to handle <span class="emphasis"><em>natural
+          languages</em></span>, languages spoken by people rather than by
+          computers, a task that turns out to be extremely difficult. One
+          approach is to parse them with the same techniques used for computer
+          languages, as in this fragment:</p><a id="I_programlisting1_d1e1251"/><pre class="programlisting">simple_sentence: subject verb object
+      |     subject verb object prep_phrase ;
+
+subject:    NOUN
+      |     PRONOUN
+      |     ADJECTIVE subject ;
+
+verb:       VERB
+      |     ADVERB VERB
+      |     verb VERB ;
+
+object:     NOUN
+      |     ADJECTIVE object ;
+
+prep_phrase:     PREPOSITION NOUN ;</pre><p>Unfortunately, it doesn’t work beyond small and unrealistic
+          subsets of natural languages. Although natural languages have
+          grammars, the grammars are extremely complex and not easy to write
+          down or to handle in software. It remains an interesting and open
+          question why this should be. Why are languages we invent for our
+          computers so much simpler than the ones we speak?</p></div></div><div class="sect2" title="Compiling Flex and Bison Programs Together"><div class="titlepage"><div><div><h2 class="title"><a id="id440011"/>Compiling Flex and Bison Programs Together</h2></div></div></div><p><a id="I_indexterm1_d1e1259" class="indexterm"/><a id="I_indexterm1_d1e1264" class="indexterm"/><a id="I_indexterm1_d1e1269" class="indexterm"/>Before we build the scanner and parser into a working
+        program, we have to make some small changes to the scanner in <a class="xref" href="ch01.xhtml#clex1" title="Example 1-4. Calculator scanner fb1-4.l">Example 1-4</a> so we can call it from the parser. In particular,
+        rather than defining explicit token values in the first part, we
+        include a header file that bison will create for us, which includes
+        both definitions of the token numbers and a definition of <code class="literal">yylval</code>. We also delete the testing main
+        routine in the third section of the scanner, since the parser will now
+        call the scanner. The first part of the scanner now looks like <a class="xref" href="ch01.xhtml#clex2" title="Example 1-6. Calculator scanner fb1-5.l">Example 1-6</a>.</p><div class="example"><a id="clex2"/><p class="title">Example 1-6. Calculator scanner fb1-5.l</p><div class="example-contents"><pre class="programlisting">%{
+# include "fb1-5.tab.h"
+%}
+%% <em class="lineannotation"><span class="lineannotation"> same rules as before, and no code in the third section</span></em></pre></div></div><p>The build process is now complex enough to be worth putting into
+        a <code class="literal">Makefile</code>:</p><a id="I_programlisting1_d1e1294"/><pre class="programlisting"># part of the makefile
+fb1-5:  fb1-5.l fb1-5.y
+        bison -d fb1-5.y
+        flex fb1-5.l
+        cc -o $@ fb1-5.tab.c lex.yy.c -lfl</pre><p>First it runs bison with the <code class="literal">-d</code> (for “definitions” file) flag, which
+        creates <code class="literal">fb1-5.tab.c</code> and <code class="literal">fb1-5.tab.h</code>, and it runs flex to create
+        <code class="literal">lex.yy.c</code>. Then it compiles them
+        together, along with the flex library. Try it out, and in particular
+        verify that it handles operator precedence correctly, doing
+        multiplication and division before addition and subtraction:<a id="I_indexterm1_d1e1314" class="indexterm"/><a id="I_indexterm1_d1e1315" class="indexterm"/></p><a id="I_programlisting1_d1e1316"/><pre class="programlisting">$ <span class="bold"><strong>./fb1-5</strong></span>
+<span class="bold"><strong>2 + 3 * 4</strong></span>
+= 14
+<span class="bold"><strong>2 * 3 + 4</strong></span>
+= 10
+<span class="bold"><strong>20 / 4 - 2</strong></span>
+= 3
+<span class="bold"><strong>20 - 4 / 2</strong></span>
+= 18</pre></div></div><div class="sect1" title="Ambiguous Grammars: Not Quite"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e1333"/>Ambiguous Grammars: Not Quite</h1></div></div></div><p><a id="I_indexterm1_d1e1337" class="indexterm"/><a id="I_indexterm1_d1e1342" class="indexterm"/>The reader may be wondering at this point whether the
+      grammar in <a class="xref" href="ch01.xhtml#calc1" title="Example 1-5. Simple calculator fb1-5.y">Example 1-5</a> is needlessly complicated. Why not
+      just write this?</p><a id="I_programlisting1_d1e1350"/><pre class="programlisting">exp: exp ADD exp
+   | exp SUB exp
+   | exp MUL exp
+   | exp DIV exp
+   | ABS exp
+   | NUMBER
+   ;</pre><p>There are two answers: precedence <a id="I_indexterm1_d1e1354" class="indexterm"/>and ambiguity. The separate symbols for <code class="literal">term</code>, <code class="literal">factor</code>, and <code class="literal">exp</code> tell bison to handle <code class="literal">ABS</code>, then <code class="literal">MUL</code> and <code class="literal">DIV</code>, and then <code class="literal">ADD</code> and <code class="literal">SUB</code>. In general, whenever a grammar has
+      multiple levels of precedence where one kind of operator binds “tighter”
+      than another, the parser will need a level of rule for each
+      level.</p><p>Well, then, OK, how about this?</p><a id="I_programlisting1_d1e1387"/><pre class="programlisting">exp: exp ADD exp
+   | exp SUB exp
+   | factor
+   ;
+<em class="lineannotation"><span class="lineannotation"> similarly for factor and term</span></em></pre><p><a id="I_indexterm1_d1e1392" class="indexterm"/><a id="I_indexterm1_d1e1397" class="indexterm"/>One of bison’s greatest strengths, and simultaneously one
+      of its most annoying aspects, is that <span class="emphasis"><em>it will not parse an
+      ambiguous grammar</em></span>. That is, any parser that bison creates has
+      exactly one way to parse any input that it parses, and the parser will
+      accept exactly that grammar. The previous grammar is ambiguous, because
+      input such as <code class="literal">1 - 2 + 3</code> could be
+      parsed either as <code class="literal">(1-2) + 3</code> or as
+      <code class="literal">1 - (2+3)</code>, two different expressions
+      with different values. Although there are some cases where ambiguity
+      doesn’t matter (e.g., <code class="literal">1+2+3</code>), in most
+      cases the ambiguity really is an error, and the grammar needs to be
+      fixed. The way we wrote the grammar in <a class="xref" href="ch01.xhtml#calc1" title="Example 1-5. Simple calculator fb1-5.y">Example 1-5</a> makes
+      expressions unambiguously group to the left. If a grammar is ambiguous,
+      bison reports <span class="emphasis"><em>conflicts</em></span>, places where there are two
+      different possible parses for a given bit of input. It creates a parser
+      anyway, picking one option in each conflict, but that choice means the
+      language it’s parsing isn’t necessarily the one you tried to specify. We
+      discuss this at length in <a class="xref" href="ch07.xhtml" title="Chapter 7. Ambiguities and Conflicts">Chapter 7</a>.</p><p>Bison’s usual parsing algorithm can look ahead one token to decide
+      what rules match the input. Some grammars aren’t ambiguous but have
+      places that require more than one token of lookahead to decide what
+      rules will match. These also cause conflicts, although it is usually
+      possible to rewrite the grammar so that one token lookahead is
+      enough.</p><p>Actually, the previous discussion about ambiguity is not quite
+      true. Since expression grammars are so common and useful, and since
+      writing separate rules for each precedence level is tedious, bison has
+      some special features that let you write an expression grammar in the
+      natural way with one rule per operator in the form <code class="literal">exp OP exp</code> and just tell it what precedence
+      and grouping rules to use to resolve the ambiguity. We’ll learn about
+      these in <a class="xref" href="ch03.xhtml" title="Chapter 3. Using Bison">Chapter 3</a>. Also, bison has an alternative
+      parsing technique called GLR that can handle ambiguous grammars and
+      arbitrary lookahead, tracking all the possible parses that match the
+      input in parallel. We cover this in <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>.</p></div><div class="sect1" title="Adding a Few More Rules"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e1437"/>Adding a Few More Rules</h1></div></div></div><p><a id="I_indexterm1_d1e1441" class="indexterm"/><a id="I_indexterm1_d1e1446" class="indexterm"/>One of the nicest things about using flex and bison to
+      handle a program’s input is that it’s often quite easy to make small
+      changes to the grammar. Our expression language would be a lot more
+      useful if it could handle parenthesized expressions, and it would be
+      nice if it could handle comments, using <code class="literal">//</code> syntax. To do this, we need only add one
+      rule to the parser and three to the scanner.</p><p>In the parser we define two new tokens, <code class="literal">OP</code> and <code class="literal">CP</code>
+      for open and close parentheses, and add a rule to make a parenthesized
+      expression a term:</p><a id="I_programlisting1_d1e1463"/><pre class="programlisting">%token OP CP <em class="lineannotation"><span class="lineannotation"> in the declaration section</span></em>
+ ...
+%%
+term: NUMBER
+ | ABS term { $$ = $2 &gt;= 0? $2 : - $2; }
+ | OP exp CP { $$ = $2; } <em class="lineannotation"><span class="lineannotation">New rule</span></em>
+ ;</pre><p>Note the action code in the new rule assigns <code class="literal">$2</code>, the value of the expression in the
+      parentheses, to <code class="literal">$$</code>.</p><p>The scanner has two new rules to recognize the two new tokens and
+      one new rule to ignore two slashes followed by arbitrary text. Since a
+      dot matches anything except a newline, <code class="literal">.*</code> will gobble up the rest of the line.</p><a id="I_programlisting1_d1e1484"/><pre class="programlisting">"("     { return OP; }
+")"     { return CP; }
+"//".*  /* ignore comments */</pre><p>That’s it—rebuild the calculator, and now it handles parenthesized
+      expressions and comments.</p></div><div class="sect1" title="Flex and Bison vs. Handwritten Scanners and Parsers"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e1488"/>Flex and Bison vs. Handwritten Scanners and Parsers</h1></div></div></div><p><a id="I_indexterm1_d1e1492" class="indexterm"/><a id="I_indexterm1_d1e1497" class="indexterm"/><a id="I_indexterm1_d1e1502" class="indexterm"/><a id="I_indexterm1_d1e1507" class="indexterm"/>The two example programs in this chapter, word count and a
+      calculator, are both simple enough that we could without too much
+      trouble have written them directly in C. But there is little reason to
+      do so when developing a program. The pattern-matching technique that
+      flex uses is quite fast and is usually about the same speed as a
+      handwritten scanner. For more complex scanners with many patterns, a
+      flex scanner may even be faster, since handwritten code will usually do
+      many comparisons per character, while flex always does one. The flex
+      version of a scanner is invariably much shorter than the equivalent C,
+      which makes it a lot easier to debug. In general, if the rules for
+      breaking an input stream into tokens can be described by regular
+      expressions, flex is the tool of choice.</p><div class="sidebar"><a id="I_sidebar1_d1e1513"/><p class="title">A Handwritten Scanner</p><p>If the lexical syntax of a language isn’t too complicated, a
+        handwritten scanner can be a reasonable alternative to a flex scanner.
+        Here’s a handwritten C equivalent of the scanner in <a class="xref" href="ch01.xhtml#clex2" title="Example 1-6. Calculator scanner fb1-5.l">Example 1-6</a>. This scanner will probably run a little faster
+        than the flex version, but it’s a lot harder to modify to add or
+        change token types. If you do plan to use a handwritten scanner,
+        prototype it in flex first.</p><a id="I_programlisting1_d1e1520"/><pre class="programlisting">/*
+ * Handwritten version of scanner for calculator
+ */
+
+# include &lt;stdio.h&gt;
+# include "fb1-5.tab.h"
+
+FILE *yyin;
+static int seeneof = 0;
+
+int
+yylex(void)
+{
+  if(!yyin) yyin = stdin;
+  if(seeneof) return 0;		/* saw EOF last time */
+
+  while(1) {
+    int c = getc(yyin);
+
+    if(isdigit(c)) {
+      int i = c - '0';
+
+      while(isdigit(c = getc(yyin)))
+        i = (10*i) + c-'0';
+      yylval = i;
+      if(c == EOF) seeneof = 1;
+      else ungetc(c, yyin);
+      return NUMBER;
+    }
+
+    switch(c) {
+    case '+': return ADD; case '-': return SUB;
+    case '*': return MUL; case '|': return ABS;
+    case '(': return OP;  case ')': return CP;
+    case '\n': return EOL;
+    case ' ': case '\t': break;	/* ignore these */
+    case EOF: return 0;		/* standard end-of-file token */
+
+    case '/': c = getc(yyin);
+      if(c == '/') {		/* it's a comment */
+	while((c = getc(yyin)) != '\n')
+	  if(c == EOF) return 0; /* EOF in comment line */
+	break;
+      }
+      if(c == EOF) seeneof = 1; /* it's division */
+      else ungetc(c, yyin);
+      return DIV;
+
+    default: yyerror("Mystery character %c\n", c); break;
+    }
+  }
+}</pre></div><p>Similarly, a bison parser is much shorter and easier to debug than
+      the equivalent handwritten parser, particularly because of bison’s
+      verification that the grammar is unambiguous.</p></div><div class="sect1" title="Exercises"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect11_d1e1524"/>Exercises</h1></div></div></div><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>Will the calculator accept a line that contains only a
+          comment? Why not? Would it be easier to fix this in the scanner or
+          in the parser?</p></li><li class="listitem"><p>Make the calculator into a hex calculator that accepts both
+          hex and decimal numbers. In the scanner add a pattern such as
+          <code class="literal">0x[a-f0-9]+</code> to match a hex
+          number, and in the action code use <code class="literal">strtol</code> to convert the string to a number
+          that you store in <code class="literal">yylval</code>; then
+          return a <code class="literal">NUMBER</code> token. Adjust the
+          output <code class="literal">printf</code> to print the result
+          in both decimal and hex.</p></li><li class="listitem"><p>(extra credit) Add bit operators such as <code class="literal">AND</code> and <code class="literal">OR</code> to the calculator. The obvious operator
+          to use for <code class="literal">OR</code> is a vertical bar,
+          but that’s already the unary absolute value operator. What happens
+          if you also use it as a binary <code class="literal">OR</code>
+          operator, for example, <code class="literal">exp ABS
+          factor</code>?</p></li><li class="listitem"><p>Does the handwritten version of the scanner from <a class="xref" href="ch01.xhtml#clex1" title="Example 1-4. Calculator scanner fb1-4.l">Example 1-4</a> recognize exactly the same tokens as the flex
+          version?</p></li><li class="listitem"><p>Can you think of languages for which flex wouldn’t be a good
+          tool to write a scanner?</p></li><li class="listitem"><p>Rewrite the word count program in C. Run some large files
+          through both versions. Is the C version noticeably faster? How much
+          harder was it to debug?</p></li></ol></div></div><div class="footnotes"><br/><hr/><div class="footnote"><p><sup>[<a id="ftn.id464485" href="#id464485" class="para">1</a>] </sup>The internal form is known as a deterministic finite
+          automation (DFA). Fortunately, the only thing you really need to
+          know about DFAs at this point is that they’re fast, and the speed is
+          independent of the number or complexity of the patterns.</p></div><div class="footnote"><p><sup>[<a id="ftn.id490463" href="#id490463" class="para">2</a>] </sup>The observant reader may ask, if a dot matches anything,
+            won’t it also match the letters the first pattern is supposed to
+            match? It does, but flex breaks a tie by preferring longer
+            matches, and if two patterns match the same thing, it prefers the
+            pattern that appears first in the flex program. This is an utter
+            hack, but a very useful one we’ll see frequently.</p></div><div class="footnote"><p><sup>[<a id="ftn.id484473" href="#id484473" class="para">3</a>] </sup>CFGs are also known as <span class="emphasis"><em>phrase-structure
+            grammars</em></span> or <span class="emphasis"><em>type-2 languages</em></span>.
+            Computer theorists and natural-language linguists independently
+            developed them at about the same time in the late 1950s. If you’re
+            a computer scientist, you usually call them CFGs, and if you’re a
+            linguist, you usually call them PSGs or type-2, but they’re the
+            same thing.</p></div></div></div></div></body>
+</html>

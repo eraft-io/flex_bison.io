@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 6. A Reference for Bison Specifications"><div class="titlepage"><div><div><h1 class="title"><a id="bisonref"/>Chapter 6. A Reference for Bison Specifications</h1></div></div></div><p><a id="index-326Q421NN1Q" class="indexterm"/>In this chapter we describe the syntax of bison programs,
+    along with the various options and support functions available. POSIX yacc
+    <a id="I_indexterm6_d1e9400" class="indexterm"/>is almost an exact subset of bison, so we note which parts
+    of bison are extensions beyond what POSIX requires.</p><p>After the section on the structure of a bison grammar, the sections
+    in this chapter are in alphabetical order by feature.</p><div class="sect1" title="Structure of a Bison Grammar"><div class="titlepage"><div><div><h1 class="title"><a id="strucbisgram"/>Structure of a Bison Grammar</h1></div></div></div><p><a id="I_indexterm6_d1e9412" class="indexterm"/><a id="I_indexterm6_d1e9417" class="indexterm"/>A bison grammar consists of three sections: the definition
+      section, the rules section, and the user subroutines section.</p><a id="I_programlisting6_d1e9423"/><pre class="programlisting">    ... definition section ...
+    %%
+    ... rules section ...
+    %%
+    ... user subroutines section ...</pre><p>The sections are separated by lines consisting of two percent
+      signs. The first two sections are required, although a section may be
+      empty. The third section and the preceding <code class="literal">%%</code> line may be omitted.</p><div class="sect2" title="Symbols"><div class="titlepage"><div><div><h2 class="title"><a id="id477591"/>Symbols</h2></div></div></div><p><a id="I_indexterm6_d1e9434" class="indexterm"/>A bison grammar is constructed from symbols, which are
+        the “words” of the grammar. Symbols are strings of letters, digits,
+        periods, and underscores that do not start with a digit. The symbol
+        <code class="literal">error</code> is reserved for error
+        recovery; otherwise, bison attaches no fixed meaning to any symbol.
+        (Since bison defines a C preprocessor symbol for each token, you also
+        need to be sure token names don’t collide with C reserved words or
+        bison’s own symbols such as <code class="literal">yyparse</code>, or strange errors will
+        ensue.)</p><p>Symbols produced by the lexer are called <span class="emphasis"><em>terminal
+        symbols</em></span><a id="I_indexterm6_d1e9450" class="indexterm"/> or <span class="emphasis"><em>tokens</em></span><a id="I_indexterm6_d1e9456" class="indexterm"/>. Those that are defined on the left-hand side of rules
+        are called <span class="emphasis"><em>nonterminal symbols</em></span><a id="I_indexterm6_d1e9464" class="indexterm"/> or <span class="emphasis"><em>nonterminals</em></span>. Tokens may also
+        be literal quoted characters. (See <a class="xref" href="ch06.xhtml#literaltokens" title="Literal Tokens">Literal Tokens</a>.)
+        A widely followed convention makes token names all uppercase and
+        nonterminals lowercase. We follow that convention throughout the
+        book.</p></div><div class="sect2" title="Definition Section"><div class="titlepage"><div><div><h2 class="title"><a id="id470774"/>Definition Section</h2></div></div></div><p><a id="I_indexterm6_d1e9478" class="indexterm"/>The definition section can include a literal block,
+        which is C code copied verbatim to the beginning of the generated C
+        file, usually containing declaration and <code class="literal">#include</code> lines in <code class="literal">%{ %}</code> or <code class="literal">%code</code> blocks. There may be <code class="literal">%union</code>, <code class="literal">%start</code>, <code class="literal">%token</code>, <code class="literal">%type</code>, <code class="literal">%left</code>, <code class="literal">%right</code>, and <code class="literal">%nonassoc</code> declarations. (See <a class="xref" href="ch06.xhtml#union" title="%union Declaration">%union Declaration</a>, <a class="xref" href="ch06.xhtml#startdec" title="%start Declaration">%start Declaration</a>, <a class="xref" href="ch06.xhtml#tokens" title="Tokens">Tokens</a>, <a class="xref" href="ch06.xhtml#typedec" title="%type Declaration">%type Declaration</a>, and <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>.) The definition section can also contain
+        comments in the usual C format, surrounded by <code class="literal">/*</code> and <code class="literal">*/</code>. All of these are optional, so in a very
+        simple parser the definition section may be completely empty.</p></div><div class="sect2" title="Rules Section"><div class="titlepage"><div><div><h2 class="title"><a id="id497320"/>Rules Section</h2></div></div></div><p><a id="I_indexterm6_d1e9536" class="indexterm"/>The rules section contains grammar rules and actions
+        containing C code. See <a class="xref" href="ch06.xhtml#actions" title="Actions"/> below and <a class="xref" href="ch06.xhtml#rules" title="Rules">Rules</a> for
+        details.</p></div><div class="sect2" title="User Subroutines Section"><div class="titlepage"><div><div><h2 class="title"><a id="id501184"/>User Subroutines Section</h2></div></div></div><p><a id="I_indexterm6_d1e9550" class="indexterm"/>Bison copies the contents of the user subroutines
+        section verbatim to the C file. This section typically includes
+        routines called from the actions.</p><p>In a large program, it is usually more convenient to put the
+        supporting code in a separate source file to minimize the amount of
+        material recompiled when you change the bison file.</p></div></div><div class="sect1" title="Actions"><div class="titlepage"><div><div><h1 class="title"><a id="actions"/>Actions</h1></div></div></div><p><a id="I_indexterm6_d1e9564" class="indexterm"/><a id="I_indexterm6_d1e9569" class="indexterm"/>An <span class="emphasis"><em>action</em></span> is C code <a id="I_indexterm6_d1e9578" class="indexterm"/>executed when bison matches a rule in the grammar. The
+      action must be a C compound statement, for example:</p><a id="I_programlisting6_d1e9584"/><pre class="programlisting">    date: month '/' day '/' year { printf("date found"); } ;</pre><p>The action can refer to the values associated with the symbols in
+      the rule by using a dollar sign followed by a number, with the first
+      symbol after the colon being 1, for example:</p><a id="I_programlisting6_d1e9588"/><pre class="programlisting">    date: month '/' day '/' year { printf("date %d-%d-%d found", $1, $3, $5); }
+          ;</pre><p>The name <code class="literal">$$</code> refers to the value
+      for the left-hand side (LHS) symbol, the one to the left of the colon.
+      Symbol values can have different C types. See <a class="xref" href="ch06.xhtml#tokens" title="Tokens">Tokens</a>,
+      <a class="xref" href="ch06.xhtml#typedec" title="%type Declaration">%type Declaration</a>, and <a class="xref" href="ch06.xhtml#union" title="%union Declaration">%union Declaration</a> for
+      details.</p><p>For rules with no action, bison uses a default of the
+      following:</p><a id="I_programlisting6_d1e9603"/><pre class="programlisting">    { $$ = $1; }</pre><p>If you have a rule with no RHS symbols and the LHS symbol has a
+      declared type, you <span class="emphasis"><em>must</em></span> write an action to set its
+      value.</p><div class="sect2" title="Embedded Actions"><div class="titlepage"><div><div><h2 class="title"><a id="embeddedact"/>Embedded Actions</h2></div></div></div><p><a id="I_indexterm6_d1e9614" class="indexterm"/><a id="I_indexterm6_d1e9619" class="indexterm"/>Even though bison’s parsing technique allows actions
+        only at the end of a rule, bison can simulate actions embedded within
+        a rule. If you write an action within a rule, bison invents a rule
+        with an empty right-hand side and a made-up name on the left, makes
+        the embedded action into the action for that rule, and replaces the
+        action in the original rule with the made-up name. For example, these
+        are equivalent:</p><a id="I_programlisting6_d1e9625"/><pre class="programlisting">    thing:           A { printf("seen an A"); } B ;
+
+    thing:           A fakename B ;
+    fakename:        /* empty */ { printf("seen an A"); } ;</pre><p>Although this feature is quite useful, it can have some
+        surprising consequences. The embedded action turns into a symbol in
+        the rule, so its value (whatever it assigns to <code class="literal">$$</code>) is available to an
+        end-of-rule action like any other symbol:</p><a id="I_programlisting6_d1e9632"/><pre class="programlisting">    thing:          A { $$ = 17; } B C
+                    { printf("%d", $2); }
+              ;</pre><p>This example prints “17”. Either action can refer to the value
+        of <code class="literal">A</code> as <code class="literal">$1</code>, and the end-of-rule action can refer to
+        the value of the embedded action as <code class="literal">$2</code> and can refer to the values of <code class="literal">B</code> and <code class="literal">C</code>
+        as <code class="literal">$3</code> and <code class="literal">$4</code>.</p><p>Embedded actions can cause shift/reduce or reduce/reduce
+        conflicts in otherwise acceptable grammars. For example, this grammar
+        causes no problem:</p><a id="I_programlisting6_d1e9660"/><pre class="programlisting">    %%
+    thing:      abcd | abcz ;
+
+    abcd: 'A' 'B' 'C' 'D' ;
+    abcz: 'A' 'B' 'C' 'Z' ;</pre><p>But if you add an embedded action, it has a shift/reduce
+        conflict:</p><a id="I_programlisting6_d1e9664"/><pre class="programlisting">    %%
+    thing:      abcd | abcz ;
+
+    abcd: 'A' 'B' { somefunc(); } 'C' 'D' ;
+    abcz: 'A' 'B' 'C' 'Z' ;</pre><p>In the first case, the parser doesn’t need to decide whether
+        it’s parsing an <code class="literal">abcd</code> or an <code class="literal">abcz</code> until it’s seen all four tokens, when
+        it can tell which it’s found. In the second case, it needs to decide
+        after it parses the <code class="literal">B</code>, but at that
+        point it hasn’t seen enough of the input to decide which rule it is
+        parsing. If the embedded action came after the <code class="literal">C</code>, there would be no problem, since bison
+        could use its one-token lookahead to see whether a <code class="literal">D</code> or a <code class="literal">Z</code>
+        is next.</p></div><div class="sect2" title="Symbol Types for Embedded Actions"><div class="titlepage"><div><div><h2 class="title"><a id="id471751"/>Symbol Types for Embedded Actions</h2></div></div></div><p><a id="I_indexterm6_d1e9691" class="indexterm"/>Since embedded actions aren’t associated with grammar
+        symbols, there is no way to declare the type of the value returned by
+        an embedded action. If you are using <code class="literal">%union</code> and typed symbol values, you have to
+        put the value in angle brackets when referring to the action’s value,
+        for example, <code class="literal">$&lt;</code><span class="emphasis"><em>type</em></span><code class="literal">&gt;$</code> when you set it in the embedded action
+        and <code class="literal">$&lt;</code><span class="emphasis"><em>type</em></span><code class="literal">&gt;3</code> (using the appropriate number) when
+        you refer to it in the action at the end of the rule. See <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a>. If you have a simple parser that uses all
+        <span class="emphasis"><em><code class="literal">int</code></em></span> values, as
+        in the previous example, you don’t need to give a type.</p></div></div><div class="sect1" title="Ambiguity and Conflicts"><div class="titlepage"><div><div><h1 class="title"><a id="ambiguity"/>Ambiguity and Conflicts</h1></div></div></div><p><a id="I_indexterm6_d1e9725" class="indexterm"/><a id="I_indexterm6_d1e9730" class="indexterm"/><a id="I_indexterm6_d1e9735" class="indexterm"/>Bison may report conflicts when it translates a grammar
+      into a parser. In some cases, the grammar is truly ambiguous; that is,
+      there are two possible parses for a single input string, and bison
+      cannot handle that. In others, the grammar is unambiguous, but the
+      standard parsing technique that bison uses is not powerful enough to
+      parse the grammar. The problem in an unambiguous grammar with conflicts
+      is that the parser would need to look more than one token ahead to
+      decide which of two possible parses to use. Usually you can rewrite the
+      grammar so that one token of lookahead is enough, but bison also offers
+      a more powerful technique, GLR, that provides lookahead of unlimited
+      length.</p><p>See <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a> and <a class="xref" href="ch07.xhtml" title="Chapter 7. Ambiguities and Conflicts">Chapter 7</a>
+      for more details and suggestions on how to fix these problems, and see
+      <a class="xref" href="ch09.xhtml#glr" title="GLR Parsing">GLR Parsing</a> for details on GLR parsing.</p><div class="sect2" title="Types of Conflicts"><div class="titlepage"><div><div><h2 class="title"><a id="id533541"/>Types of Conflicts</h2></div></div></div><p>There are two kinds of conflicts that can occur when bison tries
+        to create a parser: shift/reduce and reduce/reduce.</p></div><div class="sect2" title="Shift/Reduce Conflicts"><div class="titlepage"><div><div><h2 class="title"><a id="id533551"/>Shift/Reduce Conflicts</h2></div></div></div><p><a id="I_indexterm6_d1e9758" class="indexterm"/>A <span class="emphasis"><em>shift/reduce</em></span> conflict occurs when
+        there are two possible parses for an input string and one of the
+        parses completes a rule (the reduce option) and one doesn’t (the shift
+        option). For example, this grammar has one shift/reduce
+        conflict:</p><a id="I_programlisting6_d1e9767"/><pre class="programlisting">    %%
+    e:       'X'
+         |   e '+' e
+         ;</pre><p>For the input string <code class="literal">X+X+X</code>
+        there are two possible parses, <code class="literal">(X+X)+X</code> or <code class="literal">X+(X+X)</code>. Taking the reduce option makes the
+        parser use the first parse, and taking the shift option makes the
+        parser take the second. Bison chooses the shift unless the user puts
+        in operator precedence declarations. See <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>
+        for more information.</p></div><div class="sect2" title="Reduce/Reduce Conflicts"><div class="titlepage"><div><div><h2 class="title"><a id="id534136"/>Reduce/Reduce Conflicts</h2></div></div></div><p><a id="I_indexterm6_d1e9786" class="indexterm"/>A <span class="emphasis"><em>reduce/reduce</em></span> conflict occurs
+        when the same token could complete two different rules. For
+        example:</p><a id="I_programlisting6_d1e9795"/><pre class="programlisting">    %%
+    prog: proga | progb ;
+
+    proga:      'X' ;
+    progb:      'X' ;</pre><p>An <code class="literal">X</code> could either be a
+        <code class="literal">proga</code> or be a <code class="literal">progb</code>. Most reduce/reduce conflicts are less
+        obvious than this, but they usually indicate mistakes in the grammar.
+        See <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a> for details on handling conflicts.</p></div><div class="sect2" title="%expect"><div class="titlepage"><div><div><h2 class="title"><a id="id486090"/>%expect</h2></div></div></div><p><a id="I_indexterm6_d1e9814" class="indexterm"/>Occasionally you may have a grammar that has a few
+        conflicts, you are confident that bison will resolve them the way you
+        want, and it’s too much hassle to rewrite the grammar to get rid of
+        them. (If/then/else-style constructs are the most common place this
+        happens.) The declaration <code class="literal">%expect N</code>
+        tells bison that your parser should have N shift/reduce conflicts, so
+        bison reports a compile-time error if the number is different.</p><p>You can also use <code class="literal">%expect-rr N</code>
+        to tell it how many reduce/reduce conflicts to expect; unless you are
+        using a GLR parser, do not use this feature since reduce/reduce
+        conflicts almost always indicate an error in the grammar.</p></div><div class="sect2" title="GLR Parsers"><div class="titlepage"><div><div><h2 class="title"><a id="id456200"/>GLR Parsers</h2></div></div></div><p><a id="I_indexterm6_d1e9830" class="indexterm"/><a id="I_indexterm6_d1e9835" class="indexterm"/>Sometimes a grammar is truly too hard for bison’s normal
+        LALR parsing algorithm to handle. In that case, you can tell bison to
+        create a Generalized LR (GLR) parser instead, by including a <code class="literal">%glr-parser</code> declaration. When a GLR parser
+        encounters a conflict, it conceptually splits and continues both
+        possible parses in parallel, with each one consuming each token. If
+        there are several conflicts, it can create a tree of partial parses,
+        splitting each time there is a conflict. At the end of the parse,
+        either there will be only one surviving parse, the rest having been
+        abandoned because they didn’t match the rest of the input, or, if the
+        grammar is truly ambiguous, there may be several parses, and it is up
+        to you to decide what to do with them.</p><p>See <a class="xref" href="ch09.xhtml#glr" title="GLR Parsing">GLR Parsing</a> for examples and more details.</p></div></div><div class="sect1" title="Bugs in Bison Programs"><div class="titlepage"><div><div><h1 class="title"><a id="bugsbis"/>Bugs in Bison Programs</h1></div></div></div><p><a id="I_indexterm6_d1e9852" class="indexterm"/><a id="I_indexterm6_d1e9857" class="indexterm"/>Bison itself is pretty robust, but there are a few common
+      programming mistakes that can cause serious failures in your bison
+      parser.</p><div class="sect2" title="Infinite Recursion"><div class="titlepage"><div><div><h2 class="title"><a id="id469067"/>Infinite Recursion</h2></div></div></div><p><a id="I_indexterm6_d1e9867" class="indexterm"/><a id="I_indexterm6_d1e9870" class="indexterm"/><a id="I_indexterm6_d1e9875" class="indexterm"/>A common error in bison grammars is to create a
+        recursive rule with no way to terminate the recursion. Bison will
+        diagnose this grammar with the somewhat mysterious “start symbol xlist
+        does not derive any sentence.”</p><a id="I_programlisting6_d1e9881"/><pre class="programlisting">    %%
+    xlist:    xlist 'X' ;</pre></div><div class="sect2" title="Interchanging Precedence"><div class="titlepage"><div><div><h2 class="title"><a id="id484454"/>Interchanging Precedence</h2></div></div></div><p><a id="I_indexterm6_d1e9887" class="indexterm"/>People occasionally try to use <code class="literal">%prec</code> to swap the precedence of two
+        tokens:<a id="I_indexterm6_d1e9896" class="indexterm"/></p><a id="I_programlisting6_d1e9901"/><pre class="programlisting">    %token  NUMBER
+    %left PLUS
+    %left MUL
+    %%
+    expr  :    expr PLUS expr %prec MUL
+          |    expr MUL expr %prec PLUS
+          |    NUMBER
+          ;</pre><p>This example seems to give <code class="literal">PLUS</code> higher precedence than <code class="literal">MUL</code>, but in fact it makes them the same. The
+        precedence mechanism resolves shift/reduce conflicts by comparing the
+        precedence of the token to be shifted to the precedence of the rule.
+        In this case, there are several conflicts.<a id="I_indexterm6_d1e9911" class="indexterm"/> A typical conflict arises when the parser has seen
+        “expr PLUS expr” and the next token is a <code class="literal">MUL</code>. In the absence of a <code class="literal">%prec</code>, the rule would have the precedence of
+        <code class="literal">PLUS</code>, which is lower than that of
+        <code class="literal">MUL</code>, and bison takes the shift. But
+        with <code class="literal">%prec</code>, both the rule and the
+        token have the precedence of <code class="literal">MUL</code>,
+        so it reduces because <code class="literal">MUL</code> is left
+        associative.</p><p>One possibility would be to introduce pseudotokens, for example,
+        <code class="literal">XPLUS</code> and <code class="literal">XMUL</code>, with their own precedence levels to
+        use with <code class="literal">%prec</code>. A far better
+        solution is to rewrite the grammar to say what it means, in this case
+        exchanging the <code class="literal">%left</code> lines (see
+        <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>).</p></div><div class="sect2" title="Embedded Actions"><div class="titlepage"><div><div><h2 class="title"><a id="id491805"/>Embedded Actions</h2></div></div></div><p><a id="I_indexterm6_d1e9959" class="indexterm"/><a id="I_indexterm6_d1e9964" class="indexterm"/>When you write an action in the middle of a rule rather
+        than at the end, bison has to invent an anonymous rule to trigger the
+        embedded action. Occasionally the anonymous rule causes unexpected
+        shift/reduce conflicts.<a id="I_indexterm6_d1e9970" class="indexterm"/><a id="I_indexterm6_d1e9975" class="indexterm"/> See <a class="xref" href="ch06.xhtml#actions" title="Actions">Actions</a> for more details.</p></div></div><div class="sect1" title="C++ Parsers"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e9985"/>C++ Parsers</h1></div></div></div><p><a id="I_indexterm6_d1e9989" class="indexterm"/><a id="I_indexterm6_d1e9994" class="indexterm"/><a id="I_indexterm6_d1e9999" class="indexterm"/>Bison can produce a C++ parsers. If your bison file is
+      called <code class="literal">comp.yxx</code>, it will create the
+      C++ source <code class="literal">comp.tab.cxx</code> and header
+      <code class="literal">comp.tab.hxx</code> files. (You can change
+      the output filenames with the <code class="literal">-o</code>
+      flag, perhaps as <code class="literal">-o comp.c++</code>, which
+      will also rename the header to <code class="literal">comp.h++</code>.) It also creates the header files
+      <code class="literal">stack.hh</code>, <code class="literal">location.hh</code>, and <code class="literal">position.hh</code>, which define three classes used
+      in the parser. The contents of these three files are always the same
+      unless you use <code class="literal">-p</code> or <code class="literal">%name-prefix</code> to change the namespace of the
+      parser from “yy” to something else.</p><p>Bison defines a class called <code class="literal">yy::parser</code> (unless you change its name) with a
+      main <code class="literal">parse</code> routine and some minor
+      routines for error reporting and debugging. See <a class="xref" href="ch09.xhtml#cxx" title="C++ Parsers">C++ Parsers</a>
+      for more details.</p></div><div class="sect1" title="%code Blocks"><div class="titlepage"><div><div><h1 class="title"><a id="codeblocks"/>%code Blocks</h1></div></div></div><p><a id="I_indexterm6_d1e10054" class="indexterm"/><a id="I_indexterm6_d1e10059" class="indexterm"/>Bison has always accepted C code <a id="I_indexterm6_d1e10063" class="indexterm"/>in the declaration section surrounded by <code class="literal">%{ ... %}</code> brackets. Sometimes the code has to
+      go in a particular place in the generated program, before or after
+      particular parts of the standard parser skeleton code. The <code class="literal">%code</code><a id="I_indexterm6_d1e10074" class="indexterm"/> directive allows more specific placement of the
+      code.</p><a id="I_programlisting6_d1e10078"/><pre class="programlisting">%code [<span class="emphasis"><em>place</em></span>] {
+  ... code here ...
+}</pre><p>The optional <span class="emphasis"><em><code class="literal">place</code></em></span>, which the bison manual calls
+      the <span class="emphasis"><em>qualifier</em></span>, says where in the generated program
+      to put the code. Current places in C language programs are <code class="literal">top</code>, <code class="literal">provides</code>, and <code class="literal">requires</code>. They put the code at the top of the
+      file, before the definitions of <code class="literal">YYSTYPE</code> and <code class="literal">YYLTYPE</code>, and after those definitions. This
+      feature is considered experimental, so the places are likely to change;
+      therefore, check the current bison manual to see what the current
+      options are. The use of <code class="literal">%code</code> without
+      a place will definitely remain and is intended to replace <code class="literal">%{ %}</code>.</p></div><div class="sect1" title="End Marker"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e10114"/>End Marker</h1></div></div></div><p><a id="I_indexterm6_d1e10118" class="indexterm"/><a id="I_indexterm6_d1e10123" class="indexterm"/><a id="I_indexterm6_d1e10128" class="indexterm"/>Each bison grammar includes a pseudotoken called the
+      <span class="emphasis"><em>end marker</em></span>, which marks the end of input. In bison
+      listings, the end marker is usually indicated as <code class="literal">$end</code>.</p><p>The lexer must return a zero token to indicate the end of
+      input.</p></div><div class="sect1" title="Error Token and Error Recovery"><div class="titlepage"><div><div><h1 class="title"><a id="errortok"/>Error Token and Error Recovery</h1></div></div></div><p><a id="I_indexterm6_d1e10146" class="indexterm"/><a id="I_indexterm6_d1e10151" class="indexterm"/>Bison parsers will always detect syntax errors as early as
+      possible, that is, as soon as they read a token for which there is no
+      potential parse. When bison detects a syntax error, that is, when it
+      receives an input token that it cannot parse, it attempts to recover
+      from the error using this procedure:</p><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p>It calls <code class="literal">yyerror(“syntax
+          error”)</code>. This usually reports the error to the
+          user.</p></li><li class="listitem"><p>It discards any partially parsed rules until it returns to a
+          state in which it could shift the special <code class="literal">error</code> symbol.</p></li><li class="listitem"><p>It resumes parsing, starting by shifting an <code class="literal">error</code>.</p></li><li class="listitem"><p>If another error occurs before three tokens have been shifted
+          successfully, bison does not report another error but returns to
+          step 2.</p></li></ol></div><p>See <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a> for more details on error recovery.
+      Also, see <a class="xref" href="ch06.xhtml#yyerror" title="yyerror()">yyerror()</a>, <a class="xref" href="Images/ch06.html#yyrecovering" title="YYRECOVERING()">YYRECOVERING()</a>,
+      <a class="xref" href="ch06.xhtml#yyclearin" title="yyclearin">yyclearin</a>, and <span><a class="xref" href="ch06.xhtml#yyerrok" title="yyerrok">yyerrok</a></span> for details on features that help control
+      error recovery.</p><div class="sect2" title="%destructor"><div class="titlepage"><div><div><h2 class="title"><a id="id458152"/>%destructor</h2></div></div></div><p><a id="I_indexterm6_d1e10196" class="indexterm"/><a id="I_indexterm6_d1e10201" class="indexterm"/>When bison is trying to recover from a parse error, it
+        discards symbols and their values from the parse stack. If the value
+        is a pointer to dynamically allocated memory, or otherwise needs
+        special treatment when it’s discarded, the <code class="literal">%destructor</code> directive lets you get control
+        when particular symbols, or symbols with values of particular types,
+        are deleted. It also will handle the value of the start symbol after a
+        successful parse. See <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a> for more
+        details.</p></div></div><div class="sect1" title="Inherited Attributes ($0)"><div class="titlepage"><div><div><h1 class="title"><a id="inherit_attributes"/>Inherited Attributes ($0)</h1></div></div></div><p><a id="I_indexterm6_d1e10215" class="indexterm"/><a id="I_indexterm6_d1e10220" class="indexterm"/><a id="I_indexterm6_d1e10225" class="indexterm"/>Bison symbol values can act as <span class="emphasis"><em>inherited
+      attributes</em></span> or <span class="emphasis"><em>synthesized
+      attributes</em></span><a id="I_indexterm6_d1e10236" class="indexterm"/>. (What bison calls <span class="emphasis"><em>values</em></span> are
+      usually referred to in compiler literature as
+      <span class="emphasis"><em>attributes</em></span>.) The usual synthesized attributes start
+      as token values, which are the leaves of the parse tree. Information
+      conceptually moves up the parse tree each time a rule is reduced, and
+      each action synthesizes the value of its resulting symbol (<code class="literal">$$</code>) from the values of the symbols on the
+      right-hand side of the rule.</p><p>Sometimes you need to pass information the other way, from the
+      root of the parse tree toward the leaves. Consider this example:</p><a id="I_programlisting6_d1e10252"/><pre class="programlisting">    declaration:     class type namelist ;
+
+    class:     GLOBAL      { $$ = 1; }
+          |    LOCAL       { $$ = 2; }
+          ;
+
+    type:      REAL        { $$ = 1; }
+          |    INTEGER     { $$ = 2; }
+          ;
+
+    namelist:  NAME        { mksymbol($0, $-1, $1); }
+          |    namelist NAME { mksymbol($0, $-1, $2); }
+          ;</pre><p>It would be useful to have the class and type available in the
+      actions for <code class="literal">namelist</code>, both for error
+      checking and for entering into the symbol table. Bison makes this
+      possible by allowing access to symbols on its internal stack to the left
+      of the current rule, via <code class="literal">$0</code>, <code class="literal">$-1</code>, etc. In the example, the <code class="literal">$0</code> in the call to <code class="literal">mksymbol()</code> refers to the value of the <code class="literal">type</code>, which is stacked just before the
+      symbol(s) for the <code class="literal">namelist</code>
+      production, and it will have the value 1 or 2 depending on whether the
+      type was <code class="literal">REAL</code> or <code class="literal">INTEGER</code>. <code class="literal">$-1</code> refers to the class, which will have the
+      value 1 or 2 if the class was <code class="literal">GLOBAL</code>
+      or <code class="literal">LOCAL</code>.</p><p>Although inherited attributes can be useful, they can also be a
+      source of hard-to-find bugs. An action that uses inherited attributes
+      has to take into account every place in the grammar where its rule is
+      used. In this example, if you changed the grammar to use a <code class="literal">namelist</code> somewhere else, you’d have to make
+      sure that, in the new place where the <code class="literal">namelist</code> occurs, appropriate symbols precede
+      it so that <code class="literal">$0</code> and <code class="literal">$-1</code> will get the right values:</p><a id="I_programlisting6_d1e10308"/><pre class="programlisting">    declaration:      STRING namelist ; /* won't work! */</pre><p>Inherited attributes can occasionally be very useful, particularly
+      for syntactically complex constructs such as C language variable
+      declarations. But it’s usually safer and easier to use a global variable
+      for the value that would have been fetched from a synthesized attribute.
+      Or it’s often nearly as easy to use synthesized attributes. In the
+      previous example, the <code class="literal">namelist</code> rules
+      could create a linked list of references to the names to be declared and
+      return a pointer to that list as its value. The action for declaration
+      could take the class, type, and <code class="literal">namelist</code> values and at that point assign the
+      class and type to the names in the <code class="literal">namelist</code>.</p><div class="sect2" title="Symbol Types for Inherited Attributes"><div class="titlepage"><div><div><h2 class="title"><a id="id531840"/>Symbol Types for Inherited Attributes</h2></div></div></div><p><a id="I_indexterm6_d1e10325" class="indexterm"/>When you use the value of an inherited attribute, the
+        usual value declaration techniques (e.g., <code class="literal">%type</code>) don’t work. Since the symbol
+        corresponding to the value doesn’t appear in the rule, bison cannot
+        tell what the correct type is. You have to supply type names in the
+        action code using an explicit type. In the previous example, if the
+        types of <code class="literal">class</code> and <code class="literal">type</code> were <code class="literal">cval</code> and <code class="literal">tval</code>, the last two lines would actually read
+        like this:</p><a id="I_programlisting6_d1e10346"/><pre class="programlisting">    namelist:    NAME        { mksymbol($&lt;tval&gt;0, $&lt;cval&gt;-1, $1); }
+     |     namelist NAME     { mksymbol($&lt;tval&gt;0, $&lt;cval&gt;-1, $2); }</pre><p>See <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a> for additional
+        information.</p></div></div><div class="sect1" title="%initial-action"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e10352"/>%initial-action</h1></div></div></div><p><a id="I_indexterm6_d1e10356" class="indexterm"/><a id="I_indexterm6_d1e10361" class="indexterm"/>If you need to initialize something when your parser
+      starts up, you can use <code class="literal">%initial-action {
+      some-code }</code> to tell bison to copy <code class="literal">some-code</code> near the beginning of <code class="literal">yyparse</code>. The place where the code is copied
+      comes after the standard initialization code, so you cannot usefully put
+      variable declarations in the code. (They’ll be accepted, but they won’t
+      be accessible in your actions.) If you need to define your own
+      parse-time variables, you have to either use static globals or pass them
+      as arguments via <code class="literal">%parse-param</code>.</p></div><div class="sect1" title="Lexical Feedback"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e10377"/>Lexical Feedback</h1></div></div></div><p><a id="I_indexterm6_d1e10381" class="indexterm"/><a id="I_indexterm6_d1e10386" class="indexterm"/>Parsers can sometimes feed information back to the lexer
+      to handle otherwise difficult situations. For example, consider an input
+      syntax like this:</p><a id="I_programlisting6_d1e10392"/><pre class="programlisting">    message (<span class="emphasis"><em>any characters</em></span>)</pre><p>where in this particular context the parentheses are acting as
+      string quotes. You can’t just decide to parse a string any time you see
+      an open parenthesis, because open parentheses might be used differently
+      elsewhere in the grammar.</p><p>A straightforward way to handle this situation is to feed context
+      information from the parser back to the lexer, for example, set a flag
+      in the parser when a context-dependent construct is expected:</p><a id="I_programlisting6_d1e10401"/><pre class="programlisting">    /* parser */
+    %{
+    int parenstring = 0;
+    }%
+    . . .
+    %%
+    statement: MESSAGE { parenstring = 1; } '(' STRING ')' ;</pre><p/><p>and look for it in the lexer:</p><a id="I_programlisting6_d1e10406"/><pre class="programlisting">    %{
+    extern int parenstring;
+    %}
+    %s PSTRING
+    %%
+    . . .
+    "message"  return MESSAGE;
+    "("   {    if(parenstring)
+                     BEGIN PSTRING;
+               return '(';
+          }
+    &lt;PSTRING&gt;[^)]*   {
+                   yylval.svalue = strdup(yytext);   /* pass string to parser */
+                   BEGIN INITIAL;
+                   return STRING;
+                   }</pre><p>This code is not bulletproof, because if there is some other rule
+      that starts with <code class="literal">MESSAGE</code>, bison might have to use a
+      lookahead token, in which case the in-line action wouldn’t be executed
+      until after the open parenthesis had been scanned. In most real cases
+      that isn’t a problem because the syntax tends to be simple. If the
+      parser does error recovery, the error code needs to reset <code class="literal">parenstring</code>.</p><p>In this example, you could also handle the special case in the
+      lexer by setting <code class="literal">parenstring</code> in the lexer, for
+      example:</p><a id="I_programlisting6_d1e10422"/><pre class="programlisting">    "message("  { parenstring = 1; return MESSAGE; }</pre><p>This could cause problems, however, if the token <code class="literal">MESSAGE</code> is used elsewhere in the grammar and
+      is not always followed by a parenthesized string. You usually have the
+      choice of doing lexical feedback entirely in the lexer or doing it
+      partly in the parser, with the best solution depending on how complex
+      the grammar is. If the grammar is simple and tokens do not appear in
+      multiple contexts, you can do all of your lexical hackery in the lexer,
+      while if the grammar is more complex, it is easier to identify the
+      special situations in the parser.</p><p>This approach can be taken to extremes—I wrote a complete Fortran
+      77 parser in yacc, bison’s predecessor (but, not lex, since tokenizing
+      Fortran is just too strange), and the parser needed to feed a dozen
+      special context states back to the lexer. It was messy, but it was far
+      easier than writing the whole parser and lexer in C.</p></div><div class="sect1" title="Literal Block"><div class="titlepage"><div><div><h1 class="title"><a id="literal"/>Literal Block</h1></div></div></div><p><a id="I_indexterm6_d1e10435" class="indexterm"/><a id="I_indexterm6_d1e10440" class="indexterm"/>The literal block in the definition section is bracketed
+      by the lines <code class="literal">%{</code> and <code class="literal">%}</code>.</p><a id="I_programlisting6_d1e10452"/><pre class="programlisting">    %{
+    <span class="emphasis"><em>... C code and declarations ...</em></span>
+    %}</pre><p>The contents of the literal block are copied verbatim to the
+      generated C source file near the beginning, before the beginning of
+      <code class="literal">yyparse()</code>. The literal block usually
+      contains declarations of variables and functions used by code in the
+      rules section, as well as <code class="literal">#include</code>
+      lines for any necessary header files.</p><p>Bison also provides an experimental <code class="literal">%code
+      POS { ... }</code> where <code class="literal">POS</code> is a
+      keyword to suggest where in the generated parser the code should go. See
+      <a class="xref" href="ch06.xhtml#codeblocks" title="%code Blocks">%code Blocks</a> for current details.</p></div><div class="sect1" title="Literal Tokens"><div class="titlepage"><div><div><h1 class="title"><a id="literaltokens"/>Literal Tokens</h1></div></div></div><p><a id="I_indexterm6_d1e10479" class="indexterm"/><a id="I_indexterm6_d1e10484" class="indexterm"/><a id="I_indexterm6_d1e10489" class="indexterm"/>Bison treats a character in single quotes as a token. In
+      this example,</p><a id="I_programlisting6_d1e10495"/><pre class="programlisting">    expr: '(' expr ')' ;</pre><p>the open and close parentheses are literal tokens. The token
+      number of a literal token is the numeric value in the local character
+      set, usually ASCII, and is the same as the C value of the quoted
+      character.</p><p>The lexer usually generates these tokens from the corresponding
+      single characters in the input, but as with any other token, the
+      correspondence between the input characters and the generated tokens is
+      entirely up to the lexer. A common technique is to have the lexer treat
+      all otherwise unrecognized characters as literal tokens. For example, in
+      a flex scanner:</p><a id="I_programlisting6_d1e10501"/><pre class="programlisting">    .     return yytext[0];</pre><p>this covers all of the single-character operators in a language
+      and lets bison catch all unrecognized characters in the input with parse
+      errors.</p><p>Bison also allows you to declare strings as aliases for tokens,
+      for example:</p><a id="I_programlisting6_d1e10507"/><pre class="programlisting">  %token NE "!="
+  %%
+  ...
+  exp: exp "!=" exp ;</pre><p>This defines the token <code class="literal">NE</code> and
+      lets you use <code class="literal">NE</code> and <code class="literal">!=</code> interchangeably in the parser. The lexer
+      must still return the internal token value for <code class="literal">NE</code> when the token is read, not a
+      string.</p></div><div class="sect1" title="Locations"><div class="titlepage"><div><div><h1 class="title"><a id="locations"/>Locations</h1></div></div></div><p>To aid in error reporting, bison offers locations, a feature to
+      track the source line and column range for every symbol in the parser.
+      Locations are enabled explicitly with <code class="literal">%locations</code> or implicitly by referring to a
+      location in the action code. The lexer has to track the current line and
+      column and set the location range for each token in <code class="literal">yylloc</code> before returning the token. (Flex
+      lexers will automatically track the line number, but tracking the column
+      number is up to you.) A default rule in the parser invoked every time a
+      rule is reduced sets the location range of the LHS symbol from the
+      beginning line and column of the first RHS symbol to the ending line and
+      column of the last RHS symbol.</p><p>Within action code, the location for each symbol is referred to as
+      <code class="literal">@$</code> for the LHS and as <code class="literal">@1</code>, and so forth, for the RHS symbols. Each
+      location is actually a structure, with references to fields like
+      <code class="literal">@3.first_column</code>.</p><p>Locations are overkill for the error-reporting needs of many,
+      perhaps most, parsers. Parse errors still just report the single token
+      where the parse failed, so the only time a location range is visible to
+      the user is if your action code reports it. The most likely place to use
+      them is in an integrated development environment that could use them to
+      highlight the source code responsible for semantic errors. For some
+      examples, see <a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8</a>.</p></div><div class="sect1" title="%parse-param"><div class="titlepage"><div><div><h1 class="title"><a id="parseparam"/>%parse-param</h1></div></div></div><p><a id="I_indexterm6_d1e10553" class="indexterm"/><a id="I_indexterm6_d1e10558" class="indexterm"/>Normally, you call <code class="literal">yyparse()</code><a id="I_indexterm6_d1e10564" class="indexterm"/> with no arguments. If the parser needs to import
+      information from the surrounding program, it can use global variables,
+      or you can add parameters to its definition:</p><a id="I_programlisting6_d1e10568"/><pre class="programlisting">     %parse-param {char *modulename}
+     %parse-param {int intensity}</pre><p>This allows you to call <code class="literal">yyparse("mymodule", 42)</code> and refer to <code class="literal">modulename</code> and <code class="literal">intensity</code> in action code in the parser.
+      Note that there are no semicolons and no trailing punctuation, since the
+      parameters are just placed between the parentheses in the definition of
+      <code class="literal">yyparse</code>.</p><p>In normal parsers, there’s little reason to use parse parameters
+      rather than global variables, but if you generate a pure parser that can
+      be called multiple times, either recursively or in multiple threads,
+      parameters are the easiest way to provide the parameters to each
+      instance of the parser.</p></div><div class="sect1" title="Portability of Bison Parsers"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e10586"/>Portability of Bison Parsers</h1></div></div></div><p><a id="I_indexterm6_d1e10590" class="indexterm"/><a id="I_indexterm6_d1e10595" class="indexterm"/>There are two levels at which you can port a parser: the
+      original bison grammar or the generated C source file.</p><div class="sect2" title="Porting Bison Grammars"><div class="titlepage"><div><div><h2 class="title"><a id="id482271"/>Porting Bison Grammars</h2></div></div></div><p><a id="I_indexterm6_d1e10605" class="indexterm"/>For the most part, you can write bison parsers and
+        expect anyone’s version of bison to handle them, since the core
+        features bison have changed very little in the past 15 years. If you
+        know that your parser requires features added in recent years, you can
+        declare the minimum version of bison needed to compile it:</p><a id="I_programlisting6_d1e10611"/><pre class="programlisting">  %require "2.4"</pre></div><div class="sect2" title="Porting Generated C Parsers"><div class="titlepage"><div><div><h2 class="title"><a id="id479456"/>Porting Generated C Parsers</h2></div></div></div><p><a id="I_indexterm6_d1e10617" class="indexterm"/>Bison parsers are in general very portable among
+        reasonably modern C or C++ implementations, C89 or later, or ANSI/ISO
+        C++.</p></div><div class="sect2" title="Libraries"><div class="titlepage"><div><div><h2 class="title"><a id="id479481"/>Libraries</h2></div></div></div><p><a id="I_indexterm6_d1e10627" class="indexterm"/>The only routines in the bison library are usually
+        <code class="literal">main()</code> and <code class="literal">yyerror()</code>. Any nontrivial parser has its own
+        version of those two routines, so the library usually isn’t
+        necessary.</p></div><div class="sect2" title="Character Codes"><div class="titlepage"><div><div><h2 class="title"><a id="id464476"/>Character Codes</h2></div></div></div><p><a id="I_indexterm6_d1e10643" class="indexterm"/>Moving a generated parser between machines that use
+        different character codes can be tricky. In particular, you must avoid
+        literal tokens like <code class="literal">'0'</code> since the
+        parser uses the character code as an index into internal tables; so, a
+        parser generated on an ASCII machine where the code for <code class="literal">'0'</code> is 48 will fail on an EBCDIC machine
+        where the code is 240.</p><p>Bison assigns its own numeric values to symbolic tokens, so a
+        parser that uses only symbolic tokens should port successfully.</p></div></div><div class="sect1" title="Precedence and Associativity Declarations"><div class="titlepage"><div><div><h1 class="title"><a id="precedence"/>Precedence and Associativity Declarations</h1></div></div></div><p><a id="I_indexterm6_d1e10661" class="indexterm"/><a id="I_indexterm6_d1e10666" class="indexterm"/><a id="I_indexterm6_d1e10671" class="indexterm"/><a id="I_indexterm6_d1e10676" class="indexterm"/>Normally, all bison grammars have to be unambiguous. That
+      is, there is only one possible way to parse any legal input using the
+      rules in the grammar.</p><p>Sometimes, an ambiguous grammar is easier to use. Ambiguous
+      grammars cause <span class="emphasis"><em>conflicts</em></span>, situations where there
+      are two possible parses and hence two different ways that bison can
+      process a token. When bison processes an ambiguous grammar, it uses
+      default rules to decide which way to parse an ambiguous sequence. Often
+      these rules do not produce the desired result, so bison includes
+      operator declarations that let you change the way it handles
+      shift/reduce conflicts that result from ambiguous grammars. (See also
+      <a class="xref" href="ch06.xhtml#ambiguity" title="Ambiguity and Conflicts">Ambiguity and Conflicts</a>.)</p><p>Most programming languages have complicated rules that control the
+      interpretation of arithmetic expressions. For example, the C
+      expression:</p><a id="I_programlisting6_d1e10691"/><pre class="programlisting">    a = b = c + d / e / f</pre><p>is treated as follows:</p><a id="I_programlisting6_d1e10695"/><pre class="programlisting">    a = (b = (c + ((d / e) / f))))</pre><p>The rules for determining what operands group with which operators
+      are known as <span class="emphasis"><em>precedence</em></span> and
+      <span class="emphasis"><em>associativity</em></span>.</p><div class="sect2" title="Precedence"><div class="titlepage"><div><div><h2 class="title"><a id="id489081"/>Precedence</h2></div></div></div><p><span class="emphasis"><em>Precedence</em></span> assigns each operator a
+        precedence “level.” Operators at higher levels bind more tightly; for
+        example, if <code class="literal">*</code> has higher precedence
+        than <code class="literal">+</code>, <code class="literal">A+B*C</code> is treated as <code class="literal">A+(B*C)</code>, while <code class="literal">D*E+F</code> is <code class="literal">(D*E)+F</code>.</p></div><div class="sect2" title="Associativity"><div class="titlepage"><div><div><h2 class="title"><a id="id470918"/>Associativity</h2></div></div></div><p><span class="emphasis"><em>Associativity</em></span> controls how the grammar
+        groups expressions using the same operator or different operators with
+        the same precedence. They can group from the left, from the right, or
+        not at all. If <code class="literal">-</code> were left
+        associative, the expression <code class="literal">A-B-C</code>
+        would mean <code class="literal">(A-B)-C</code>, while if it
+        were right associative, it would mean <code class="literal">A-(B-C)</code>.</p><p>Some operators such as Fortran .<code class="literal">GE</code>. are not associative either way; that is,
+        <code class="literal">A .GE. B .GE. C</code> is not a valid
+        expression.</p></div><div class="sect2" title="Precedence Declarations"><div class="titlepage"><div><div><h2 class="title"><a id="id460160"/>Precedence Declarations</h2></div></div></div><p>Precedence declarations appear in the definition section. The
+        possible declarations are <code class="literal">%left</code>,
+        <code class="literal">%right</code>, and <code class="literal">%nonassoc</code>. The <code class="literal">%left</code> and <code class="literal">%right</code> declarations make an operator left or right associative, respectively.
+        You declare nonassociative operators with <code class="literal">%nonassoc</code>.</p><p>Operators are declared in increasing order of precedence. All
+        operators declared on the same line are at the same precedence level.
+        For example, a Fortran grammar might include the following:</p><a id="I_programlisting6_d1e10787"/><pre class="programlisting">    %left '+' '-'
+    %left '*' '/'
+    %right POW</pre><p>The lowest precedence operators here are <code class="literal">+</code> and <code class="literal">-</code>,
+        the middle predecence operators are <code class="literal">*</code> and <code class="literal">/</code>,
+        and the highest is <code class="literal">POW</code>, which
+        represents the <code class="literal">**</code> power
+        operator.</p></div><div class="sect2" title="Using Precedence and Associativity to Resolve Conflicts"><div class="titlepage"><div><div><h2 class="title"><a id="id499944"/>Using Precedence and Associativity to Resolve Conflicts</h2></div></div></div><p><a id="I_indexterm6_d1e10815" class="indexterm"/>Every token in a grammar can have a precedence and an
+        associativity assigned by a precedence declaration. Every rule can
+        also have a precedence and an associativity, which is taken from a
+        <code class="literal">%prec</code> clause in the rule or,
+        failing that, the rightmost token in the rule that has a precedence
+        assigned.</p><p>Whenever there is a shift/reduce conflict,<a id="I_indexterm6_d1e10826" class="indexterm"/><a id="I_indexterm6_d1e10831" class="indexterm"/> bison compares the precedence of the token that might
+        be shifted to that of the rule that might be reduced. It shifts if the
+        token’s precedence is higher or reduces if the rule’s precedence is
+        higher. If both have the same precedence, bison checks the
+        associativity. If they are left associative, it reduces; if they are
+        right associative, it shifts; and if they are nonassociative, bison
+        generates an error.</p></div><div class="sect2" title="Typical Uses of Precedence"><div class="titlepage"><div><div><h2 class="title"><a id="id468281"/>Typical Uses of Precedence</h2></div></div></div><p>Although you can in theory use precedence to resolve any kind of
+        shift/reduce conflict, you should use precedence only for a few
+        well-understood situations and rewrite the grammar otherwise.
+        Precedence declarations were designed to handle expression grammars,
+        with large numbers of rules like this:</p><a id="I_programlisting6_d1e10842"/><pre class="programlisting">    expr OP expr</pre><p>Expression grammars are almost always written using
+        precedence.</p><p>The only other common use is if/then/else, where you can resolve
+        the “dangling else” problem more easily with precedence than by
+        rewriting the grammar.</p><p>See <a class="xref" href="ch07.xhtml" title="Chapter 7. Ambiguities and Conflicts">Chapter 7</a> for details. Also see <a class="xref" href="ch06.xhtml#bugsbis" title="Bugs in Bison Programs">Bugs in Bison Programs</a> for a common pitfall using <code class="literal">%prec</code>.</p></div></div><div class="sect1" title="Recursive Rules"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e10857"/>Recursive Rules</h1></div></div></div><p><a id="I_indexterm6_d1e10861" class="indexterm"/><a id="I_indexterm6_d1e10866" class="indexterm"/><a id="I_indexterm6_d1e10871" class="indexterm"/>To parse a list of items of indefinite length, you write a
+      <span class="emphasis"><em>recursive</em></span> rule, one that is defined in terms of
+      itself. For example, this parses a possibly empty list of
+      numbers:</p><a id="I_programlisting6_d1e10880"/><pre class="programlisting">    numberlist: /* empty */
+          | numberlist NUMBER
+          ;</pre><p>The details of the recursive rule vary depending on the exact
+      syntax to be parsed. The next example parses a nonempty list of
+      expressions separated by commas, with the symbol <code class="literal">expr</code> being defined elsewhere in the
+      grammar:</p><a id="I_programlisting6_d1e10887"/><pre class="programlisting">    exprlist:     expr
+          |       exprlist ',' expr
+          ;</pre><p>It’s also possible to have mutually recursive rules that refer to
+      each other:</p><a id="I_programlisting6_d1e10891"/><pre class="programlisting">   exp:       term
+          |   term '+' term
+          ;
+   term:     '(' exp ')'
+          |  VARIABLE
+          ;</pre><p>Any recursive rule and each rule in a group of mutually recursive
+      rules must have at least one nonrecursive alternative (one that does not
+      refer to itself). Otherwise, there is no way to terminate the string
+      that it matches, which is an error.</p><div class="sect2" title="Left and Right Recursion"><div class="titlepage"><div><div><h2 class="title"><a id="id467454"/>Left and Right Recursion</h2></div></div></div><p><a id="I_indexterm6_d1e10899" class="indexterm"/><a id="I_indexterm6_d1e10902" class="indexterm"/>When you write a recursive rule, you can put the
+        recursive reference at the left end or the right end of the right-hand
+        side of the rule, for example:</p><a id="I_programlisting6_d1e10906"/><pre class="programlisting">    exprlist:    exprlist ',' expr ;    /* left recursion */
+
+    exprlist:    expr ',' exprlist ;    /* right recursion */</pre><p>In most cases, you can write the grammar either way. Bison
+        handles left recursion much more efficiently than right recursion.
+        This is because its internal stack keeps track of all symbols seen so
+        far for all partially parsed rules. If you use the right-recursive
+        version of <code class="literal">exprlist</code> and have an
+        expression with 10 expressions in it, by the time the 10th expression
+        is read, there will be 20 entries on the stack: an <code class="literal">expr</code> and a comma for each of the 10
+        expressions. When the list ends, all of the nested <code class="literal">exprlist</code>s will be reduced, starting from
+        right to left. On the other hand, if you use the left-recursive
+        version, the <code class="literal">exprlist</code> rule is
+        reduced after each <code class="literal">expr</code>, so the
+        list will never have more than three entries on the internal
+        stack.</p><p>A 10-element expression list poses no problems in a parser, but
+        grammars often parse lists that are hundreds or thousands of items
+        long, particularly when a program is defined as a list of
+        statements:</p><a id="I_programlisting6_d1e10927"/><pre class="programlisting">    %start program
+    %%
+    program:   statementlist ;
+
+    statementlist :   statement
+                | statementlist ';' statement
+                ;
+    statement: . . .</pre><p>In this case, a 5,000-statement program is parsed as a
+        10,000-element list of statements and semicolons, and a
+        right-recursive list of 10,000 elements is too large for most bison
+        parsers.</p><p>Right-recursive grammars can be useful for a list of items that
+        you know will be short and that you want to make into a linked list of
+        values:</p><a id="I_programlisting6_d1e10933"/><pre class="programlisting">    thinglist:   THING { $$ = $1; }
+          |      THING thinglist { $1-&gt;next = $2; $$ = $1; }
+          ;</pre><p>With a left-recursive grammar, either you end up with the list
+        linked in reverse order with a reversal step at the end or you need
+        extra code to search for the end of the list at each stage in order to
+        add the next thing to the end.</p><p>You can control the size of the parser stack by defining
+        <code class="literal">YYINITDEPTH</code>, which is the initial
+        stack size that is normally 200, and <code class="literal">YYMAXDEPTH</code>, which is the maximum stack size
+        that is normally 10,000. For example:</p><a id="I_programlisting6_d1e10946"/><pre class="programlisting">%{
+#define YYMAXDEPTH 50000
+%}</pre><p>Each stack entry is the size of a semantic value (the largest
+        size in the <code class="literal">%union</code> entries) plus
+        two bytes for the token number plus, if you are using locations, 16
+        bytes for the location. On a workstation with a gigabyte of virtual
+        memory, a stack of 100,000 entries would be a manageable 2 or 3
+        megabytes, but on a smaller embedded system, you’d probably want to
+        rewrite your grammar to limit the stack size.</p></div></div><div class="sect1" title="Rules"><div class="titlepage"><div><div><h1 class="title"><a id="rules"/>Rules</h1></div></div></div><p><a id="I_indexterm6_d1e10957" class="indexterm"/><a id="I_indexterm6_d1e10962" class="indexterm"/>A bison grammar consists of a set of
+      <span class="emphasis"><em>rules</em></span>. Each rule starts with a nonterminal symbol
+      and a colon and is followed by a possibly empty list of symbols, literal
+      tokens, and actions. Rules by convention end with a semicolon, although
+      the semicolon is technically optional. For example,</p><a id="I_programlisting6_d1e10971"/><pre class="programlisting">    date: month '/' day '/' year ;</pre><p>says that a date is a month, a slash, a day, another slash, and a
+      year. (The symbols month, day, and year must be defined elsewhere in the
+      grammar.) The initial symbol and colon are called the
+      <span class="emphasis"><em>left-hand side (LHS)</em></span> of the rule, and the rest of
+      the rule is the <span class="emphasis"><em>right-hand side (RHS)</em></span>. The
+      right-hand side may be empty.</p><p>If several consecutive rules in a grammar have the same LHS, the
+      second and subsequent rules may start with a vertical bar rather than
+      the name and the colon. These two fragments are equivalent:</p><a id="I_programlisting6_d1e10983"/><pre class="programlisting">    declaration:     EXTERNAL name ;
+    declaration:     ARRAY name '(' size ')' ;
+
+    declaration:     EXTERNAL name
+          |    ARRAY name '(' size ')' ;</pre><p>The form with the vertical bar is better style. The semicolon must
+      be omitted before a vertical bar. Multiple rules with the same LHS need
+      not occur together. See the SQL grammar in <a class="xref" href="ch04.xhtml" title="Chapter 4. Parsing SQL">Chapter 4</a> where
+      there are multiple rules defining the term <code class="literal">sql</code> throughout the grammar.</p><p>An <span class="emphasis"><em>action</em></span><a id="I_indexterm6_d1e10996" class="indexterm"/> is a C compound statement that is executed whenever the
+      parser reaches the point in the grammar where the action occurs:</p><a id="I_programlisting6_d1e11002"/><pre class="programlisting">    date: month '/' day '/' year
+                       { printf("Date recognized.\n"); }
+          ;</pre><p>The C code in actions may have some special constructs starting
+      with <code class="literal">$</code> or <code class="literal">@</code> that are specially treated by bison. (See
+      <a class="xref" href="ch06.xhtml#actions" title="Actions">Actions</a> and <a class="xref" href="ch06.xhtml#locations" title="Locations">Locations</a> for
+      details.) Actions that occur anywhere except at the end of a rule are
+      treated specially. (See <a class="xref" href="ch06.xhtml#embeddedact" title="Embedded Actions">Embedded Actions</a> for
+      details.)</p><p>A rule may have an explicit precedence at the end:</p><a id="I_programlisting6_d1e11021"/><pre class="programlisting">    expr: expr '*' expr
+        | expr '-' expr
+        | '-' expr %prec UMINUS ;</pre><p>The precedence is used only to resolve otherwise ambiguous parses.
+      See <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a> for details. In a GLR parser, a rule
+      can also have a <code class="literal">%dprec</code> precedence to
+      resolve ambiguous parses.</p></div><div class="sect1" title="Special Characters"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e11031"/>Special Characters</h1></div></div></div><p><a id="I_indexterm6_d1e11035" class="indexterm"/><a id="I_indexterm6_d1e11040" class="indexterm"/><a id="I_indexterm6_d1e11045" class="indexterm"/>Since bison deals with symbolic tokens rather than literal
+      text, its input character set is considerably simpler than lex’s. Here
+      is a list of the special characters that it uses:</p><div class="variablelist"><dl><dt><span class="term">%</span></dt><dd><p><a id="I_indexterm6_d1e11057" class="indexterm"/><a id="I_indexterm6_d1e11060" class="indexterm"/>A line with two percent signs separates the parts of
+            a bison grammar (see <a class="xref" href="ch06.xhtml#strucbisgram" title="Structure of a Bison Grammar">Structure of a Bison Grammar</a>). All of the
+            declarations in the definition section start with <code class="literal">%</code>, including <code class="literal">%{
+            %}</code>, <code class="literal">%start</code>, <code class="literal">%token</code>, <code class="literal">%type</code>, <code class="literal">%left</code>, <code class="literal">%right</code>, <code class="literal">%nonassoc</code>, and <code class="literal">%union</code>. See <a class="xref" href="ch06.xhtml#literal" title="Literal Block">Literal Block</a>,
+            <a class="xref" href="ch06.xhtml#startdec" title="%start Declaration">%start Declaration</a>, <a class="xref" href="ch06.xhtml#typedec" title="%type Declaration">%type Declaration</a>, <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>, and <a class="xref" href="ch06.xhtml#union" title="%union Declaration">%union Declaration</a>.</p></dd><dt><span class="term">$</span></dt><dd><p><a id="I_indexterm6_d1e11110" class="indexterm"/><a id="I_indexterm6_d1e11113" class="indexterm"/>In actions, a dollar sign introduces a value
+            reference, for example, <code class="literal">$3</code> for
+            the value of the third symbol in the rule’s right-hand side. See
+            <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a>.</p></dd><dt><span class="term">@</span></dt><dd><p><a id="I_indexterm6_d1e11127" class="indexterm"/><a id="I_indexterm6_d1e11130" class="indexterm"/>In actions, an @ sign introduces a location
+            reference, such as <code class="literal">@2</code> for the
+            location of the second symbol in the RHS.</p></dd><dt><span class="term">'</span></dt><dd><p><a id="I_indexterm6_d1e11142" class="indexterm"/><a id="I_indexterm6_d1e11145" class="indexterm"/>Literal tokens are enclosed in single quotes, for
+            example, <code class="literal">'Z'</code>. See <a class="xref" href="ch06.xhtml#literaltokens" title="Literal Tokens">Literal Tokens</a>.</p></dd><dt><span class="term">"</span></dt><dd><p><a id="I_indexterm6_d1e11159" class="indexterm"/><a id="I_indexterm6_d1e11162" class="indexterm"/>Bison lets you declare quoted strings as parser
+            aliases for tokens. See <a class="xref" href="ch06.xhtml#literaltokens" title="Literal Tokens">Literal Tokens</a>.</p></dd><dt><span class="term">&lt; &gt;</span></dt><dd><p><a id="I_indexterm6_d1e11173" class="indexterm"/><a id="I_indexterm6_d1e11176" class="indexterm"/>In a value reference in an action, you can override
+            the value’s default type by enclosing the type name in angle
+            brackets, for example, <code class="literal">$&lt;xtype&gt;3</code>. See <a class="xref" href="ch06.xhtml#symtypes" title="Declaring Symbol Types">Declaring Symbol Types</a>.</p></dd><dt><span class="term">{ }</span></dt><dd><p><a id="I_indexterm6_d1e11190" class="indexterm"/><a id="I_indexterm6_d1e11193" class="indexterm"/>The C code in actions is enclosed in curly braces.
+            (See <a class="xref" href="ch06.xhtml#actions" title="Actions">Actions</a>.) C code in the literal block
+            declarations section is enclosed in <code class="literal">%{</code> and <code class="literal">%}</code>. See <a class="xref" href="ch06.xhtml#literal" title="Literal Block">Literal Block</a>.</p></dd><dt><span class="term">;</span></dt><dd><p><a id="I_indexterm6_d1e11212" class="indexterm"/><a id="I_indexterm6_d1e11215" class="indexterm"/>Each rule in the rules section should end with a
+            semicolon, except those that are immediately followed by a rule
+            that starts with a vertical bar. The semicolons are optional, but
+            they are always a good idea. See <a class="xref" href="ch06.xhtml#rules" title="Rules">Rules</a>.</p></dd><dt><span class="term">|</span></dt><dd><p><a id="I_indexterm6_d1e11226" class="indexterm"/><a id="I_indexterm6_d1e11229" class="indexterm"/>When two consecutive rules have the same left-hand
+            side, the second rule may replace the symbol and colon with a
+            vertical bar. See <a class="xref" href="ch06.xhtml#rules" title="Rules">Rules</a>.</p></dd><dt><span class="term">:</span></dt><dd><p><a id="I_indexterm6_d1e11240" class="indexterm"/><a id="I_indexterm6_d1e11243" class="indexterm"/>In each rule, a colon follows the symbol on the
+            rule’s left-hand side. See <a class="xref" href="ch06.xhtml#rules" title="Rules">Rules</a>.</p></dd><dt><span class="term">_</span></dt><dd><p><a id="I_indexterm6_d1e11254" class="indexterm"/><a id="I_indexterm6_d1e11257" class="indexterm"/>Symbols may include underscores along with letters,
+            digits, and periods.</p></dd><dt><span class="term">.</span></dt><dd><p><a id="I_indexterm6_d1e11267" class="indexterm"/><a id="I_indexterm6_d1e11270" class="indexterm"/>Symbols may include periods along with letters,
+            digits, and underscores. This can cause trouble because C
+            identifiers cannot include periods. In particular, do not use
+            tokens whose names contain periods, since the token names are all
+            <code class="literal">#define</code>’d as C preprocessor
+            symbols.</p></dd></dl></div></div><div class="sect1" title="%start Declaration"><div class="titlepage"><div><div><h1 class="title"><a id="startdec"/>%start Declaration</h1></div></div></div><p><a id="I_indexterm6_d1e11281" class="indexterm"/><a id="I_indexterm6_d1e11286" class="indexterm"/>Normally, the start rule, the one that the parser starts
+      trying to parse, is the one named in the first rule. If you want to
+      start with some other rule, in the declaration section you can write the
+      following:</p><a id="I_programlisting6_d1e11290"/><pre class="programlisting">    %start <span class="emphasis"><em>somename</em></span></pre><p>to start with rule <span class="emphasis"><em><code class="literal">somename</code></em></span>.</p><p>In most cases, the clearest way to present the grammar is
+      top-down, with the start rule first, so no <code class="literal">%start</code> is needed.</p></div><div class="sect1" title="Symbol Values"><div class="titlepage"><div><div><h1 class="title"><a id="symvals"/>Symbol Values</h1></div></div></div><p><a id="I_indexterm6_d1e11309" class="indexterm"/><a id="I_indexterm6_d1e11314" class="indexterm"/>Every symbol in a bison parser, both tokens and
+      nonterminals, can have a value associated with it. If the token were
+      <code class="literal">NUMBER</code>, the value might be the
+      particular number; if it were <code class="literal">STRING</code>,
+      the value might be a pointer to a copy of the string; and if it were
+      <code class="literal">SYMBOL</code>, the
+      value might be a pointer to an entry in the symbol table that describes
+      the symbol. Each of these kinds of value corresponds to a different C
+      type: <code class="literal">int</code> or <code class="literal">double</code> for the number, <code class="literal">char *</code> for the string, and a pointer to a
+      structure for the symbol. Bison makes it easy to assign types to symbols
+      so that it automatically uses the correct type for each symbol.</p><div class="sect2" title="Declaring Symbol Types"><div class="titlepage"><div><div><h2 class="title"><a id="symtypes"/>Declaring Symbol Types</h2></div></div></div><p><a id="I_indexterm6_d1e11343" class="indexterm"/>Internally, bison declares each value as a C union that
+        includes all of the types. You list all of the types in <code class="literal">%union</code> declarations. Bison turns them into a
+        <code class="literal">typedef</code> for a union type called
+        <code class="literal">YYSTYPE</code><a id="I_indexterm6_d1e11355" class="indexterm"/>. Then for each symbol whose value is set or used in
+        action code, you have to declare its type. Use <code class="literal">%type</code> for nonterminals. Use <code class="literal">%token</code>, <code class="literal">%left</code>, <code class="literal">%right</code>, or <code class="literal">%nonassoc</code> for tokens to give the name of the
+        union field corresponding to its type.</p><p>Then, whenever you refer to a value using <code class="literal">$$</code>, <code class="literal">$1</code>,
+        etc., bison automatically uses the appropriate field of the
+        union.</p><p>Bison doesn’t understand any C, so any symbol typing mistakes
+        you make, such as using a type name that isn’t in the union or using a
+        field in a way that C doesn’t allow, will cause errors in the
+        generated C program.</p></div><div class="sect2" title="Explicit Symbol Types"><div class="titlepage"><div><div><h2 class="title"><a id="id552279"/>Explicit Symbol Types</h2></div></div></div><p><a id="I_indexterm6_d1e11389" class="indexterm"/>Bison allows you to declare an explicit type for a
+        symbol value reference by putting the type name in angle brackets
+        between the dollar sign and the symbol number or between the two
+        dollar signs, for example, <code class="literal">$&lt;xxx&gt;3</code> or <code class="literal">$&lt;zzz&gt;$</code>.<a id="I_indexterm6_d1e11401" class="indexterm"/><a id="I_indexterm6_d1e11404" class="indexterm"/><a id="I_indexterm6_d1e11407" class="indexterm"/><a id="I_indexterm6_d1e11410" class="indexterm"/></p><p>The feature is rarely used, since in nearly all cases it is
+        easier and more readable to declare the symbols. The most plausible
+        uses are when referring to inherited attributes and when setting and
+        referring to the value returned by an embedded action. See <a class="xref" href="ch06.xhtml#inherit_attributes" title="Inherited Attributes ($0)">Inherited Attributes ($0)</a> and <a class="xref" href="ch06.xhtml#actions" title="Actions">Actions</a> for
+        details.</p></div></div><div class="sect1" title="Tokens"><div class="titlepage"><div><div><h1 class="title"><a id="tokens"/>Tokens</h1></div></div></div><p><span class="emphasis"><em>Tokens</em></span> <a id="I_indexterm6_d1e11426" class="indexterm"/><a id="I_indexterm6_d1e11431" class="indexterm"/>or <span class="emphasis"><em>terminal symbols</em></span><a id="I_indexterm6_d1e11439" class="indexterm"/><a id="I_indexterm6_d1e11444" class="indexterm"/> are symbols that the lexer passes to the parser. Whenever
+      a bison parser needs another token, it calls <code class="literal">yylex()</code>, which returns the next token from the
+      input. At the end of input, <code class="literal">yylex()</code>
+      returns zero.</p><p>Tokens may be either symbols defined by <code class="literal">%token</code> or individual characters in single
+      quotes. (See <a class="xref" href="ch06.xhtml#literaltokens" title="Literal Tokens">Literal Tokens</a>.) All symbols used as
+      tokens must be defined explicitly in the definition section, for
+      example:</p><a id="I_programlisting6_d1e11464"/><pre class="programlisting">    %token UP DOWN LEFT RIGHT</pre><p>Tokens can also be declared by <code class="literal">%left</code>, <code class="literal">%right</code>, or <code class="literal">%nonassoc</code> declarations, each of which has
+      exactly the same syntax options as <code class="literal">%token</code> has. See <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>.</p><div class="sect2" title="Token Numbers"><div class="titlepage"><div><div><h2 class="title"><a id="id481822"/>Token Numbers</h2></div></div></div><p>Within the lexer and parser, tokens are identified by small
+        integers. The token number of a literal token is the numeric value in
+        the local character set, usually ASCII, and is the same as the C value
+        of the quoted character.</p><p>Symbolic tokens usually have values assigned by bison, which
+        gives them numbers higher than any possible character’s code, so they
+        will not conflict with any literal tokens. You can assign token
+        numbers yourself by following the token name by its number in <code class="literal">%token</code>:</p><a id="I_programlisting6_d1e11492"/><pre class="programlisting">    %token UP 50 DOWN 60 LEFT 17 RIGHT 25</pre><p>It is an error to assign two tokens the same number. In most
+        cases it is easier and more reliable to let bison choose its own token
+        numbers.</p><p>The lexer needs to know the token numbers in order to return the
+        appropriate values to the parser. For literal tokens, it uses the
+        corresponding C character constant. For symbolic tokens, you can tell
+        bison with the <code class="literal">-d</code> command-line flag
+        to create a C header file with definitions of all the token numbers.
+        If you #<code class="literal">include</code> that header file in
+        your lexer, you can use the symbols, for example, <code class="literal">UP</code>, <code class="literal">DOWN</code>,
+        <code class="literal">LEFT</code>, and <code class="literal">RIGHT</code>, in its C code. The header file is
+        normally called <code class="literal">xxx.tab.h</code> if your
+        source file was <code class="literal">xxx.y</code>, or you can
+        rename it with the <code class="literal">%defines</code>
+        declaration or the <code class="literal">--defines=</code><span class="emphasis"><em>filename</em></span>
+        command-line option.</p><a id="I_programlisting6_d1e11535"/><pre class="programlisting">  %defines "xxxsyms.h"</pre></div><div class="sect2" title="Token Values"><div class="titlepage"><div><div><h2 class="title"><a id="id481824"/>Token Values</h2></div></div></div><p>Each symbol in a bison parser can have an associated value. (See
+        <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a>.) Since tokens can have values, you need to
+        set the values as the lexer returns tokens to the parser. The token
+        value is always stored in the variable <code class="literal">yylval</code>. In the simplest parsers, <code class="literal">yylval</code> is a plain <code class="literal">int</code> variable, and you might set it like this
+        in a flex scanner:</p><a id="I_programlisting6_d1e11553"/><pre class="programlisting">    [0-9]+      { yylval = atoi(yytext); return NUMBER; }</pre><p>In most cases, though, different symbols have different value
+        types. See <a class="xref" href="ch06.xhtml#union" title="%union Declaration">%union Declaration</a>, <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a>, and
+        <a class="xref" href="ch06.xhtml#typedec" title="%type Declaration"/> below.</p><p>In the parser you must declare the value types <a id="I_indexterm6_d1e11565" class="indexterm"/>of all tokens that have values. Put the name of the
+        appropriate union tag in angle brackets in the <code class="literal">%token</code> or precedence declaration. You might
+        define your values types like this:</p><a id="I_programlisting6_d1e11574"/><pre class="programlisting">    %union {
+          enum optype opval;
+          double dval;
+    }
+
+    %nonassoc &lt;opval&gt; RELOP
+    %token &lt;dval&gt; REAL
+
+    %union { char *sval; }
+    . . .
+    %token &lt;sval&gt; STRING</pre><p>In this case <code class="literal">RELOP</code> might be a
+        relational operator such as <code class="literal">==</code> or
+        <code class="literal">&gt;</code>, and the token value says
+        which operator it is.</p><p>You set the appropriate field of <code class="literal">yylval</code> when you return the token. In this
+        case, you’d do something like this in lex:</p><a id="I_programlisting6_d1e11592"/><pre class="programlisting">    %{
+    #include "parser.tab.h"
+    %}
+    . . .
+    [0-9]+\.[0-9]*   { yylval.dval = atof(yytext); return REAL; }
+    \"[^"]*\"  { yylval.sval = strdup(yytext); return STRING; }
+    "=="       { yyval.opval = OPEQUAL; return RELOP; }</pre><p>The value for <code class="literal">REAL</code> is a
+        <code class="literal">double</code>, so it goes into <code class="literal">yylval.dval</code>, while the value for <code class="literal">STRING</code> is a <code class="literal">char
+        *</code>, so it goes into <code class="literal">yylval.sval</code>.</p></div><div class="sect2" title="%type Declaration"><div class="titlepage"><div><div><h2 class="title"><a id="typedec"/>%type Declaration</h2></div></div></div><p><a id="I_indexterm6_d1e11619" class="indexterm"/>You declare the types of nonterminals <a id="I_indexterm6_d1e11623" class="indexterm"/>using <code class="literal">%type</code>. Each
+        declaration has the following form:</p><a id="I_programlisting6_d1e11632"/><pre class="programlisting">    %type &lt;<span class="emphasis"><em>type</em></span>&gt; <span class="emphasis"><em>name</em></span>, <span class="emphasis"><em>name</em></span>, . . .</pre><p>Each <code class="literal">type</code> name must have been
+        defined by a <code class="literal">%union</code>. (See <a class="xref" href="ch06.xhtml#union" title="%union Declaration">%union Declaration</a>.) Each <code class="literal">name</code> is
+        the name of a nonterminal symbol. See <a class="xref" href="ch06.xhtml#symtypes" title="Declaring Symbol Types">Declaring Symbol Types</a> for
+        details and an example.</p><p>Use <code class="literal">%type</code> to declare
+        nonterminals. To declare tokens, you can also use <code class="literal">%token</code>, <code class="literal">%left</code>, <code class="literal">%right</code>, or <code class="literal">%nonassoc</code>. See <a class="xref" href="ch06.xhtml#tokens" title="Tokens">Tokens</a> and
+        <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a> for details.</p></div><div class="sect2" title="%union Declaration"><div class="titlepage"><div><div><h2 class="title"><a id="union"/>%union Declaration</h2></div></div></div><p><a id="I_indexterm6_d1e11684" class="indexterm"/>The <code class="literal">%union</code>
+        declaration identifies all of the possible C types that a symbol value
+        can have. (See <a class="xref" href="ch06.xhtml#symvals" title="Symbol Values">Symbol Values</a>.) The declaration takes this
+        form:</p><a id="I_programlisting6_d1e11695"/><pre class="programlisting">    %union {
+      ... <span class="emphasis"><em>field declarations...</em></span>
+    }</pre><p>The field declarations <a id="I_indexterm6_d1e11702" class="indexterm"/>are copied verbatim into a C <code class="literal">union</code> declaration of the type <code class="literal">YYSTYPE</code> in the output
+        file. Bison does not check to see whether the contents of the <code class="literal">%union</code> are valid C. If you have more than
+        one <code class="literal">%union</code> declaration, their
+        contents are concatenated to create the C or C++ union
+        declaration.</p><p>In the absence of a <code class="literal">%union</code>
+        declaration, bison defines <code class="literal">YYSTYPE</code>
+        to be <code class="literal">int</code>, so all of the symbol
+        values are integers.</p><p>You associate the types declared in <code class="literal">%union</code> with particular symbols using the
+        <code class="literal">%type</code> declaration.</p><p>Bison puts the generated C union declaration both in the
+        generated C file and in the optional generated header file (called
+        <code class="literal"><em class="replaceable"><code>name</code></em>.tab.h</code> unless
+        you tell it otherwise), so you can use <code class="literal">YYSTYPE</code> in other source files by including
+        the generated header file. Conversely, you can put your own
+        declaration of <code class="literal">YYSTYPE</code> in an
+        include file that you reference with <code class="literal">#include</code> in the definition section. In this
+        case, there must be at least one <code class="literal">%type</code> or other declaration that specifies a
+        symbol type to warn bison that you are using explicit symbol
+        types.</p></div></div><div class="sect1" title="Variant and Multiple Grammars"><div class="titlepage"><div><div><h1 class="title"><a id="multiparse"/>Variant and Multiple Grammars</h1></div></div></div><p><a id="I_indexterm6_d1e11762" class="indexterm"/><a id="I_indexterm6_d1e11767" class="indexterm"/>You may want to have parsers for two partially or entirely
+      different grammars in the same program. For example, an interactive
+      debugging interpreter might have one parser for the programming language
+      and another for debugger commands. A one-pass C compiler might need one
+      parser for the preprocessor syntax and another for the C language
+      itself.</p><p>There are two ways to handle two grammars in one program: combine
+      them into a single parser or put two complete parsers into the
+      program.</p><div class="sect2" title="Combined Parsers"><div class="titlepage"><div><div><h2 class="title"><a id="id481919"/>Combined Parsers</h2></div></div></div><p><a id="I_indexterm6_d1e11779" class="indexterm"/>If you have several similar grammars, you can combine
+        them into one by adding a new start rule that depends on the first
+        token read. For example:</p><a id="I_programlisting6_d1e11785"/><pre class="programlisting">    %token CSTART PPSTART
+    %%
+    combined:  CSTART cgrammar
+          |    PPSTART ppgrammar
+          ;
+
+    cgrammar:  . . .
+
+    ppgrammar: . . .</pre><p>In this case, if the first token is <code class="literal">CSTART</code>, it parses the grammar whose start
+        rule is <code class="literal">cgrammar</code>, while if the first token is
+        <code class="literal">PPSTART</code>, it parses the grammar
+        whose start rule is <code class="literal">ppgrammar</code>.</p><p>You also need to put code in the lexer that returns the
+        appropriate special token the first time that the parser asks the
+        lexer for a token:</p><a id="I_programlisting6_d1e11803"/><pre class="programlisting">    %%
+    %{
+         extern first_tok;
+
+         if(first_tok) {
+               int holdtok = first_tok;
+
+               first_tok = 0;
+               return holdtok;
+         }
+    %}
+    . . . <span class="emphasis"><em>&lt;the rest of the lexer&gt;</em></span></pre><p>In this case, you set <code class="literal">first_tok</code> to the appropriate token before
+        calling <code class="literal">yyparse()</code>.</p><p>One advantage of this approach is that the program is smaller
+        than it would be with multiple parsers, since there is only one copy
+        of the parsing code. Another is that if you are parsing related
+        grammars, for example, C preprocessor expressions and C itself, you
+        should be able to share some parts of the grammar. The disadvantages
+        are that you cannot call one parser while the other is active unless
+        you create a pure parser and that you have to use different symbols in
+        the two grammars except where they deliberately share rules, and the
+        possibilities for hard-to-find errors are rife if you accidentally use
+        the same symbol in the two grammars.</p><p>In practice, this approach is useful when you want to parse
+        slightly different versions of a single language, for example, a full
+        language that is compiled and an interactive subset that you interpret
+        in a debugger. If one language is actually a subset of the other, a
+        better approach would be to use a single parser for both, check in the
+        action code in the rules excluded from the subset for which version is
+        being parsed, and if it’s the subset, report an error to the
+        user.</p></div></div><div class="sect1" title="Multiple Parsers"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e11819"/>Multiple Parsers</h1></div></div></div><p><a id="I_indexterm6_d1e11823" class="indexterm"/><a id="I_indexterm6_d1e11828" class="indexterm"/>The other approach is to include two complete parsers in a
+      single program. Every bison parser normally has the same entry point,
+      <code class="literal">yyparse()</code>, and calls the same lexer,
+      <code class="literal">yylex()</code>, which uses the same token
+      value variable <code class="literal">yylval</code>. Also, the
+      parse tables and parser stack are in global variables with names like
+      <code class="literal">yyact</code> and <code class="literal">yyv</code>. If you just translate two grammars and
+      compile and link the two resulting files, you get a long list of
+      multiply defined symbols. The trick is to change the names that bison
+      uses for its functions and variables.</p><div class="sect2" title="Using %name-prefix or the -p Flag"><div class="titlepage"><div><div><h2 class="title"><a id="id553657"/>Using %name-prefix or the -p Flag</h2></div></div></div><p><a id="I_indexterm6_d1e11854" class="indexterm"/><a id="I_indexterm6_d1e11857" class="indexterm"/>You can use a declaration in the bison source code to
+        change the prefix used on the names in the parser generated by
+        bison.</p><a id="I_programlisting6_d1e11861"/><pre class="programlisting">   %name-prefix "pdq"</pre><p>This produces a parser with the entry point <code class="literal">pdqparse()</code>, which calls the lexer <code class="literal">pdqlex()</code>, and so forth.</p><p>Specifically, the names affected are <code class="literal">yyparse()</code>, <code class="literal">yylex()</code>, <code class="literal">yyerror()</code>, <code class="literal">yylval</code>, <code class="literal">yychar</code>, and <code class="literal">yydebug</code>. (The variable <code class="literal">yychar</code> holds the most recently read token,
+        which is sometimes useful when printing error messages.) The other
+        variables used in the parser may be renamed or may be made <code class="literal">static</code> or <code class="literal">auto</code>; in any event, they are guaranteed not
+        to collide. There is also a <code class="literal">-p</code> flag
+        to specify the prefix on the command line rather than in the source
+        file, and there is a a <code class="literal">-b</code> flag to
+        specify the prefix of the generated C file; for example,</p><a id="I_programlisting6_d1e11907"/><pre class="programlisting">    bison -d -p pdq -b pref mygram.y</pre><p>would produce <code class="literal">pref.tab.c</code> and
+        <code class="literal">pref.tab.h</code> with a parser whose
+        entry point is <code class="literal">pdqparse</code>.</p><p>You have to provide properly named versions of <code class="literal">yyerror()</code> and <code class="literal">yylex()</code>.</p></div><div class="sect2" title="Lexers for Multiple Parsers"><div class="titlepage"><div><div><h2 class="title"><a id="id549638"/>Lexers for Multiple Parsers</h2></div></div></div><p><a id="I_indexterm6_d1e11932" class="indexterm"/>If you use a flex lexer with your multiple parsers, you
+        need to make adjustments to the lexer to correspond to the changes to
+        the parser. (See <a class="xref" href="ch05.xhtml#multilex" title="Multiple Lexers in One Program">Multiple Lexers in One Program</a>.) You will usually want
+        to use a combined lexer with a combined parser and use multiple lexers
+        with multiple parsers.</p></div><div class="sect2" title="Pure Parsers"><div class="titlepage"><div><div><h2 class="title"><a id="id549679"/>Pure Parsers</h2></div></div></div><p>A slightly different problem is that of recursive
+        parsing,<a id="I_indexterm6_d1e11945" class="indexterm"/> calling <code class="literal">yyparse()</code><a id="I_indexterm6_d1e11951" class="indexterm"/> a second time while the original call to <code class="literal">yyparse()</code> is still active. This can be an
+        issue when you have combined parsers. If you have a combined C
+        language and C preprocessor parser, you can call <code class="literal">yyparse()</code> in C language mode once to parse
+        the whole program, and you can call it recursively whenever you see a
+        <code class="literal">#if</code> to parse a preprocessor
+        expression.</p><p>Pure parsers are also useful in threaded programs, where each
+        thread might be parsing input from a separate source. See <a class="xref" href="ch09.xhtml#pure" title="Pure Scanners and Parsers">Pure Scanners and Parsers</a> in <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a> for the details on pure
+        parsers.</p></div></div><div class="sect1" title="y.output Files"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e11970"/>y.output Files</h1></div></div></div><p><a id="I_indexterm6_d1e11974" class="indexterm"/><a id="I_indexterm6_d1e11979" class="indexterm"/><a id="I_indexterm6_d1e11984" class="indexterm"/>Bison can create a log file, traditionally named
+      <span class="emphasis"><em><code class="literal">y.output</code></em></span> or now
+      more often <code class="literal"><em class="replaceable"><code>name</code></em>.output</code>, that shows all
+      of the states in the parser and the transitions from one state to
+      another. Use the <span class="emphasis"><em><code class="literal">--report=all</code></em></span> flag to generate a log
+      file.</p><p>Here’s part of the log for the bison grammar in <a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1</a>:</p><a id="I_programlisting6_d1e12007"/><pre class="programlisting">state 3
+
+   10 term: NUMBER .
+
+    $default  reduce using rule 10 (term)
+
+state 4
+
+   11 term: ABS . term
+
+    NUMBER  shift, and go to state 3
+    ABS     shift, and go to state 4
+
+    term  go to state 9
+
+
+state 5
+
+    2 calclist: calclist calc . EOL
+
+    EOL  shift, and go to state 10</pre><p>The dot in each state shows how far the parser has gotten parsing
+      a rule when it gets to that state. When the parser is in state 4, for
+      example, if the parser sees a <code class="literal">NUMBER</code>
+      token, it shifts the <code class="literal">NUMBER</code> onto the
+      stack and switches to state 3. If it sees an <code class="literal">ABS</code>, it shifts and switches back to state 4,
+      and any other token is an error. If a subsequent reduction returns to
+      this state with a <code class="literal">term</code> on the top of
+      the stack, it switches to state 9. In state
+      3, it always reduces rule 10. (Rules are numbered in the order
+      they appear in the input file.) After the reduction, the <code class="literal">NUMBER</code> is replaced on the parse stack by a
+      <code class="literal">term</code>, and the parser pops back to
+      state 4, at which point the <code class="literal">term</code>
+      makes it go to state 9.</p><p>When there are conflicts, the states with conflicts show the
+      conflicting shift and reduce actions.</p><a id="I_programlisting6_d1e12038"/><pre class="programlisting">State 19 conflicts: 3 shift/reduce
+
+state 19
+
+    5 exp: exp . ADD exp
+    5    | exp ADD exp .
+    6    | exp . SUB factor
+    7    | exp . ABS factor
+
+    ADD  shift, and go to state 12
+    SUB  shift, and go to state 13
+    ABS  shift, and go to state 14
+
+    ADD       [reduce using rule 5 (exp)]
+    SUB       [reduce using rule 5 (exp)]
+    ABS       [reduce using rule 5 (exp)]
+    $default  reduce using rule 5 (exp)</pre><p>In this case, there is a shift/reduce conflict when bison sees a
+      plus sign. You could fix it either by rewriting the grammar or by adding
+      an operator declaration for the plus sign. See <a class="xref" href="ch06.xhtml#precedence" title="Precedence and Associativity Declarations">Precedence and Associativity Declarations</a>.</p></div><div class="sect1" title="Bison Library"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12044"/>Bison Library</h1></div></div></div><p><a id="I_indexterm6_d1e12048" class="indexterm"/><a id="I_indexterm6_d1e12053" class="indexterm"/>Bison inherits a library of helpful routines from its
+      predecessor yacc. You can include the library by giving the <code class="literal">-ly</code> flag at the end of the <code class="literal">cc</code> command line. The library contains <code class="literal">main()</code> and <code class="literal">yyerror()</code>.</p><div class="sect2" title="main()"><div class="titlepage"><div><div><h2 class="title"><a id="id483382"/>main()</h2></div></div></div><p><a id="I_indexterm6_d1e12075" class="indexterm"/>The library has a minimal main program that is sometimes
+        useful for quickie programs and for testing. It’s so simple we can
+        reproduce it here:</p><a id="I_programlisting6_d1e12081"/><pre class="programlisting">    main(ac, av)
+    {
+          yyparse();
+          return 0;
+    }</pre><p>As with any library routine, you can provide your own <code class="literal">main()</code>. In nearly any useful application you
+        will want to provide a <code class="literal">main()</code> that
+        accepts command-line arguments and flags, opens files, and checks for
+        errors.</p></div><div class="sect2" title="yyerror()"><div class="titlepage"><div><div><h2 class="title"><a id="yyerror"/>yyerror()</h2></div></div></div><p><a id="I_indexterm6_d1e12095" class="indexterm"/>Bison also provides a simple error-reporting routine.
+        It’s also simple enough to list in its entirety:</p><a id="I_programlisting6_d1e12099"/><pre class="programlisting">    yyerror(char *errmsg)
+    {
+          fprintf(stderr, "%s\n", errmsg);
+    }</pre><p>This sometimes suffices, but a better error routine that reports
+        at least the line number and the most recent token (available in
+        <code class="literal">yytext</code> if your lexer is written
+        with lex) will make your parser much more usable.</p></div></div><div class="sect1" title="YYABORT"><div class="titlepage"><div><div><h1 class="title"><a id="yyabort"/>YYABORT</h1></div></div></div><p><a id="I_indexterm6_d1e12110" class="indexterm"/><a id="I_indexterm6_d1e12115" class="indexterm"/>The special statement</p><a id="I_programlisting6_d1e12119"/><pre class="programlisting">    YYABORT;</pre><p>in an action makes the parser routine <code class="literal">yyparse()</code><a id="I_indexterm6_d1e12125" class="indexterm"/> return immediately with a nonzero value, indicating
+      failure.</p><p>It can be useful when an action routine detects an error so severe
+      that there is no point in continuing the parse.</p><p>Since the parser may have a one-token lookahead, the rule action
+      containing the <code class="literal">YYABORT</code> may not be reduced until the
+      parser has read another token.</p></div><div class="sect1" title="YYACCEPT"><div class="titlepage"><div><div><h1 class="title"><a id="yyaccept"/>YYACCEPT</h1></div></div></div><p><a id="I_indexterm6_d1e12140" class="indexterm"/><a id="I_indexterm6_d1e12145" class="indexterm"/>The special statement</p><a id="I_programlisting6_d1e12149"/><pre class="programlisting">    YYACCEPT;</pre><p>in an action makes the parser routine <code class="literal">yyparse()</code> return immediately with a value 0,
+      indicating success.</p><p>It can be useful in a situation where the lexer cannot tell when
+      the input data ends but the parser can.</p><p>Since the parser may have a one-token lookahead, the rule action
+      containing the <code class="literal">YYACCEPT</code> may not be reduced until the
+      parser has read another token.</p></div><div class="sect1" title="YYBACKUP"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12163"/>YYBACKUP</h1></div></div></div><p><a id="I_indexterm6_d1e12167" class="indexterm"/><a id="I_indexterm6_d1e12172" class="indexterm"/><a id="I_indexterm6_d1e12175" class="indexterm"/>The macro <code class="literal">YYBACKUP</code> lets
+      you unshift the current token and replace it with something else. The
+      syntax is as follows:</p><a id="I_programlisting6_d1e12184"/><pre class="programlisting">    sym:    TOKEN  { YYBACKUP(<span class="emphasis"><em>newtok</em></span>, <span class="emphasis"><em>newval</em></span>); }</pre><p>It discards the symbol <code class="literal">sym</code> that
+      would have been substituted by the reduction and pretends that the lexer
+      just read the token <code class="literal">newtok</code> with the
+      value <code class="literal">newval</code>. If there is a
+      look-ahead token or the rule has more than one symbol on the right side,
+      the rule fails with a call to <code class="literal">yyerror()</code>.</p><p>It is extremely difficult to use <code class="literal">YYBACKUP()</code> correctly, so you’re best off not
+      using it. (It’s documented here in case you come across an existing
+      grammar that does use it.)</p></div><div class="sect1" title="yyclearin"><div class="titlepage"><div><div><h1 class="title"><a id="yyclearin"/>yyclearin</h1></div></div></div><p><a id="I_indexterm6_d1e12216" class="indexterm"/><a id="I_indexterm6_d1e12221" class="indexterm"/>The macro <code class="literal">yyclearin</code> in
+      an action discards a lookahead token if one has been read. It is most
+      often useful in error recovery in an interactive parser to put the
+      parser into a known state after an error:</p><a id="I_programlisting6_d1e12228"/><pre class="programlisting">    stmtlist: stmt | stmtlist stmt ;
+
+    stmt: error  { reset_input(); yyclearin; } ;</pre><p>After an error, this calls the user routine <code class="literal">reset_input()</code>, which presumably puts the input
+      into a known state, and then uses <code class="literal">yyclearin</code> to prepare to start reading tokens
+      anew.</p><p>See <a class="xref" href="Images/ch06.html#yyrecovering" title="YYRECOVERING()">YYRECOVERING()</a> and <a class="xref" href="ch06.xhtml#yyerrok" title="yyerrok"/> below for more information.</p></div><div class="sect1" title="yydebug and YYDEBUG"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12246"/>yydebug and YYDEBUG</h1></div></div></div><p><a id="I_indexterm6_d1e12250" class="indexterm"/><a id="I_indexterm6_d1e12255" class="indexterm"/><a id="I_indexterm6_d1e12258" class="indexterm"/>Bison can optionally compile in trace code that reports
+      everything that the parser does. These reports are extremely verbose but
+      are often the only way to figure out what a recalcitrant parser is
+      doing.</p><div class="sect2" title="YYDEBUG"><div class="titlepage"><div><div><h2 class="title"><a id="id511705"/>YYDEBUG</h2></div></div></div><p>Since the trace code is large and slow, it is not automatically
+        compiled into the object program. To include the trace code, either
+        use the <code class="literal">-t</code> flag on the bison
+        command line or else define the C preprocessor symbol <code class="literal">YYDEBUG</code> to be nonzero either on the C
+        compiler command line or by including something like this in the
+        definition section:</p><a id="I_programlisting6_d1e12273"/><pre class="programlisting">    %{
+    #define YYDEBUG 1
+    %}</pre></div><div class="sect2" title="yydebug"><div class="titlepage"><div><div><h2 class="title"><a id="id499091"/>yydebug</h2></div></div></div><p>The integer variable <code class="literal">yydebug</code>
+        in the running parser controls whether the parser actually produces
+        debug output. If it is nonzero, the parser produces debugging reports,
+        while if it is zero, it doesn’t. You can set <code class="literal">yydebug</code> nonzero in any way you want, for
+        instance, in response to a flag on the program’s command line or by
+        patching it at runtime with a debugger.</p></div></div><div class="sect1" title="yyerrok"><div class="titlepage"><div><div><h1 class="title"><a id="yyerrok"/>yyerrok</h1></div></div></div><p><a id="I_indexterm6_d1e12290" class="indexterm"/><a id="I_indexterm6_d1e12295" class="indexterm"/>After bison detects a syntax error, it normally refrains
+      from reporting another error until it has shifted three consecutive
+      tokens without another error. This somewhat alleviates the problem of
+      multiple error messages resulting from a single mistake as the parser
+      gets resynchronized.</p><p>If you know when the parser is back in sync, you can return to the
+      normal state in which all errors are reported. The macro <code class="literal">yyerrok</code> tells the parser to return to the
+      normal state.</p><p>For example, assume you have a command interpreter in which all
+      commands are on separate lines. No matter how badly the user botches a
+      command, you know the next line is a new command.</p><a id="I_programlisting6_d1e12306"/><pre class="programlisting">    cmdlist: cmd | cmdlist cmd ;
+
+    cmd:  error '\n' { yyerrok; } ;</pre><p>The rule with <code class="literal">error</code> skips input
+      after an error up to a newline, and <code class="literal">yyerrok</code> tells the parser that error recovery
+      is complete.</p><p>See also <a class="xref" href="Images/ch06.html#yyrecovering" title="YYRECOVERING()">YYRECOVERING()</a> and <a class="xref" href="ch06.xhtml#yyclearin" title="yyclearin">yyclearin</a>.</p></div><div class="sect1" title="YYERROR"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12322"/>YYERROR</h1></div></div></div><p><a id="I_indexterm6_d1e12326" class="indexterm"/><a id="I_indexterm6_d1e12331" class="indexterm"/><a id="I_indexterm6_d1e12334" class="indexterm"/>Sometimes your action code can detect context-sensitive
+      syntax errors that the parser itself cannot. If your code detects a
+      syntax error, you can call the macro <code class="literal">YYERROR</code> to produce exactly the same effect as
+      if the parser had read a token forbidden by the grammar. As soon as you
+      invoke <code class="literal">YYERROR</code>, the parser goes into
+      error recovery mode looking for a state where it can shift an <code class="literal">error</code> token. See <a class="xref" href="ch06.xhtml#errortok" title="Error Token and Error Recovery">Error Token and Error Recovery</a>
+      for details. If you want to produce an error message, you have to call
+      <code class="literal">yyerror</code> yourself.</p></div><div class="sect1" title="yyerror()"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12355"/>yyerror()</h1></div></div></div><p><a id="I_indexterm6_d1e12359" class="indexterm"/><a id="I_indexterm6_d1e12364" class="indexterm"/>Whenever a bison parser detects a syntax error, it calls
+      <code class="literal">yyerror()</code> to report the error to the
+      user, passing it a single argument: a string describing the error.
+      (Unless you have calls to <code class="literal">yyerror()</code>
+      in your own code, usually the only error you ever get is “syntax
+      error.”) The default version of <code class="literal">yyerror</code> in the bison library merely prints its
+      argument on the standard output. Here is a slightly more informative
+      version:</p><a id="I_programlisting6_d1e12377"/><pre class="programlisting">    yyerror(const char *msg)
+    {
+          printf("%d: %s at '%s'\n", yylineno, msg, yytext);
+    }</pre><p>We assume <code class="literal">yylineno</code> is the
+      current line number. (See <a class="xref" href="ch05.xhtml#yylineno" title="Line Numbers and yylineno">Line Numbers and yylineno</a>.) <code class="literal">yytext</code> is the flex token buffer that contains
+      the current token.</p><p>Since bison doggedly tries to recover from errors and parse its
+      entire input, no matter how badly garbled, you may want to have <code class="literal">yyerror()</code> count the number of times it’s
+      called and exit after 10 errors, on the theory that the parser is
+      probably hopelessly confused by the errors that have already been
+      reported.</p><p>You can and probably should call <code class="literal">yyerror()</code> yourself when your action routines
+      detect other sorts of errors.</p></div><div class="sect1" title="yyparse()"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect16_d1e12399"/>yyparse()</h1></div></div></div><p><a id="I_indexterm6_d1e12403" class="indexterm"/><a id="I_indexterm6_d1e12408" class="indexterm"/>The entry point to a bison-generated parser is <code class="literal">yyparse()</code>. When your program calls <code class="literal">yyparse()</code>, the parser attempts to parse an
+      input stream. The parser returns a value of zero if the parse succeeds
+      and nonzero if not. The parser normally takes no arguments, but see
+      <a class="xref" href="ch06.xhtml#parseparam" title="%parse-param">%parse-param</a> for more information.</p><p>Every time you call <code class="literal">yyparse()</code>,
+      the parser starts parsing anew, forgetting whatever state it might have
+      been in the last time it returned. This is quite unlike the scanner
+      <code class="literal">yylex()</code> generated by lex, which picks
+      up where it left off each time you call it.</p><p>See also <a class="xref" href="ch06.xhtml#yyaccept" title="YYACCEPT">YYACCEPT</a> and <a class="xref" href="ch06.xhtml#yyabort" title="YYABORT">YYABORT</a>.</p></div><div class="sect1" title="YYRECOVERING()"><div class="titlepage"><div><div><h1 class="title"><a id="yyrecovering"/>YYRECOVERING()</h1></div></div></div><p><a id="I_indexterm6_d1e12438" class="indexterm"/><a id="I_indexterm6_d1e12443" class="indexterm"/><a id="I_indexterm6_d1e12446" class="indexterm"/>After bison detects a syntax error, it normally enters a
+      recovery mode in which it refrains from reporting another error until it
+      has shifted three consecutive tokens without another error. This
+      somewhat alleviates the problem of multiple error messages resulting
+      from a single mistake as the parser gets resynchronized.</p><p>The macro <code class="literal">YYRECOVERING()</code>
+      returns nonzero if the parser is currently in the error recovery mode
+      and zero if it is not. It is sometimes convenient to test <code class="literal">YYRECOVERING()</code> to decide whether to report
+      errors discovered in an action routine.</p><p>See also <a class="xref" href="ch06.xhtml#yyclearin" title="yyclearin">yyclearin</a> and <a class="xref" href="ch06.xhtml#yyerrok" title="yyerrok">yyerrok</a>.<a id="I_indexterm6_d1e12466" class="indexterm"/></p></div></div></div></body>
+</html>

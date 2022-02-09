@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" unique-identifier="bookid" version="2.0" >
+<metadata xmlns:dc="http://purl.org/dc/elements/1.1/"  xmlns:opf="http://www.idpf.org/2007/opf">
+<dc:title>flex &amp; bison</dc:title>
+<dc:creator opf:file-as="John Levine" opf:role="aut">John Levine</dc:creator>
+<dc:description>&lt;span&gt;&lt;div&gt;&lt;p&gt;If you need to parse or process text data in Linux or Unix, this useful book explains how to use flex and bison to solve your problems quickly. flex &amp;amp; bison is the long-awaited sequel to the classic O&#x27;Reilly book, &lt;i&gt;lex &amp;amp; yacc&lt;/i&gt;. In the nearly two decades since the original book was published, the flex and bison utilities have proven to be more reliable and more powerful than the original Unix tools. &lt;br/&gt;&lt;br/&gt;&lt;i&gt;flex &amp;amp; bison&lt;/i&gt; covers the same core functionality vital to Linux and Unix program development, along with several important new topics. You&#x27;ll find revised tutorials for novices and references for advanced users, as well as an explanation of each utility&#x27;s basic usage and simple, standalone applications you can create with them. With &lt;i&gt;flex &amp;amp; bison&lt;/i&gt;, you&#x27;ll discover the wide range of uses these flexible tools offer.&lt;br/&gt;&lt;br/&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Address syntax crunching that regular expressions tools can&#x27;t handle&lt;/li&gt;&lt;li&gt;Build compilers and interpreters, and handle a wide range of text processing functions&lt;/li&gt;&lt;li&gt;Interpret code, configuration files, or any other structured format&lt;/li&gt;&lt;li&gt;Learn key programming techniques, including abstract syntax trees and symbol tables&lt;/li&gt;&lt;li&gt;Implement a full SQL grammar-with complete sample code&lt;/li&gt;&lt;li&gt;Use new features such as pure (reentrant) lexers and parsers, powerful GLR parsers, and interfaces to C++&lt;/li&gt;&lt;/ul&gt;&lt;/div&gt;&lt;/span&gt;</dc:description>
+<dc:publisher>O&#x27;Reilly Media</dc:publisher>
+<dc:rights></dc:rights>
+<dc:language>en-US</dc:language>
+<dc:date>2009-08-05</dc:date>
+<dc:identifier id="bookid">9781449379278</dc:identifier>
+<meta name="cover" content="Images/orm_front_cover.jpg"/>
+</metadata>
+<manifest>
+<item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml" />
+<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml" />
+<item id="index" href="index.xhtml" media-type="application/xhtml+xml" />
+<item id="upgrade_offer_front" href="upgrade_offer_front.xhtml" media-type="application/xhtml+xml" />
+<item id="pr02" href="pr02.xhtml" media-type="application/xhtml+xml" />
+<item id="ch01" href="ch01.xhtml" media-type="application/xhtml+xml" />
+<item id="ch02" href="ch02.xhtml" media-type="application/xhtml+xml" />
+<item id="ch03" href="ch03.xhtml" media-type="application/xhtml+xml" />
+<item id="ch04" href="ch04.xhtml" media-type="application/xhtml+xml" />
+<item id="ch05" href="ch05.xhtml" media-type="application/xhtml+xml" />
+<item id="ch06" href="ch06.xhtml" media-type="application/xhtml+xml" />
+<item id="ch08" href="ch08.xhtml" media-type="application/xhtml+xml" />
+<item id="ch07" href="ch07.xhtml" media-type="application/xhtml+xml" />
+<item id="ch09" href="ch09.xhtml" media-type="application/xhtml+xml" />
+<item id="apa" href="apa.xhtml" media-type="application/xhtml+xml" />
+<item id="go01" href="go01.xhtml" media-type="application/xhtml+xml" />
+<item id="ix01" href="ix01.xhtml" media-type="application/xhtml+xml" />
+<item id="author_bios" href="author_bios.xhtml" media-type="application/xhtml+xml" />
+<item id="co02" href="co02.xhtml" media-type="application/xhtml+xml" />
+<item id="upgrade_offer_back" href="upgrade_offer_back.xhtml" media-type="application/xhtml+xml" />
+<item id="copyright" href="copyright.xhtml" media-type="application/xhtml+xml" />
+<item id="img_orm_front_cover" href="Images/orm_front_cover.jpg" media-type="image/jpeg" />
+<item id="img_httpatomoreillycomsourceoreillyimages1740020" href="Images/httpatomoreillycomsourceoreillyimages1740020.png" media-type="image/png" />
+<item id="img_oreilly_largepng" href="Images/oreilly_large.png.jpg" media-type="image/jpeg" />
+<item id="img_httpatomoreillycomsourceoreillyimages1740022" href="Images/httpatomoreillycomsourceoreillyimages1740022.png" media-type="image/png" />
+<item id="img_httpatomoreillycomsourceoreillyimages1740028" href="Images/httpatomoreillycomsourceoreillyimages1740028.png" media-type="image/png" />
+<item id="img_httpatomoreillycomsourceoreillyimages1740024" href="Images/httpatomoreillycomsourceoreillyimages1740024.png" media-type="image/png" />
+<item id="img_httpatomoreillycomsourceoreillyimages1740026" href="Images/httpatomoreillycomsourceoreillyimages1740026.png" media-type="image/png" />
+<item id="style_00" href="Styles/Style00.css" media-type="text/css" />
+<item id="style_01" href="Styles/Style01.css" media-type="text/css" />
+</manifest>
+<spine toc="ncx">
+<itemref idref="cover"/>
+<itemref idref="index"/>
+<itemref idref="upgrade_offer_front"/>
+<itemref idref="pr02"/>
+<itemref idref="ch01"/>
+<itemref idref="ch02"/>
+<itemref idref="ch03"/>
+<itemref idref="ch04"/>
+<itemref idref="ch05"/>
+<itemref idref="ch06"/>
+<itemref idref="ch08"/>
+<itemref idref="ch07"/>
+<itemref idref="ch09"/>
+<itemref idref="apa"/>
+<itemref idref="go01"/>
+<itemref idref="ix01"/>
+<itemref idref="author_bios"/>
+<itemref idref="co02"/>
+<itemref idref="upgrade_offer_back"/>
+<itemref idref="copyright"/></spine>
+<guide><reference href="cover.xhtml" title="Cover" type="cover" /></guide>
+</package>

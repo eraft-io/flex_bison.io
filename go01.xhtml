@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="glossary" title="Glossary"><div class="titlepage"><div><div><h1 class="title"><a id="I_glossary_d1e16124"/>Glossary</h1></div></div></div><dl><dt>action</dt><dd><p><a id="index-545D805CL1B" class="indexterm"/><a id="I_indexterm_d1e16135" class="indexterm"/>The C or C++ code associated with a flex pattern or a
+        bison rule. When the pattern or rule matches an input sequence, the
+        action code is executed.</p></dd><dt>alphabet</dt><dd><p><a id="I_indexterm_d1e16146" class="indexterm"/>A set of distinct symbols. For example, the ASCII
+        character set is a collection of 128 different symbols. In a flex
+        specification, the alphabet is the native character set of the
+        computer. In a bison grammar, the alphabet is the set of tokens and
+        nonterminals used in the grammar.</p></dd><dt>ambiguity</dt><dd><p><a id="I_indexterm_d1e16157" class="indexterm"/>An <span class="emphasis"><em>ambiguous</em></span> grammar is one with
+        more than one rule or set of rules that match the same input. In a
+        bison grammar, ambiguous rules cause shift/reduce or reduce/reduce
+        conflicts. The parsing mechanism that bison normally uses cannot
+        handle ambiguous grammars. The programmer can use <code class="literal">%prec</code> declarations and bison’s own internal
+        rules to resolve conflicts when creating a parser, or the programmer
+        can use a GLR parser, which can handle ambiguous grammars directly.</p></dd><dt>ASCII</dt><dd><p><span class="bold"><strong><a id="I_indexterm_d1e16177" class="indexterm"/>A</strong></span>merican <span class="bold"><strong>S</strong></span>tandard <span class="bold"><strong>C</strong></span>ode
+        for <span class="bold"><strong>I</strong></span>nformation <span class="bold"><strong>I</strong></span>nterchange; a collection of 128 symbols
+        representing the common symbols found in the American alphabet:
+        lowercase and uppercase letters, digits, and punctuation, plus
+        additional characters for formatting and control of data communication
+        links. Most systems that run flex and bison use ASCII or extended
+        8-bit codes in the ISO-8859 series that include ASCII as a
+        subset.</p></dd><dt>bison</dt><dd><p><a id="I_indexterm_d1e16201" class="indexterm"/>A program that translates a dialect of BNF into LALR(1)
+        or GLR parsers.</p></dd><dt>BNF</dt><dd><p><span class="bold"><strong>B</strong></span>ackus-<span class="bold"><strong>N</strong></span>aur <span class="bold"><strong>F</strong></span>orm;<a id="I_indexterm_d1e16221" class="indexterm"/> a method of representing context-free grammars. It is
+        commonly used to specify formal grammars of programming languages. The
+        input syntax of bison is a simplifed version of BNF.</p></dd><dt>compiler</dt><dd><p><a id="I_indexterm_d1e16232" class="indexterm"/>A program that translates a set of instructions (a
+        <span class="emphasis"><em>program</em></span>) in one language into some other
+        representation; typically, the output of a compiler is in the native
+        binary language that can be run directly on a computer. Compare to
+        <span class="emphasis"><em>interpreter</em></span>.</p></dd><dt>conflict</dt><dd><p><a id="I_indexterm_d1e16249" class="indexterm"/>An error within the bison grammar in which two (or more)
+        parsing actions are possible when parsing the same input token. There
+        are two types of conflicts: <span class="emphasis"><em>shift/reduce</em></span> and
+        <span class="emphasis"><em>reduce/reduce</em></span>. (See also
+        <span class="emphasis"><em>ambiguity</em></span>.)</p></dd><dt>context-free grammar</dt><dd><p><a id="I_indexterm_d1e16269" class="indexterm"/>A grammar in which each rule has a single symbol on the
+        LHS; hence, one in which the RHS can match input regardless of what
+        might precede or follow the material it matches. Also called a
+        <span class="emphasis"><em>phrase structure grammar</em></span>. Context-sensitive
+        grammars, containing rules with several symbols on the LHS, are not
+        practical for parsing computer languages.</p></dd><dt>empty</dt><dd><p><a id="I_indexterm_d1e16283" class="indexterm"/>The special case of a string with zero symbols,
+        sometimes written as a Greek epsilon. Bison rules can match the empty
+        string, but flex patterns cannot.</p></dd><dt>finite automaton</dt><dd><p><a id="I_indexterm_d1e16295" class="indexterm"/>An abstract machine that consists of a finite number of
+        instructions (or <span class="emphasis"><em>transitions</em></span>). Finite automata
+        are useful in modeling many commonly occurring computer processes and
+        have useful mathematical properties. Flex and bison create scanners
+        and parsers based on finite automata.</p></dd><dt>flex</dt><dd><p><a id="I_indexterm_d1e16309" class="indexterm"/>A program for producing lexical analyzers, also known as
+        <span class="emphasis"><em>scanners</em></span>, that match patterns defined by regular
+        expressions to a character stream.</p></dd><dt>GLR</dt><dd><p><span class="bold"><strong>G</strong></span>eneralized <span class="bold"><strong>L</strong></span>eft to <span class="bold"><strong>R</strong></span>ight;<a id="I_indexterm_d1e16332" class="indexterm"/> a powerful parsing technique that bison can optionally
+        use. Unlike LALR(1), it can parse grammars that are ambiguous or need
+        indefinite lookahead by maintaining all possible parses in parallel of
+        the input read so far.</p></dd><dt>grammar</dt><dd><p><a id="I_indexterm_d1e16343" class="indexterm"/>A set of <span class="emphasis"><em>rules</em></span> that together define
+        a language.</p></dd><dt>input</dt><dd><p><a id="I_indexterm_d1e16357" class="indexterm"/>A stream of data read by a program. For instance, the
+        input to a flex scanner is a sequence of bytes, while the input to a
+        bison parser is a sequence of <span class="emphasis"><em>tokens</em></span>.</p></dd><dt>interpreter</dt><dd><p><a id="I_indexterm_d1e16371" class="indexterm"/>A program that reads instructions in a language (a
+        <span class="emphasis"><em>program</em></span>) and decodes and acts on them one at a
+        time. Compare to <span class="emphasis"><em>compiler</em></span>.</p></dd><dt>LALR(1)</dt><dd><p><span class="bold"><strong>L</strong></span>ook <span class="bold"><strong>A</strong></span>head <span class="bold"><strong>L</strong></span>eft to
+        <span class="bold"><strong>R</strong></span>ight;<a id="I_indexterm_d1e16400" class="indexterm"/><a id="I_indexterm_d1e16405" class="indexterm"/> the parsing technique that bison normally uses. The (1)
+        denotes that the lookahead is limited to a single token.</p></dd><dt>language</dt><dd><p><a id="I_indexterm_d1e16416" class="indexterm"/>Formally, a well-defined set of strings over some
+        alphabet; informally, some set of instructions for describing tasks
+        that can be executed by a computer.</p></dd><dt>left-hand side (LHS)</dt><dd><p><a id="I_indexterm_d1e16427" class="indexterm"/>The left-hand side or LHS of a bison
+        <span class="emphasis"><em>rule</em></span> is the symbol that precedes the colon.
+        During a parse, when the input matches the sequence of symbols on the
+        RHS of the rule, that sequence is <span class="emphasis"><em>reduced</em></span> to the
+        LHS symbol.</p></dd><dt>lex</dt><dd><p><a id="I_indexterm_d1e16444" class="indexterm"/>A program that produced lexical analyzers that match
+        patterns defined by regular expressions to a character stream. Now
+        superseded by flex, which is more reliable and more powerful.</p></dd><dt>lexical analyzer</dt><dd><p><a id="I_indexterm_d1e16455" class="indexterm"/>A program that converts a character stream into a token
+        stream. Flex takes a description of individual tokens as regular
+        expressions, divides the character stream into tokens, and determines
+        the types and values of the tokens. For example, it might turn the
+        character stream <code class="literal">a = 17;</code> into a
+        token stream consisting of the name <code class="literal">a</code>, the operator <code class="literal">=</code>, the number <code class="literal">17</code>, and the single character token <code class="literal">;</code>. Also called a <span class="emphasis"><em>lexer</em></span>
+        or <span class="emphasis"><em>scanner</em></span>.</p></dd><dt>lookahead</dt><dd><p><a id="I_indexterm_d1e16489" class="indexterm"/>Input read by a parser or scanner but not yet matched to
+        a pattern or rule. Bison parsers have a single token of lookahead,
+        while flex scanners can have indefinitely long lookahead.</p></dd><dt>nonterminal</dt><dd><p><a id="I_indexterm_d1e16500" class="indexterm"/>Symbols in a bison grammar that do not appear in the
+        input but instead are defined by <span class="emphasis"><em>rules</em></span>. Contrast
+        to <span class="emphasis"><em>tokenizing</em></span>.</p></dd><dt>parser stack</dt><dd><p><a id="I_indexterm_d1e16517" class="indexterm"/>In a bison parser, the symbols for partially matched
+        rules are stored on an internal stack. Symbols are added to the stack
+        when the parser <span class="emphasis"><em>shifts</em></span> and are removed when it
+        <span class="emphasis"><em>reduces</em></span>.</p></dd><dt>parsing</dt><dd><p><a id="I_indexterm_d1e16534" class="indexterm"/>The process of taking a stream of
+        <span class="emphasis"><em>tokens</em></span> and logically grouping them into
+        <span class="emphasis"><em>statements</em></span> within some language.</p></dd><dt>pattern</dt><dd><p><a id="I_indexterm_d1e16551" class="indexterm"/>In a flex scanner, a <span class="emphasis"><em>regular
+        expression</em></span> that the scanner matches against the
+        input.</p></dd><dt>precedence</dt><dd><p><a id="I_indexterm_d1e16565" class="indexterm"/>The order in which some particular operation is
+        performed; for example, when interpreting mathematical statements,
+        multiplication and division are assigned higher precedence than
+        addition and subtraction. Thus, the statement <code class="literal">3+4*5</code> is 23 as opposed to 35.</p></dd><dt>production</dt><dd><p>See <span class="emphasis"><em>rule</em></span>.</p></dd><dt>program</dt><dd><p><a id="I_indexterm_d1e16588" class="indexterm"/>A set of instructions that perform a certain defined
+        task.</p></dd><dt>reduce</dt><dd><p><a id="I_indexterm_d1e16599" class="indexterm"/>In a bison parser, when the input matches the list of
+        symbols on the RHS of a rule, the parser <span class="emphasis"><em>reduces</em></span>
+        the rule by removing the RHS symbols from the <span class="emphasis"><em>parser
+        stack</em></span> and replacing them with the LHS symbol.</p></dd><dt>reduce/reduce conflict</dt><dd><p>I<a id="I_indexterm_d1e16617" class="indexterm"/>n a bison grammar, the situation where two or more rules
+        match the same string of tokens. Bison resolves the conflict by
+        reducing the rule that occurs earlier in the grammar.</p></dd><dt>regular expression</dt><dd><p><a id="I_indexterm_d1e16628" class="indexterm"/>A language for specifying <span class="emphasis"><em>patterns</em></span>
+        that match a sequence of characters. Regular expressions consist of
+        normal characters, which match the same character in the input;
+        character classes, which match any single character in the class; and
+        other characters, which specify the way that parts of the expression
+        are to be matched against the input.</p></dd><dt>right-hand side (RHS)</dt><dd><p><a id="I_indexterm_d1e16645" class="indexterm"/>The right-hand side or RHS of a bison
+        <span class="emphasis"><em>rule</em></span> is the list of symbols that follow the
+        colon. During a parse, when the input matches the sequence of symbols
+        on the RHS of the rule, that sequence is <span class="emphasis"><em>reduced</em></span>
+        to the LHS symbol.</p></dd><dt>rule</dt><dd><p><a id="I_indexterm_d1e16662" class="indexterm"/>In bison, <span class="emphasis"><em>rules</em></span> are the abstract
+        description of the grammar. Bison rules are also called
+        <span class="emphasis"><em>productions</em></span>. A rule is a single
+        <span class="emphasis"><em>nonterminal</em></span> called the LHS, a colon, and a
+        possibly empty set of symbols called the RHS. Whenever the input
+        matches the RHS of a rule, the parser <span class="emphasis"><em>reduces</em></span> the
+        rule.</p></dd><dt>semantic meaning</dt><dd><p>See <span class="emphasis"><em>value</em></span>.</p></dd><dt>shift</dt><dd><p><a id="I_indexterm_d1e16694" class="indexterm"/>A bison parser <span class="emphasis"><em>shifts</em></span> an input
+        symbol, placing it onto the parser stack in expectation that the
+        symbol will match one of the rules in the grammar.</p></dd><dt>shift/reduce conflict</dt><dd><p><a id="I_indexterm_d1e16708" class="indexterm"/>In a bison grammar, the situation where a symbol
+        completes the RHS of one rule, which the parser needs to
+        <span class="emphasis"><em>reduce</em></span>, and is an intermediate symbol in the RHS
+        of other rules, for which the parser needs to
+        <span class="emphasis"><em>shift</em></span> the symbol. Shift/reduce conflicts occur
+        either because the grammar is ambiguous or because the parser would
+        need to look more than one token ahead to decide whether to reduce the
+        rule that the symbol completes. Bison resolves the conflict by doing
+        the shift.</p></dd><dt>specification</dt><dd><p><a id="I_indexterm_d1e16725" class="indexterm"/>A flex <span class="emphasis"><em>specification</em></span> is a set of
+        patterns to be matched against an input stream. Flex turns a
+        specification into a scanner.</p></dd><dt>start</dt><dd><p><a id="I_indexterm_d1e16739" class="indexterm"/>The single symbol to which a bison parser reduces a
+        valid input stream. Rules with the start symbol on the LHS are called
+        <span class="emphasis"><em>start rules</em></span>.</p></dd><dt>start state</dt><dd><p><a id="I_indexterm_d1e16753" class="indexterm"/>In a flex specification, patterns can be tagged with
+        start states. At any point one start state is active, and patterns
+        tagged with that start state can match the input. In an exclusive
+        start state, only tagged patterns can match, while in an inclusive
+        state, untagged patterns can also match the input.</p></dd><dt>symbol</dt><dd><p><a id="I_indexterm_d1e16764" class="indexterm"/>In bison terminology, <span class="emphasis"><em>symbols</em></span> are
+        either <span class="emphasis"><em>tokens</em></span> or
+        <span class="emphasis"><em>nonterminals</em></span>. In the rules for the grammar, any
+        name found on the right-hand side of a rule is always a symbol.</p><p>In bison terminology, <span class="emphasis"><em>tokens</em></span> or
+        <span class="emphasis"><em>terminals</em></span> are the symbols provided to the parser
+        by the scanner. Compare to a <span class="emphasis"><em>nonterminal</em></span>, which
+        is defined within the parser.</p></dd><dt>symbol table</dt><dd><p><a id="I_indexterm_d1e16795" class="indexterm"/>A data structure containing information about names
+        occurring in the input so that all references to the same name can be
+        related to the same object.</p></dd><dt>tokenizing</dt><dd><p><a id="I_indexterm_d1e16806" class="indexterm"/>The process of converting a stream of characters into a
+        stream of tokens is termed <span class="emphasis"><em>tokenizing</em></span>. A scanner
+        tokenizes its input.</p></dd><dt>value</dt><dd><p><a id="I_indexterm_d1e16821" class="indexterm"/>Each <span class="emphasis"><em>token</em></span> in a bison grammar has
+        both a <span class="emphasis"><em>syntactic</em></span> and a
+        <span class="emphasis"><em>semantic</em></span> value; its semantic value is the actual
+        data contents of the token. For instance, the syntactic type of a
+        certain operation may be <code class="literal">INTEGER</code>,
+        but its semantic value might be 3.</p></dd><dt>yacc</dt><dd><p><span class="bold"><strong>Y</strong></span>et <span class="bold"><strong>A</strong></span>nother <span class="bold"><strong>C</strong></span>ompiler <span class="bold"><strong>C</strong></span>ompiler;<a id="I_indexterm_d1e16856" class="indexterm"/> the predecessor to bison, a program that generates a
+        parser from a list of rules in BNF-like format.<a id="I_indexterm_d1e16862" class="indexterm"/></p></dd></dl></div></div></body>
+</html>

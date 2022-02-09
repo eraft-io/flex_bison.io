@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="preface" title="Preface"><div class="titlepage"><div><div><h1 class="title"><a id="preface"/>Preface</h1></div></div></div><p>Flex and bison are tools designed for writers of compilers and
+    interpreters, although they are also useful for many applications that
+    will interest noncompiler writers. Any application that looks for patterns
+    in its input or has an input or command language is a good candidate for
+    flex and bison. Furthermore, they allow for rapid application prototyping,
+    easy modification, and simple maintenance of programs. To stimulate your
+    imagination, here are a few things people have used flex and bison, or
+    their predecessors lex and yacc, to develop:</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>The desktop calculator <span class="emphasis"><em>bc</em></span></p></li><li class="listitem"><p>The tools <span class="emphasis"><em>eqn</em></span> and <span class="emphasis"><em>pic</em></span>,
+        typesetting preprocessors for mathematical equations and complex
+        pictures</p></li><li class="listitem"><p>Many other “domain-specific languages” targeted for a particular
+        application</p></li><li class="listitem"><p><span class="emphasis"><em>PCC</em></span>, the Portable C Compiler used with many
+        Unix systems</p></li><li class="listitem"><p>Flex itself</p></li><li class="listitem"><p>A SQL database language translator</p></li></ul></div><div class="sect1" title="Scope of This Book"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e169"/>Scope of This Book</h1></div></div></div><p><a class="xref" href="ch01.xhtml" title="Chapter 1. Introducing Flex and Bison">Chapter 1, Introducing Flex and Bison</a>, gives an
+      overview of how and why flex and bison are used to create compilers and
+      interpreters and demonstrates some simple applications including a
+      calculator built in flex and bison. It also introduces basic terms we
+      use throughout the book.</p><p><a class="xref" href="ch02.xhtml" title="Chapter 2. Using Flex">Chapter 2, Using Flex</a>, describes how
+      to use flex. It develops flex applications that count words in files,
+      handle multiple and nested input files, and compute statistics on C
+      programs.</p><p><a class="xref" href="ch03.xhtml" title="Chapter 3. Using Bison">Chapter 3, Using Bison</a>, gives a full
+      example using flex and bison to develop a fully functional desktop
+      calculator with variables, procedures, loops, and conditional
+      expressions. It shows the use of abstract syntax trees (ASTs), powerful
+      and easy-to-use data structures for representing parsed input.</p><p><a class="xref" href="ch04.xhtml" title="Chapter 4. Parsing SQL">Chapter 4, Parsing SQL</a>, develops a
+      parser for the MySQL dialect of the SQL relational database language.
+      The parser checks the syntax of SQL statements and translates them into
+      an internal form suitable for an interpreter. It shows the use of
+      Reverse Polish Notation (RPN), another powerful form used to represent
+      and interpret parsed input.</p><p><a class="xref" href="ch05.xhtml" title="Chapter 5. A Reference for Flex Specifications">Chapter 5, A Reference for Flex Specifications</a>, and <a class="xref" href="ch06.xhtml" title="Chapter 6. A Reference for Bison Specifications">Chapter 6, A Reference for Bison Specifications</a>, provide detailed
+      descriptions of the features and options available to flex and bison
+      programmers. These chapters and the two that follow provide technical
+      information for the now-experienced flex and bison programmer to use
+      while developing flex and bison applications.</p><p><a class="xref" href="ch07.xhtml" title="Chapter 7. Ambiguities and Conflicts">Chapter 7, Ambiguities and Conflicts</a>, explains
+      bison ambiguities and conflicts, which are grammar problems that keep
+      bison from creating a parser from a grammar. It then develops methods
+      that can be used to locate and correct such problems.</p><p><a class="xref" href="ch08.xhtml" title="Chapter 8. Error Reporting and Recovery">Chapter 8, Error Reporting and Recovery</a>, discusses
+      techniques that compiler or interpreter designers can use to locate,
+      recognize, and report errors in the compiler input.</p><p><a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9, Advanced Flex and Bison</a>, covers
+      reentrant scanners and parsers, Generalized Left to Right (GLR) parsers
+      that can handle grammars that regular bison parsers can’t, and
+      interfaces to C++.</p><p>The <span class="emphasis"><em>appendix</em></span> provides the complete grammar
+      and a cross-reference for the SQL parser discussed in <a class="xref" href="ch04.xhtml" title="Chapter 4. Parsing SQL">Chapter 4</a>.</p><p>The <span class="emphasis"><em>glossary</em></span> lists technical terms from
+      language and compiler theory.</p><p>We presume you are familiar with C, because most examples are in
+      C, flex, or bison, with a few in C++ and the remainder in SQL or the
+      special-purpose languages developed within the text.</p></div><div class="sect1" title="Conventions Used in This Book"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e213"/>Conventions Used in This Book</h1></div></div></div><p>The following conventions are used in this book:</p><div class="variablelist"><dl><dt><span class="term"><span class="emphasis"><em>Italic</em></span></span></dt><dd><p>Used for new terms and concepts when they are
+            introduced.</p></dd><dt><span class="term"><code class="literal">Constant Width</code></span></dt><dd><p>Used for program listings, as well as within paragraphs to
+            refer to program elements such as statements, classes, macros,
+            states, rules, all code terms, and files and directories.</p></dd><dt><span class="term"><strong class="userinput"><code>Constant Bold</code></strong></span></dt><dd><p>Shows commands or other text that should be typed literally
+            by the user.</p></dd><dt><span class="term"><em class="replaceable"><code>Constant width italic</code></em></span></dt><dd><p>Shows text that should be replaced with user-supplied values
+            or by values determined by context.</p></dd><dt><span class="term"><code class="literal">$</code></span></dt><dd><p>is the shell prompt.</p></dd><dt><span class="term"><code class="literal">[]</code></span></dt><dd><p>surround optional elements in a description of program
+            syntax. (Don’t type the brackets themselves.)</p></dd></dl></div><div class="tip" title="Tip"><h3 class="title">Tip</h3><p>This icon signifies a tip, suggestion, or general note.</p></div><div class="caution" title="Caution"><h3 class="title">Caution</h3><p>This icon indicates a warning or caution.</p></div></div><div class="sect1" title="Getting Flex and Bison"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e267"/>Getting Flex and Bison</h1></div></div></div><p><a id="I_indexterm_d1e271" class="indexterm"/><a id="I_indexterm_d1e276" class="indexterm"/>Flex and bison are modern replacements for the classic lex
+      <a id="I_indexterm_d1e282" class="indexterm"/>and yacc <a id="I_indexterm_d1e288" class="indexterm"/>that were both developed at Bell Laboratories in the
+      1970s. Yacc was the first of the two, developed by Stephen C. Johnson.
+      Lex was designed by Mike Lesk and Eric Schmidt (the same Eric Schmidt
+      who now heads Google) to work with yacc. Both lex and yacc have been
+      standard Unix utilities since Seventh Edition Unix in the 1970s.</p><p><a id="I_indexterm_d1e295" class="indexterm"/>The GNU Project of the Free Software Foundation
+      distributes bison, a foreward-compatible replacement for yacc. It was
+      originally written by Robert Corbett and Richard Stallman. The bison
+      manual is excellent, especially for referencing specific features. Bison
+      is included with all common distributions of BSD and Linux, but if you
+      want the most up-to-date version, its home page is:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><a class="ulink" href="http://www.gnu.org/software/bison/">http://www.gnu.org/software/bison/</a></td></tr></table><p><a id="I_indexterm_d1e305" class="indexterm"/>BSD and the GNU Project also distribute
+      <span class="emphasis"><em>flex</em></span> (<span class="emphasis"><em>F</em></span>ast
+      <span class="emphasis"><em>Lex</em></span>ical Analyzer Generator), “a rewrite of lex
+      intended to fix some of that tool’s many bugs and deficiencies.” Flex
+      was originally written by Jef Poskanzer; Vern Paxson and Van Jacobson
+      have considerably improved it. Common distributions of BSD and Linux
+      include a copy of flex, but if you want the latest version, it’s now
+      hosted at SourceForge:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><a class="ulink" href="http://flex.sourceforge.net/">http://flex.sourceforge.net/</a></td></tr></table></div><div class="sect1" title="This Book’s Example Files"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e323"/>This Book’s Example Files</h1></div></div></div><p>The programs in this book are available online as:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><a class="ulink" href="ftp://ftp.iecc.com/pub/file/flexbison.zip">ftp://ftp.iecc.com/pub/file/flexbison.zip</a></td></tr></table><p>They can be downloaded by any web browser or FTP client. The zip
+      format file can be decoded by the popular freeware
+      <span class="emphasis"><em>unzip</em></span> utility on Unix-ish and Linux systems or
+      opened as a compressed folder on Windows XP or newer.</p><p>The examples in the book were all tested with flex version 2.5.35
+      and bison 2.4.1.</p></div><div class="sect1" title="Using Code Examples"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e338"/>Using Code Examples</h1></div></div></div><p>This book is here to help you get your job done. In general, you
+      may use the code in this book in your programs and documentation. You do
+      not need to contact us for permission unless you’re reproducing a
+      significant portion of the code. For example, writing a program that
+      uses several chunks of code from this book does not require permission.
+      Selling or distributing a CD-ROM of examples from O’Reilly books does
+      require permission. Answering a question by citing this book and quoting
+      example code does not require permission. Incorporating a significant
+      amount of example code from this book into your product’s documentation
+      does require permission.</p><p>We appreciate, but do not require, attribution. An attribution
+      usually includes the title, author, publisher, and ISBN. For example:
+      “<span class="emphasis"><em>Book Title</em></span> by Some Author. Copyright 2008 O’Reilly
+      Media, Inc., 978-0-596-xxxx-x.”</p><p>If you feel your use of code examples falls outside fair use or
+      the permission given above, feel free to contact us at
+      <span class="email"><a class="email" href="mailto:permissions@oreilly.com">permissions@oreilly.com</a></span>.</p></div><div class="sect1" title="Safari® Books Online"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e353"/>Safari® Books Online</h1></div></div></div><div class="note" title="Note"><h3 class="title">Note</h3><p>When you see a Safari® Books Online icon on the cover of your
+        favorite technology book, that means the book is available online
+        through the O’Reilly Network Safari Bookshelf.</p></div><p>Safari offers a solution that’s better than e-books. It’s a
+      virtual library that lets you easily search thousands of top tech books,
+      cut and paste code samples, download chapters, and find quick answers
+      when you need the most accurate, current information. Try it for free at
+      <a class="ulink" href="http://my.safaribooksonline.com/?portal=oreilly">http://my.safaribooksonline.com</a>.</p></div><div class="sect1" title="How to Contact Us"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e364"/>How to Contact Us</h1></div></div></div><p>Despite all the help, errors remain the author’s responsibility.
+      When you find some, or if you have other comments, email them to
+      <span class="email"><a class="email" href="mailto:fbook@iecc.com">fbook@iecc.com</a></span>, being sure to include the name of the
+      book in the subject line to alert the spam filters that you are a real
+      person rather than a deceased kleptocrat from a developing country. Or
+      drop by the Usenet group <code class="literal">comp.compilers</code> where questions about compiler
+      tools are always on topic.</p><p>You can also address comments and questions concerning this book
+      to the publisher:</p><table border="0" summary="Simple list" class="simplelist"><tr><td>O’Reilly Media, Inc.</td></tr><tr><td>1005 Gravenstein Highway North</td></tr><tr><td>Sebastopol, CA 95472</td></tr><tr><td>800-998-9938 (in the United States or Canada)</td></tr><tr><td>707-829-0515 (international or local)</td></tr><tr><td>707 829-0104 (fax)</td></tr></table><p>We have a web page for this book, where we list errata, examples,
+      and any additional information. You can access this page at:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><a class="ulink" href="http://www.oreilly.com/catalog/9780596155971">http://www.oreilly.com/catalog/9780596155971</a></td></tr></table><p>To comment or ask technical questions about this book, send email
+      to:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><span class="email"><a class="email" href="mailto:bookquestions@oreilly.com">bookquestions@oreilly.com</a></span></td></tr></table><p>For more information about our books, conferences, Resource
+      Centers, and the O’Reilly Network,
+      see our web site at:</p><table border="0" summary="Simple list" class="simplelist"><tr><td><a class="ulink" href="http://www.oreilly.com">http://www.oreilly.com</a></td></tr></table></div><div class="sect1" title="Acknowledgments"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect1_d1e409"/>Acknowledgments</h1></div></div></div><p>Every book is the work of many people, and this one is no
+      exception. I thank Tony Mason and Doug Brown, my coauthors of
+      <span class="emphasis"><em>lex &amp; yacc</em></span>, for permission to adapt parts of
+      that book. Many people provided useful comments on the draft manuscript,
+      including Lorenzo Bettini, Joel E. Denny, Danny Dubé, Ben Hanson, Jan
+      Van Katwijk, Jeff Kenton, Timothy Knox, Chris Morley, Ken Rose, and Juha
+      Vihavainen. I particularly thank Derek M. Jones, who provided a detailed
+      page-by-page review in an unreasonably short time. Simon St. Laurent, my
+      long-suffering editor, as always shepherded the book skillfully and
+      without complaint through the editorial and production process<a id="I_indexterm_d1e417" class="indexterm"/><a id="I_indexterm_d1e422" class="indexterm"/><a id="I_indexterm_d1e427" class="indexterm"/><a id="I_indexterm_d1e432" class="indexterm"/><a id="I_indexterm_d1e437" class="indexterm"/><a id="I_indexterm_d1e442" class="indexterm"/><a id="I_indexterm_d1e447" class="indexterm"/><a id="I_indexterm_d1e452" class="indexterm"/><a id="I_indexterm_d1e458" class="indexterm"/>.</p></div></div></div></body>
+</html>

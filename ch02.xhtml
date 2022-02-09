@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.w3.org/2002/06/xhtml2/ http://www.w3.org/MarkUp/SCHEMA/xhtml2.xsd" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+<link href="Styles/Style01.css" rel="stylesheet" type="text/css" />
+<link href="Styles/Style00.css" rel="stylesheet" type="text/css" />
+
+<style type="text/css">body{margin:1em;background-color:transparent!important;}#sbo-rt-content *{text-indent:0pt!important;}#sbo-rt-content .bq{margin-right:1em!important;}#sbo-rt-content *{word-wrap:break-word!important;word-break:break-word!important;}#sbo-rt-content table,#sbo-rt-content pre{overflow-x:unset!important;overflow:unset!important;overflow-y:unset!important;white-space:pre-wrap!important;}</style></head>
+<body><div id="sbo-rt-content"><div class="chapter" title="Chapter 2. Using Flex"><div class="titlepage"><div><div><h1 class="title"><a id="flex"/>Chapter 2. Using Flex</h1></div></div></div><p><a id="index-601A262GB4M" class="indexterm"/>In this chapter we’ll take a closer look at flex as a
+    standalone tool, with some examples that exercise most of its C language
+    capabilities. All of flex’s facilities are described in <a class="xref" href="ch05.xhtml" title="Chapter 5. A Reference for Flex Specifications">Chapter 5</a>, and the usage of flex scanners in C++ programs is
+    described in <a class="xref" href="ch09.xhtml" title="Chapter 9. Advanced Flex and Bison">Chapter 9</a>.</p><div class="sect1" title="Regular Expressions"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e1592"/>Regular Expressions</h1></div></div></div><p><a id="index-362I815AH6C" class="indexterm"/><a id="index-435W305UR7S" class="indexterm"/><a id="I_indexterm2_d1e1604" class="indexterm"/>The patterns at the heart of every flex scanner use a rich
+      regular expression language. A <span class="emphasis"><em>regular expression</em></span>
+      is a pattern description using a
+      <span class="emphasis"><em>metalanguage</em></span><a id="I_indexterm2_d1e1615" class="indexterm"/>, a language that you use to describe what you want the
+      pattern to match. Flex’s regular expression language is essentially
+      POSIX-extended regular expressions (which is not surprising considering
+      their shared Unix heritage). The metalanguage uses standard text
+      characters, some of which represent themselves and others of which
+      represent patterns. All characters other than the ones listed below,
+      including all letters and digits, match themselves.</p><p>The characters with special meaning in regular expressions
+      are:</p><div class="variablelist"><dl><dt><span class="term">.</span></dt><dd><p><a id="I_indexterm2_d1e1629" class="indexterm"/><a id="I_indexterm2_d1e1632" class="indexterm"/>Matches any single character except the newline
+            character (<code class="literal">\n</code>).</p></dd><dt><span class="term">[]</span></dt><dd><p><a id="I_indexterm2_d1e1644" class="indexterm"/><a id="I_indexterm2_d1e1647" class="indexterm"/>A <span class="emphasis"><em>character class</em></span> that matches
+            any character within the brackets. If the first character is a
+            circumflex (<code class="literal">^</code>), it changes the
+            meaning to match any character <span class="emphasis"><em>except</em></span> the
+            ones within the brackets. A dash inside the square brackets
+            indicates a character range; for example, <code class="literal">[0-9]</code> means the same thing as <code class="literal">[0123456789]</code> and <code class="literal">[a-z]</code> means any lowercase letter. A
+            <code class="literal">-</code> or <code class="literal">]</code> as the first character after the
+            <code class="literal">[</code> is interpreted literally to
+            let you include dashes and square brackets in character classes.
+            POSIX introduced other special square bracket constructs that are
+            useful when handling non-English alphabets, described later in
+            this chapter. Other metacharacters do not have any special meaning
+            within square brackets except that C escape sequences starting
+            with <code class="literal">\</code> are recognized.
+            Character ranges are interpreted relative to the character coding
+            in use, so the range <code class="literal">[A-z]</code> with
+            ASCII character coding would match all uppercase and lowercase
+            letters, as well as six punctuation characters whose codes fall
+            between the code for <code class="literal">Z</code> and the
+            code for <code class="literal">a</code>. In practice, useful
+            ranges are ranges of digits, of uppercase letters, or of lowercase
+            letters.</p></dd><dt><span class="term">[a-z]{-}[jv]</span></dt><dd><p>A differenced character class, with the characters in the
+            first class omitting the characters in the second class (only in
+            recent versions of flex).</p></dd><dt><span class="term">^</span></dt><dd><p><a id="I_indexterm2_d1e1703" class="indexterm"/><a id="I_indexterm2_d1e1706" class="indexterm"/>Matches the beginning of a line as the first
+            character of a regular expression. Also used for negation within
+            square brackets.</p></dd><dt><span class="term">$</span></dt><dd><p><a id="I_indexterm2_d1e1715" class="indexterm"/><a id="I_indexterm2_d1e1718" class="indexterm"/>Matches the end of a line as the last character of a
+            regular expression.</p></dd><dt><span class="term">{}</span></dt><dd><p><a id="I_indexterm2_d1e1727" class="indexterm"/><a id="I_indexterm2_d1e1730" class="indexterm"/>If the braces contain one or two numbers, indicate
+            the minimum and maximum number of times the previous pattern can
+            match. For example, <code class="literal">A{1,3}</code>
+            matches one to three occurrences of the letter
+            <span class="emphasis"><em>A</em></span>, and <code class="literal">0{5}</code> matches 00000. If the braces
+            contain a name, they refer to a named pattern by that name.</p></dd><dt><span class="term">\</span></dt><dd><p><a id="I_indexterm2_d1e1748" class="indexterm"/><a id="I_indexterm2_d1e1751" class="indexterm"/>Used to escape metacharacters and as part of the
+            usual C escape sequences; for example, <code class="literal">\n</code> is a newline character, while
+            <code class="literal">\*</code> is a literal
+            asterisk.</p></dd><dt><span class="term">*</span></dt><dd><p><a id="I_indexterm2_d1e1766" class="indexterm"/><a id="I_indexterm2_d1e1769" class="indexterm"/>Matches zero or more copies of the preceding
+            expression. For example, <code class="literal">[ \t]*</code>
+            is a common pattern to match optional spaces and tabs, that is,
+            whitespace, which matches “ ”, “ &lt;tab&gt;&lt;tab&gt;”, or an
+            empty string.</p></dd><dt><span class="term">+</span></dt><dd><p><a id="I_indexterm2_d1e1781" class="indexterm"/><a id="I_indexterm2_d1e1784" class="indexterm"/>Matches one or more occurrences of the preceding
+            regular expression. For example, <code class="literal">[0-9]+</code> matches strings of digits such as
+            <code class="literal">1</code>, <code class="literal">111</code>, or <code class="literal">123456</code> but not an empty string.</p></dd><dt><span class="term">?</span></dt><dd><p>Matches zero or one occurrence of the preceding regular
+            expression. For example, <code class="literal">-?[0-9]+</code> matches a signed number
+            including an optional leading minus sign.</p></dd><dt><span class="term">|</span></dt><dd><p><a id="I_indexterm2_d1e1814" class="indexterm"/><a id="I_indexterm2_d1e1817" class="indexterm"/>The <span class="emphasis"><em>alternation</em></span> operator;
+            matches either the preceding regular expression or the following
+            regular expression. For example, <code class="literal">faith|hope|charity</code> matches any of the
+            three virtues.</p></dd><dt><span class="term">“...”</span></dt><dd><p><a id="I_indexterm2_d1e1833" class="indexterm"/><a id="I_indexterm2_d1e1836" class="indexterm"/>Anything within the quotation marks is treated
+            literally. Metacharacters other than C escape sequences lose their
+            meaning. As a matter of style, it’s good practice to quote any
+            punctuation characters intended to be matched literally.</p></dd><dt><span class="term">()</span></dt><dd><p><a id="I_indexterm2_d1e1845" class="indexterm"/><a id="I_indexterm2_d1e1848" class="indexterm"/>Groups a series of regular expressions together into
+            a new regular expression. For example, <code class="literal">(01)</code> matches the character sequence 01,
+            and <code class="literal">a(bc|de)</code> matches
+            <span class="emphasis"><em>abc</em></span> or <span class="emphasis"><em>ade</em></span>. Parentheses
+            are useful when building up complex patterns with *, +, ?, and
+            |.</p></dd><dt><span class="term">/</span></dt><dd><p><span class="emphasis"><em>Trailing context</em></span><a id="I_indexterm2_d1e1871" class="indexterm"/><a id="I_indexterm2_d1e1874" class="indexterm"/>, which means to match the regular expression
+            preceding the slash but only if followed by the regular expression
+            after the slash. For example, <code class="literal">0/1</code> matches <code class="literal">0</code> in the string <code class="literal">01</code> but would not match anything in the
+            string <code class="literal">0</code> or <code class="literal">02</code>. The material matched by the pattern
+            following the slash is not “consumed” and remains to be turned
+            into subsequent tokens. Only one slash is permitted per
+            pattern.</p></dd></dl></div><p>The repetition operators affect the smallest preceding expression,
+      so <code class="literal">abc+</code> matches
+      <span class="emphasis"><em>ab</em></span> followed by one or more
+      <span class="emphasis"><em>c</em></span>’s. Use parentheses freely to be sure your
+      expressions match what you want, such as <code class="literal">(abc)+</code> to match one or more repetitions of
+      <span class="emphasis"><em>abc</em></span>.</p><div class="sect2" title="Regular Expression Examples"><div class="titlepage"><div><div><h2 class="title"><a id="id459236"/>Regular Expression Examples</h2></div></div></div><p><a id="I_indexterm2_d1e1915" class="indexterm"/><a id="I_indexterm2_d1e1920" class="indexterm"/>We can combine these characters to make quite complex
+        and useful regular expression patterns. For example, consider the
+        surprisingly difficult job of writing a pattern to match Fortran-style
+        numbers, which consist of an optional sign, a string of digits that
+        may contain a decimal point, optionally an exponent that is the letter
+        <code class="literal">E</code>, an optional sign, and a string
+        of digits. A pattern for an optional sign and a string of digits is
+        simple enough:</p><a id="I_programlisting2_d1e1929"/><pre class="programlisting">[-+]?[0-9]+</pre><p>Note that we put the hyphen as the first thing in <code class="literal">[-+]</code> so it wouldn’t be taken to mean a
+        character range.</p><p>Writing the pattern to match a string of digits with an optional
+        decimal point is harder, because the decimal point can come at the
+        beginning or end of the number. Here’s a few near misses:</p><a id="I_programlisting2_d1e1938"/><pre class="programlisting">[-+]?[0-9.]+            <em class="lineannotation"><span class="lineannotation">matches too much, like 1.2.3.4</span></em>
+[-+]?[0-9]+\.?[0-9]+   <em class="lineannotation"><span class="lineannotation"> matches too little, misses .12 or 12. </span></em>
+[-+]?[0-9]*\.?[0-9]+   <em class="lineannotation"><span class="lineannotation"> doesn't match 12. </span></em>
+[-+]?[0-9]+\.?[0-9]*   <em class="lineannotation"><span class="lineannotation"> doesn't match .12 </span></em>
+[-+]?[0-9]*\.?[0-9]*   <em class="lineannotation"><span class="lineannotation"> matches nothing, or a dot with no digits at all</span></em></pre><p>It turns out that no combination of character classes, ?, *, and
+        + will match a number with an optional decimal point. Fortunately, the
+        alternation operator | does the trick by allowing the pattern to
+        combine two versions, each of which individually isn’t quite
+        sufficient:</p><a id="I_programlisting2_d1e1956"/><pre class="programlisting">[-+]?([0-9]*\.?[0-9]+|[0-9]+\.)      
+[-+]?([0-9]*\.?[0-9]+|[0-9]+\.[0-9]*) <em class="lineannotation"><span class="lineannotation">This is overkill but also works</span></em></pre><p>The second example is internally ambiguous, because there are
+        many strings that match either of the alternates, but that is no
+        problem for flex’s matching algorithm. (Flex also allows two
+        <span class="emphasis"><em>different</em></span> patterns to match the same input, which
+        is also useful but requires more care by the programmer.)</p><p>Now we need to add on the optional exponent, for which the
+        pattern is quite simple:</p><a id="I_programlisting2_d1e1967"/><pre class="programlisting">E(+|-)?[0-9]+</pre><p>(We did the two sign characters as an alternation here rather
+        than a character class; it’s purely a matter of taste.) Now we glue
+        the two together to get a Fortran number pattern:</p><a id="I_programlisting2_d1e1972"/><pre class="programlisting">[-+]?([0-9]*\.?[0-9]+|[0-9]+\.)(E(+|-)?[0-9]+)?</pre><p>Since the exponent part is optional, we used parens and a
+        question mark to make it an optional part of the pattern. Note that
+        our pattern now includes nested optional parts, which work fine and as
+        shown here are often very useful.</p><p>This is about as complex a pattern as you’ll find in most flex
+        scanners. It’s worth reiterating that complex patterns do
+        <span class="emphasis"><em>not</em></span> make the scanner any slower.<sup>[<a id="id460291" href="#ftn.id460291" class="footnote">4</a>]</sup> Write your patterns to match what you need to match, and
+        trust flex to handle them.</p></div><div class="sect2" title="How Flex Handles Ambiguous Patterns"><div class="titlepage"><div><div><h2 class="title"><a id="id462906"/>How Flex Handles Ambiguous Patterns</h2></div></div></div><p><a id="I_indexterm2_d1e1992" class="indexterm"/><a id="I_indexterm2_d1e1997" class="indexterm"/><a id="I_indexterm2_d1e2002" class="indexterm"/>Most flex programs are quite ambiguous, with multiple
+        patterns that can match the same input. Flex resolves the ambiguity
+        with two simple rules:</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>Match the longest possible string every time the scanner
+            matches input.</p></li><li class="listitem"><p>In the case of a tie, use the pattern that appears first in
+            the program.</p></li></ul></div><p>These turn out to do the right thing in the vast majority of
+        cases. Consider this snippet from a scanner for C source code:</p><a id="I_programlisting2_d1e2017"/><pre class="programlisting">"+"                     { return ADD; }
+"="                     { return ASSIGN; }
+"+="                    { return ASSIGNADD; }
+
+"if"                    { return KEYWORDIF; }
+"else"                  { return KEYWORDELSE; }
+[a-zA-Z_][a-zA-Z0-9_]*  { return IDENTIFIER; }</pre><p>For the first three patterns, the string <code class="literal">+=</code> is matched as one token, since <code class="literal">+=</code> is longer than <code class="literal">+</code>. For the last three patterns, so long as
+        the patterns for keywords precede the pattern that matches an
+        identifier, the scanner will match keywords correctly.</p></div><div class="sect2" title="Context-Dependent Tokens"><div class="titlepage"><div><div><h2 class="title"><a id="id495057"/>Context-Dependent Tokens</h2></div></div></div><p><a id="I_indexterm2_d1e2034" class="indexterm"/><a id="I_indexterm2_d1e2039" class="indexterm"/><a id="I_indexterm2_d1e2044" class="indexterm"/><a id="I_indexterm2_d1e2049" class="indexterm"/>In some languages, scanning is context dependent. For
+        example, in Pascal, <code class="literal">1.</code> is usually a
+        floating-point number, but in a declaration, <code class="literal">1..2</code> is two integers separated by a <code class="literal">..</code> token. Flex provides <span class="emphasis"><em>start
+        states</em></span>, which can turn patterns on and off dynamically and
+        are generally sufficient to handle such context dependencies. We
+        discuss start states later in this chapter.<a id="I_indexterm2_d1e2068" class="indexterm"/><a id="I_indexterm2_d1e2069" class="indexterm"/></p></div></div><div class="sect1" title="File I/O in Flex Scanners"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2070"/>File I/O in Flex Scanners</h1></div></div></div><p><a id="I_indexterm2_d1e2074" class="indexterm"/><a id="I_indexterm2_d1e2079" class="indexterm"/><a id="I_indexterm2_d1e2084" class="indexterm"/><a id="I_indexterm2_d1e2089" class="indexterm"/>Flex scanners will read from the standard input unless you
+      tell them otherwise. In practice, most scanners read from files. We’ll
+      modify the word count program from <a class="xref" href="ch01.xhtml#pgmwc" title="Example 1-1. Word count fb1-1.l">Example 1-1</a> to read from
+      files, like the real <code class="literal">wc</code> program
+      does.</p><p>The I/O options available in scanners generated by flex and its
+      predecessor lex have undergone extensive evolution over the past 30
+      years, so there are several different ways to manage a scanner’s input
+      and output. Unless you make other arrangements, a scanner reads from the
+      stdio <code class="literal">FILE</code> called <code class="literal">yyin</code>, so to read a single file, you need only
+      set it before the first call to <code class="literal">yylex</code>. In <a class="xref" href="ch02.xhtml#pgmwc2" title="Example 2-1. Word count, reading one file">Example 2-1</a>, we add
+      the ability to specify an input file to the word count program from
+      <a class="xref" href="ch01.xhtml#pgmwc" title="Example 1-1. Word count fb1-1.l">Example 1-1</a>.</p><div class="example"><a id="pgmwc2"/><p class="title">Example 2-1. Word count, reading one file</p><div class="example-contents"><pre class="programlisting">/* even more like Unix wc */
+%option noyywrap
+%{
+int chars = 0;
+int words = 0;
+int lines = 0;
+%}
+
+%%
+
+[a-zA-Z]+  { words++; chars += strlen(yytext); }
+\n         { chars++; lines++; }
+.          { chars++; }
+
+%%
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+  if(argc &gt; 1) {
+    if(!(yyin = fopen(argv[1], "r"))) {
+      perror(argv[1]);
+      return (1);
+    }
+  }
+
+  yylex();
+  printf("%8d%8d%8d\n", lines, words, chars);
+}</pre></div></div><p>The only differences from Example 1-1 are in the code in the third
+      section. The main routine opens a filename passed on the command line,
+      if the user specified one, and assigns the <code class="literal">FILE</code> to <code class="literal">yyin</code>. Otherwise, <code class="literal">yyin</code> is left unset, in which case <code class="literal">yylex</code> automatically sets it to <code class="literal">stdin</code>.</p><div class="sidebar"><a id="I_sidebar2_d1e2137"/><p class="title">The Flex Library</p><p><a id="I_indexterm2_d1e2141" class="indexterm"/><a id="I_indexterm2_d1e2146" class="indexterm"/>Lex and flex have always come with a small library now
+        known as <code class="literal">-lfl</code> that defines a
+        default <code class="literal">main</code> routine, as well as a
+        default version of <code class="literal">yywrap</code><a id="I_indexterm2_d1e2160" class="indexterm"/>, a wart left over from the earliest days of lex.</p><p>When a lex scanner reached the end of <code class="literal">yyin</code>, it called <code class="literal">yywrap()</code>. The idea was that if there was
+        another input file, <code class="literal">yywrap</code> could
+        adjust <code class="literal">yyin</code> and return 0 to resume
+        scanning. If that was really the end of the input, it returned 1 to
+        the scanner to say that it was done. Although subsequent versions of
+        lex and flex have faithfully preserved <code class="literal">yywrap</code>, in 30 years I have never seen a use
+        of <code class="literal">yywrap</code> that wouldn’t be better
+        handled by flex’s other I/O management features. In practice, everyone
+        used the default <code class="literal">yywrap</code> from the
+        flex library, which always returns 1, or put a one-line equivalent in
+        their programs. Modern versions of flex let you say <code class="literal">%option noyywrap</code><a id="I_indexterm2_d1e2190" class="indexterm"/> at the top of your scanner to tell it not to call
+        <code class="literal">yywrap</code>, and from here on, we’ll
+        always do that.</p><p>The default main program is slightly useful for testing and for
+        quick flex hacks, although, again, in any nontrivial flex program, you
+        always have your own main program that at least sets up the scanner’s
+        input. Here’s what the library version does:</p><a id="I_programlisting2_d1e2199"/><pre class="programlisting">int main()
+{
+    while (yylex() != 0) ;
+    return 0;
+}</pre><p>Most flex programs now use <code class="literal">%option
+        noyywrap</code> and provide their own main routine, so they don’t
+        need the flex library.</p></div></div><div class="sect1" title="Reading Several Files"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2206"/>Reading Several Files</h1></div></div></div><p><a id="I_indexterm2_d1e2210" class="indexterm"/><a id="I_indexterm2_d1e2215" class="indexterm"/><a id="I_indexterm2_d1e2218" class="indexterm"/>The real version of <code class="literal">wc</code>
+      handles multiple files, so <a class="xref" href="ch02.xhtml#pgmwc2m" title="Example 2-2. Word count, reading many files">Example 2-2</a> is an improved
+      version of our program that does so as well. For programs with simple
+      I/O needs that read each input file from beginning to end, flex provides
+      the routine <code class="literal">yyrestart(f)</code><a id="I_indexterm2_d1e2231" class="indexterm"/>, which tells the scanner to read from stdio file <code class="literal">f</code>.<a id="I_indexterm2_d1e2239" class="indexterm"/><a id="I_indexterm2_d1e2244" class="indexterm"/></p><div class="example"><a id="pgmwc2m"/><p class="title">Example 2-2. Word count, reading many files</p><div class="example-contents"><pre class="programlisting">/* fb2-2 read several files */
+%option noyywrap
+
+%{
+int chars = 0;
+int words = 0;
+int lines = 0;
+
+int totchars = 0;
+int totwords = 0;
+int totlines = 0;
+%}
+
+%%
+
+[a-zA-Z]+  { words++; chars += strlen(yytext); }
+\n        { chars++; lines++; }
+.          { chars++; }
+
+%%
+
+main(argc, argv)
+int argc;
+char **argv;
+{
+  int i;
+
+  if(argc &lt; 2) { /* just read stdin */
+    yylex();
+    printf("%8d%8d%8d\n", lines, words, chars);
+    return 0;
+  }
+
+  for(i = 1; i &lt; argc; i++) {
+    FILE *f = fopen(argv[i], "r");
+  
+    if(!f) {
+      perror(argv[i]);
+      return (1);
+    }
+    yyrestart(f);
+    yylex();
+    fclose(f);
+    printf("%8d%8d%8d %s\n", lines, words, chars, argv[i]);
+    totchars += chars; chars = 0;
+    totwords += words; words = 0;
+    totlines += lines; lines = 0;
+  }
+  if(argc &gt; 2) /* print total if more than one file */
+    printf("%8d%8d%8d total\n", totlines, totwords, totchars);
+  return 0;
+}</pre></div></div><p>For each file, it opens the file, uses <code class="literal">yyrestart()</code> to make it the input to the
+      scanner, and calls <code class="literal">yylex()</code> to scan
+      it. Like the real <code class="literal">wc</code>, it also tracks
+      the overall total items read and reports the overall totals if there was
+      more than one input file.</p></div><div class="sect1" title="The I/O Structure of a Flex Scanner"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2263"/>The I/O Structure of a Flex Scanner</h1></div></div></div><p><a id="I_indexterm2_d1e2267" class="indexterm"/><a id="I_indexterm2_d1e2272" class="indexterm"/><a id="I_indexterm2_d1e2277" class="indexterm"/><a id="I_indexterm2_d1e2282" class="indexterm"/>Basically, a flex scanner reads from an input source and
+      optionally writes to an output sink. By default, the input and output
+      are stdin and stdout, but as we’ve seen, they’re often changed to
+      something else.</p><div class="sect2" title="Input to a Flex Scanner"><div class="titlepage"><div><div><h2 class="title"><a id="id498901"/>Input to a Flex Scanner</h2></div></div></div><p>In programs that include scanners, the performance of the
+        scanner frequently determines the performance of the entire program.
+        Early versions of lex read from <code class="literal">yyin</code><a id="I_indexterm2_d1e2295" class="indexterm"/> one character at a time. Since then, flex has developed
+        a flexible (perhaps overly so) three-level input system that allows
+        programmers to customize it at each level to handle any imaginable
+        input structure.</p><p>In most cases, a flex scanner reads its input using stdio from a
+        file or the standard input, which can be the user console. There’s a
+        subtle but important difference between reading from a file and
+        reading from the console—readahead. If the scanner is reading from a
+        file, it should read big chunks to be as fast as possible. But if it’s
+        reading from the console, the user is probably typing one line at a
+        time and will expect the scanner to process each line as soon as it’s
+        typed. In this case, speed doesn’t matter, since a very slow scanner
+        is still a lot faster than a fast typist, so it reads one character at
+        a time. Fortunately, a flex scanner checks to see whether its input is
+        from the terminal and generally does the right thing
+        automatically.<sup>[<a id="id480731" href="#ftn.id480731" class="footnote">5</a>]</sup></p><p>To handle its input, a flex scanner uses a structure known as a
+        <code class="literal">YY_BUFFER_STATE</code><a id="I_indexterm2_d1e2308" class="indexterm"/>, which describes a single input source. It contains a
+        string buffer and a bunch of variables and flags. Usually it contains
+        a <code class="literal">FILE*</code> for the file it’s reading
+        from, but it’s also possible to create a <code class="literal">YY_BUFFER_STATE</code> not connected a file to scan
+        a string already in memory.</p><p>The default input behavior of a flex scanner is approximately
+        this:</p><a id="I_programlisting2_d1e2320"/><pre class="programlisting">    YY_BUFFER_STATE bp;
+    extern FILE* yyin;
+
+    <em class="lineannotation"><span class="lineannotation"> ... whatever the program does before the first call to the scanner</span></em>
+
+    if(!yyin) yyin = stdin; <em class="lineannotation"><span class="lineannotation">default input is stdin</span></em>
+    bp = yy_create_buffer(yyin,YY_BUF_SIZE );
+         <em class="lineannotation"><span class="lineannotation">YY_BUF_SIZE defined by flex, typically 16K</span></em>
+    yy_switch_to_buffer(bp); <em class="lineannotation"><span class="lineannotation"> tell it to use the buffer we just made</span></em>
+
+    yylex(); <em class="lineannotation"><span class="lineannotation">or yyparse() or whatever calls the scanner</span></em></pre><p>If <code class="literal">yyin</code> isn’t already set,
+        set it to <code class="literal">stdin</code>. Then use <code class="literal">yy_create_buffer</code> to create a new buffer
+        reading from <code class="literal">yyin</code>, use <code class="literal">yy_switch_to_buffer</code> to tell the scanner to
+        read from it, then scan.</p><p>When reading from several files in sequence, after opening each
+        file, call <code class="literal">yyrestart(fp)</code> to switch the scanner
+        input to the stdio file <code class="literal">fp</code>. For the
+        common case where a new file is assigned to <code class="literal">yyin</code>, <code class="literal">YY_NEW_FILE</code> is equivalent to <code class="literal">yyrestart(yyin)</code>.<sup>[<a id="id487701" href="#ftn.id487701" class="footnote">6</a>]</sup></p><p>There are several other functions to create scanner buffers,
+        including <code class="literal">yy_scan_string("string")</code>
+        to scan a null-terminated string and <code class="literal">yy_scan_buffer(char *base, size)</code> to scan a
+        buffer of known size. Later in this chapter we’ll also see functions
+        to maintain a stack of buffers, which is handy when handling nested
+        include files. They’re all listed in <a class="xref" href="ch05.xhtml" title="Chapter 5. A Reference for Flex Specifications">Chapter 5</a>, under
+        “Input Management.”</p><p>Finally, for maximum flexibility, you can redefine the macro
+        that flex uses to read input into the current buffer:</p><a id="I_programlisting2_d1e2392"/><pre class="programlisting">#define YY_INPUT(buf,result,max_size) ...</pre><p>Whenever the scanner’s input buffer is empty, it invokes
+        <code class="literal">YY_INPUT</code><a id="I_indexterm2_d1e2399" class="indexterm"/><a id="I_indexterm2_d1e2402" class="indexterm"/>, where <code class="literal">buf</code> and
+        <code class="literal">maxsize</code> are the buffer and its
+        size, respectively, and <code class="literal">result</code> is
+        where to put the actual amount read or zero at EOF. (Since this is a
+        macro, it’s <code class="literal">result</code>, not <code class="literal">*result</code>.) The ability to redefine <code class="literal">YY_INPUT</code> predates the addition of <code class="literal">YY_BUFFER_STATE</code>, so most of what people used
+        to do with the former is now better done with the latter. At this
+        point, the main use for a custom <code class="literal">YY_INPUT</code> is in event-driven systems where
+        the input arrives from something that can’t be preloaded into a string
+        buffer and that stdio can’t handle.</p><p>Whenever the scanner reaches the end of an input file, it
+        matches the pseudopattern <code class="literal">&lt;&lt;EOF&gt;&gt;</code>, which is often used to
+        clean up, switch to other files, and so forth.</p><p>Flex offers two macros that can be useful in action code,
+        <code class="literal">input()</code><a id="I_indexterm2_d1e2442" class="indexterm"/><a id="I_indexterm2_d1e2445" class="indexterm"/> and <code class="literal">unput()</code><a id="I_indexterm2_d1e2453" class="indexterm"/><a id="I_indexterm2_d1e2456" class="indexterm"/>. Each call to <code class="literal">input()</code> returns the next character from the
+        input stream. It’s sometimes a convenient way to read through a little
+        input without having to write patterns to match it. Each call to
+        <code class="literal">unput(c)</code> pushes character <code class="literal">c</code> back into the input stream. It’s an
+        alternative to the <code class="literal">/</code> operator to
+        peek ahead into the input but not to process it.</p><p>To summarize, the three levels of input management are:</p><div class="itemizedlist"><ul class="itemizedlist"><li class="listitem"><p>Setting <code class="literal">yyin</code> to read the
+            desired file(s)</p></li><li class="listitem"><p>Creating and using <code class="literal">YY_BUFFER_STATE</code> input buffers</p></li><li class="listitem"><p>Redefining <code class="literal">YY_INPUT</code></p></li></ul></div></div><div class="sect2" title="Flex Scanner Output"><div class="titlepage"><div><div><h2 class="title"><a id="id498893"/>Flex Scanner Output</h2></div></div></div><p>Scanner output management is much simpler than input management
+        and is completely optional. Again, harking back to the earliest
+        versions of lex, unless you tell it otherwise, flex acts as though
+        there is a default rule at the end of the scanner that copies
+        otherwise unmatched input to <code class="literal">yyout</code><a id="I_indexterm2_d1e2502" class="indexterm"/>.</p><a id="I_programlisting2_d1e2506"/><pre class="programlisting">.    ECHO;
+
+#define ECHO fwrite( yytext, yyleng, 1, yyout )</pre><p>This is of some use in flex programs that do something with part
+        of the input and leave the rest untouched, as in the English to
+        American translator in <a class="xref" href="ch01.xhtml#etoalex" title="Example 1-2. English to American fb1-2.l">Example 1-2</a>, but in general it
+        is more likely to be a source of bugs than to be useful. Flex lets you
+        say <code class="literal">%option nodefault</code><a id="I_indexterm2_d1e2514" class="indexterm"/> at the top of the scanner to tell it not to add a
+        default rule and rather to report an error if the input rules don’t
+        cover all possible input. I recommend that scanners always use
+        <code class="literal">nodefault</code> and include their own
+        default rule if one is needed.</p></div></div><div class="sect1" title="Start States and Nested Input Files"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2521"/>Start States and Nested Input Files</h1></div></div></div><p><a id="index-806T008JC1Q" class="indexterm"/><a id="index-431I838UJ1A" class="indexterm"/><a id="index-232S255RB3G" class="indexterm"/><a id="index-665M027WH3A" class="indexterm"/><a id="index-867T755BB7O" class="indexterm"/><a id="index-446Q508IC1G" class="indexterm"/>We’ll try out our knowledge of flex I/O with a simple
+      program that handles nested include files and prints them out. To make
+      it a little more interesting, it prints the input files with the line
+      number of each line in its file. To do that, the program keeps a stack
+      of nested input files and line numbers, pushing an entry each time it
+      encounters a <code class="literal">#include</code> and popping an
+      entry off the stack when it gets to the end of a file.</p><p>We also use a very powerful flex feature called <span class="emphasis"><em>start
+      states</em></span> that let us control which patterns can be matched
+      when. The <code class="literal">%x</code> line near the top of the
+      file defines <code class="literal">IFILE</code> as a start state
+      that we’ll use when we’re looking for the filename in a <code class="literal">#include</code> statement. At any point, the scanner
+      is in one start state and can match patterns active in that start state
+      only. In effect, the state defines a different scanner, with its own
+      rules.</p><p>You can define as many start states as needed, but in this program
+      we need only one in addition to the <code class="literal">INITIAL</code> state that flex always defines.
+      Patterns are tagged with start state names in angle brackets to indicate
+      in which state(s) the pattern is active. The <code class="literal">%x</code> marks <code class="literal">IFILE</code> as an <code class="literal">exclusive</code> start state, which means that when
+      that state is active, only patterns specifically marked with the state
+      can match. (There are also <span class="emphasis"><em>inclusive</em></span> start states
+      declared with <code class="literal">%s</code>, in which patterns
+      not marked with any state can also match. Exclusive states are usually
+      more useful.) In action code, the macro <code class="literal">BEGIN</code> switches to a different start state.
+      <a class="xref" href="ch02.xhtml#includeskel" title="Example 2-3. Skeleton for include files">Example 2-3</a> shows a code skeleton for a scanner that
+      handles included files.</p><div class="example"><a id="includeskel"/><p class="title">Example 2-3. Skeleton for include files</p><div class="example-contents"><pre class="programlisting">/* fb2-3 skeleton for include files */
+%option noyywrap yylineno
+%x IFILE
+
+%{
+  struct bufstack {
+    struct bufstack *prev;      /* previous entry */
+    YY_BUFFER_STATE bs;         /* saved buffer */
+    int lineno;                 /* saved line number */
+    char *filename;             /* name of this file */
+    FILE *f;                    /* current file */
+  } *curbs = 0;
+
+  char *curfilename;            /* name of current input file */
+
+  int newfile(char *fn);
+  int popfile(void);
+%}
+%%
+  <em class="lineannotation"><span class="lineannotation"> match #include statement up through the quote or &lt; </span></em>
+^"#"[ \t]*include[ \t]*[\"&lt;]  { BEGIN IFILE; }
+
+  <em class="lineannotation"><span class="lineannotation">handle filename up to the closing quote, &gt;, or end of line</span></em>
+&lt;IFILE&gt;[^ \t\n\"&gt;]+        { 
+                             { int c;
+                               while((c = input()) &amp;&amp; c != '\n') ;
+                             }
+                             yylineno++;
+                             if(!newfile(yytext))
+                               yyterminate(); /* no such file */
+                             BEGIN INITIAL;
+                           }
+
+  <em class="lineannotation"><span class="lineannotation">handle bad input in IFILE state</span></em>
+&lt;IFILE&gt;.|\n                { fprintf(stderr, "%4d bad include line\n", yylineno);
+                                     yyterminate();
+                           }
+
+  <em class="lineannotation"><span class="lineannotation"> pop the file stack at end of file, terminate if it's the outermost file</span></em>
+&lt;&lt;EOF&gt;&gt;                    { if(!popfile()) yyterminate(); }
+
+  <em class="lineannotation"><span class="lineannotation"> print the line number at the beginning of each line </span></em>
+  <em class="lineannotation"><span class="lineannotation"> and bump the line number each time a \n is read </span></em>
+^.                         { fprintf(yyout, "%4d %s", yylineno, yytext); }
+^\n                        { fprintf(yyout, "%4d %s", yylineno++, yytext); }
+\n                         { ECHO; yylineno++; }
+.                          { ECHO; }
+
+%%
+
+main(int argc, char **argv)
+{
+  if(argc &lt; 2) {
+    fprintf(stderr, "need filename\n");
+    return 1;
+  }
+  if(newfile(argv[1]))
+    yylex();
+}
+
+int
+  newfile(char *fn)
+{
+  FILE *f = fopen(fn, "r");
+  struct bufstack *bs = malloc(sizeof(struct bufstack));
+
+  /* die if no file or no room */
+  if(!f) { perror(fn); return 0; }
+  if(!bs) { perror("malloc"); exit(1); }
+
+  /* remember state */
+  if(curbs)curbs-&gt;lineno = yylineno;
+  bs-&gt;prev = curbs;
+
+  /* set up current entry */
+  bs-&gt;bs = yy_create_buffer(f, YY_BUF_SIZE);
+  bs-&gt;f = f;
+  bs-&gt;filename = strdup(fn);
+  yy_switch_to_buffer(bs-&gt;bs);
+  curbs = bs;
+  yylineno = 1;
+  curfilename = bs-&gt;filename;
+  return 1;
+}
+
+int
+  popfile(void)
+{
+  struct bufstack *bs = curbs;
+  struct bufstack *prevbs;
+
+  if(!bs) return 0;
+
+  /* get rid of current entry */
+  fclose(bs-&gt;f);
+  free(bs-&gt;fn);
+  yy_delete_buffer(bs-&gt;bs);
+
+  /* switch back to previous */
+  prevbs = bs-&gt;prev;
+  free(bs);
+
+  if(!prevbs) return 0;
+
+  yy_switch_to_buffer(prevbs-&gt;bs);
+  curbs = prevbs;
+  yylineno = curbs-&gt;lineno;
+  curfilename = curbs-&gt;filename;
+  return 1; 
+}</pre></div></div><p>The first part of the program defines the start state and also has
+      the C code to declare the <code class="literal">bufstack</code>
+      structure that will hold an entry in the list of saved input
+      files.</p><p>In the patterns, the first pattern matches a <code class="literal">#include</code> statement up through the double quote
+      that precedes the filename. The pattern permits optional whitespace in
+      the usual places. It switches to <code class="literal">IFILE</code> state to read the next input filename.
+      In <code class="literal">IFILE</code> state, the second pattern
+      matches a filename, characters up to a closing quote, whitespace, or
+      end-of-line. The filename is passed to <code class="literal">newfile</code> to stack the current input file and
+      set up the next level of input, but first there’s the matter of dealing
+      with whatever remains of the <code class="literal">#include</code>
+      line. One possibility would be to use another start state and patterns
+      that absorb the rest of the line, but that would be tricky, since the
+      action switches to the included file, so the start state and pattern
+      would have to be used <span class="emphasis"><em>after</em></span> the end of the included
+      file. Instead, this is one of the few places where <code class="literal">input()</code> makes a scanner simpler. A short loop
+      reads until it finds the <code class="literal">\n</code> at the
+      end of the line or EOF. Then, when scanning returns to this file after
+      the end of the included one, it resumes at the beginning of the next
+      line.</p><p>Since an exclusive start state in effect defines its own
+      mini-scanner, that scanner has to be prepared for any possible input.
+      The next pattern deals with the case of an ill-formed <code class="literal">#include</code> line that doesn’t have a filename
+      after the double quote. It simply prints an error message and uses the
+      macro <code class="literal">yyterminate()</code>, which
+      immediately returns from the scanner.<sup>[<a id="id455257" href="#ftn.id455257" class="footnote">7</a>]</sup> This definition of <code class="literal">#include</code> is fairly casual and makes no effort
+      to verify that the punctuation around the filename matches or that there
+      isn’t extra junk after the filename. It’s not hard to write code to
+      check those issues and diagnose errors, and a more polished version of
+      this program should do so.<sup>[<a id="id500220" href="#ftn.id500220" class="footnote">8</a>]</sup></p><p>Next is the special pattern <code class="literal">&lt;&lt;EOF&gt;&gt;</code>, which matches at the end
+      of each input file. We call <code class="literal">popfile()</code>, defined later, to return to the
+      previous input file. If it returns 0, meaning that was the last file, we
+      terminate. Otherwise, the scanner will resume reading the previous file
+      when it resumes scanning.</p><p>The last four patterns do the actual work of printing out each
+      line with a preceding line number. Flex provides a variable called
+      <code class="literal">yylineno</code><a id="I_indexterm2_d1e2688" class="indexterm"/> that is intended to track line numbers, so we might as
+      well use it. The pattern <code class="literal">^.</code> matches
+      any character at the beginning of a line, so the action prints the
+      current line number and the character. Since a dot doesn’t match a
+      newline, <code class="literal">^\n</code> matches a newline at the
+      beginning of a line, that is, an empty line, so the code prints out the
+      line number and the new line and increments the line number. A newline
+      or other character not at the beginning of the line is just printed out
+      with <code class="literal">ECHO</code>, incrementing the line
+      number for a new line.</p><p>The routine <code class="literal">newfile(fn)</code>
+      prepares to read from the file named <code class="literal">fn</code>, saving any previous input file. It does so
+      by keeping a linked list of <code class="literal">bufstack</code>
+      structures, each of which has a link to the previous <code class="literal">bufstack</code> along with the saved <code class="literal">yylineno</code> and filename. It opens the file;
+      creates and switches to a flex buffer; and saves the previous open file,
+      filename, and buffer. (In this program nothing uses the filename after
+      the file is open, but we’ll reuse this code later in this chapter in a
+      program that does.)</p><p>The routine <code class="literal">popfile</code> undoes what
+      <code class="literal">newfile</code> did. It closes the open file,
+      deletes the current flex buffer, and then restores the buffer, filename,
+      and line number from the prior stack entry. Note that it doesn’t call
+      <code class="literal">yyrestart()</code> when it restores the
+      prior buffer; if it did, it would lose any input that had already been
+      read into the buffer.</p><p>This is a fairly typical albeit somewhat simplistic example of
+      code for handling include files.
+      Although flex can handle a stack of input buffers using the routines
+      <code class="literal">yypush_buffer_state</code> and <code class="literal">yypop_buffer_state</code>, I rarely find them to be
+      useful since they don’t handle the other information invariably
+      associated with the stacked files.<a id="I_indexterm2_d1e2741" class="indexterm"/><a id="I_indexterm2_d1e2742" class="indexterm"/><a id="I_indexterm2_d1e2743" class="indexterm"/><a id="I_indexterm2_d1e2744" class="indexterm"/><a id="I_indexterm2_d1e2746" class="indexterm"/><a id="I_indexterm2_d1e2747" class="indexterm"/></p></div><div class="sect1" title="Symbol Tables and a Concordance Generator"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2748"/>Symbol Tables and a Concordance Generator</h1></div></div></div><p><a id="index-365V106JJ5K" class="indexterm"/><a id="index-573P858WO2C" class="indexterm"/><a id="index-182B238PO4P" class="indexterm"/><a id="index-315L807CC1Q" class="indexterm"/>Nearly every flex or bison program uses a <span class="emphasis"><em>symbol
+      table</em></span> to keep track of the names used in the input. We’ll
+      start with a very simple program that makes a
+      <span class="emphasis"><em>concordance</em></span>, which is a list of the line numbers
+      where each word in the input appears, and then we’ll modify it to read C
+      source to make a C cross-referencer.</p><div class="sect2" title="Managing Symbol Tables"><div class="titlepage"><div><div><h2 class="title"><a id="id461220"/>Managing Symbol Tables</h2></div></div></div><p>Many long and dense chapters have been written in compiler texts
+        on the topic of symbol tables, but this (I hope) is not one of them.
+        The symbol table for the concordance simply tracks each word and the
+        files and line numbers of each. <a class="xref" href="ch02.xhtml#conc1" title="Example 2-4. Concordance generator">Example 2-4</a> shows the
+        declarations part of the concordance generator.</p><div class="example"><a id="conc1"/><p class="title">Example 2-4. Concordance generator</p><div class="example-contents"><pre class="programlisting">/* fb2-4 text concordance */
+%option noyywrap nodefault yylineno case-insensitive
+
+/* the symbol table */
+%{
+  struct symbol {               /* a word */
+    char *name;
+    struct ref *reflist;
+  };
+
+  struct ref {
+    struct ref *next;
+    char *filename;
+    int flags;
+    int lineno;
+  };
+
+  /* simple symtab of fixed size */
+  #define NHASH 9997
+  struct symbol symtab[NHASH];
+
+  struct symbol *lookup(char*);
+  void addref(int, char*, char*,int);
+
+  char *curfilename;            /* name of current input file */
+
+%}
+%%</pre></div></div><p>The <code class="literal">%option</code> line has two
+        options we haven’t seen before, both of which are quite useful. The
+        <code class="literal">%yylineno</code> option tells flex to
+        define an integer variable called <code class="literal">yylineno</code> and to maintain the current line
+        number in it. What that means is that every time the scanner reads a
+        newline character, it increments <code class="literal">yylineno</code>, and if the scanner backs up over a
+        newline (using some features we’ll get to later), it decrements it.
+        It’s still up to you to initialize <code class="literal">yylineno</code> to 1 at the beginning of each file
+        and to save and restore it if you’re handling include files. Even with
+        those limitations, it’s still easier than doing line numbers by hand.
+        (In this example, there’s only a single pattern that matches <code class="literal">\n</code>, which wouldn’t be hard to get right, but
+        it’s quite common to have several patterns that match, causing
+        hard-to-track bugs when some but not all of them update the line
+        number.)</p><p>The other new option is <code class="literal">case-insensitive</code>, which tells flex to build
+        a scanner that treats upper- and lowercase the same. What this means
+        is that a pattern like <code class="literal">abc</code> will
+        match <span class="emphasis"><em>abc</em></span>, <span class="emphasis"><em>Abc</em></span>,
+        <span class="emphasis"><em>ABc</em></span>, <span class="emphasis"><em>AbC</em></span>, and so forth. It
+        does <span class="emphasis"><em>not</em></span> have any effect on your input; in
+        particular, the matched string in <code class="literal">yytext</code> is not case folded or otherwise
+        modified.</p><p>The symbol table is just an array of <code class="literal">symbol</code> structures, each of which contains a
+        pointer to the name (i.e., the word in the concordance) and a list of
+        references. The references are a linked list of line numbers and
+        pointers to the filename. We also define <code class="literal">curfilename</code>, a static pointer to the
+        name of the current file, for use when adding references.</p><a id="I_programlisting2_d1e2847"/><pre class="programlisting">%%
+ /* rules for concordance generator */
+ /* skip common words */
+a |
+an |
+and |
+are |
+as |
+at |
+be |
+but |
+for |
+in |
+is |
+it |
+of |
+on |
+or |
+that |
+the |
+this |
+to                     /* ignore */
+
+[a-z]+(\'(s|t))?   { addref(yylineno, curfilename, yytext, 0); }
+.|\n                   /* ignore everything else */
+%%</pre><p>Concordances usually don’t index common short words, so the
+        first set of patterns matches and ignores them. An action consisting
+        solely of a vertical bar tells flex that the action for this rule is
+        the same as the action for the next rule. The action on the last
+        ignored word <code class="literal">to</code> does nothing, which
+        is all we need to do to ignore a word.</p><p>The next rule is the meat of the scanner and matches a
+        reasonable approximation of an English word. It matches a string of
+        letters, <code class="literal">[a-z]+</code>, optionally
+        followed by an apostrophe and either <code class="literal">s</code> or <code class="literal">t</code>,
+        to match words such as <span class="emphasis"><em>owner’s</em></span> and
+        <span class="emphasis"><em>can’t</em></span>. Each matched word is passed to <code class="literal">addref()</code>, described in a moment, along with
+        the current filename and line number.</p><p>The final pattern is a catchall to match whatever the previous
+        patterns didn’t.</p><p><a id="I_indexterm2_d1e2878" class="indexterm"/>Note that this scanner is extremely ambiguous, but
+        flex’s rules for resolving ambiguity make it do what we want. It
+        prefers longer matches to shorter ones, so the word
+        <span class="emphasis"><em>toad</em></span> will be matched by the main word pattern,
+        not <span class="emphasis"><em>to</em></span>. If two patterns make an exact match, it
+        prefers the earlier one in the program, which is why we put the ignore
+        rules first and the catchall last.</p><a id="I_programlisting2_d1e2891"/><pre class="programlisting">/* concordance main routine */
+main(argc, argv)
+int argc;
+char **argv;
+{
+  int i;
+
+  if(argc &lt; 2) { /* just read stdin */
+    curfilename = "(stdin)";
+    yylineno = 1;
+    yylex();
+  } else
+  for(i = 1; i &lt; argc; i++) {
+    FILE *f = fopen(argv[i], "r");
+  
+    if(!f) {
+      perror(argv[i]);
+      return (1);
+    }
+    curfilename = argv[i];      /* for addref */
+
+    yyrestart(f);
+    yylineno = 1;
+    yylex();
+    fclose(f);
+  }
+
+  printrefs();
+}</pre><p>The main routine looks a lot like the one in the word count
+        program that reads multiple files. It opens each file in turn, uses
+        <code class="literal">yyrestart</code> to arrange to read the
+        file, and calls <code class="literal">yylex</code>. The
+        additions are setting <code class="literal">curfilename</code>
+        to the name of the file, for use when building the list of references,
+        and setting <code class="literal">yylineno</code> to 1 for each
+        file. (Otherwise, the line numbers would continue from one file to
+        another, which might be desirable in some situations, but not here.)
+        Finally, <code class="literal">printrefs</code> alphabetizes the
+        symbol table and prints the references.</p></div><div class="sect2" title="Using a Symbol Table"><div class="titlepage"><div><div><h2 class="title"><a id="id461216"/>Using a Symbol Table</h2></div></div></div><p>The code section of the scanner includes a simple symbol table
+        routine, a routine to add a word to the symbol table, and a routine to
+        print out the concordance after all the input is run.</p><p>This symbol table is minimal but quite functional. It contains
+        one routine, <code class="literal">lookup</code>, which takes a
+        string and returns the address of the table entry for that name,
+        creating a new entry if there isn’t one already. The lookup technique
+        is known as <span class="emphasis"><em>hashing with linear probing</em></span><a id="I_indexterm2_d1e2922" class="indexterm"/>. It uses a hash function to turn the string into an
+        entry number in the table, then checks the entry, and, if it’s already
+        taken by a different symbol, scans linearly until it finds a free
+        entry.</p><p>The hash function is also quite simple: For each character,
+        multiply the previous hash by 9 and then <code class="literal">xor</code> the character, doing all the arithmetic
+        as unsigned, which ignores overflows. The lookup routine computes the
+        symbol table entry index as the hash value modulo the size of the
+        symbol table, which was chosen as a number with no even factors, again
+        to mix the hash bits up.</p><a id="I_programlisting2_d1e2931"/><pre class="programlisting">/* hash a symbol */
+static unsigned
+symhash(char *sym)
+{
+  unsigned int hash = 0;
+  unsigned c;
+
+  while(c = *sym++) hash = hash*9 ^ c;
+
+  return hash;
+}
+
+struct symbol *
+lookup(char* sym)
+{
+  struct symbol *sp = &amp;symtab[symhash(sym)%NHASH];
+  int scount = NHASH;           /* how many have we looked at */
+
+  while(--scount &gt;= 0) {
+    if(sp-&gt;name &amp;&amp; !strcasecmp(sp-&gt;name, sym)) return sp;
+
+    if(!sp-&gt;name) {             /* new entry */
+      sp-&gt;name = strdup(sym);
+      sp-&gt;reflist = 0;
+      return sp;
+    }
+
+    if(++sp &gt;= symtab+NHASH) sp = symtab; /* try the next entry */
+  }
+  fputs("symbol table overflow\n", stderr);
+  abort(); /* tried them all, table is full */
+
+}</pre><p>Note that whenever <code class="literal">lookup</code>
+        makes a new entry, it calls <code class="literal">strdup</code>
+        to make a copy of the string to put into the symbol table entry. Flex
+        and bison programs often have hard-to-track string storage management
+        bugs, because it is easy to forget that the string in <code class="literal">yytext</code> will be there only until the next
+        token is scanned.</p><p>This simple hash function and lookup routine works pretty well.
+        I ran a group of text files through an instrumented version of the
+        concordance program, with 4,429 different words and a total of 70,775
+        lookups. The average lookup took 1.32 probes, not far from the ideal
+        minimum of 1.0.</p><a id="I_programlisting2_d1e2946"/><pre class="programlisting">void
+addref(int lineno, char *filename, char *word, int flags)
+{
+  struct ref *r;
+  struct symbol *sp = lookup(word);
+
+  /* don't do dups of same line and file */
+  if(sp-&gt;reflist &amp;&amp;
+     sp-&gt;reflist-&gt;lineno == lineno &amp;&amp;
+     sp-&gt;reflist-&gt;filename == filename) return;
+
+  r = malloc(sizeof(struct ref));
+  if(!r) {fputs("out of space\n", stderr); abort(); }
+  r-&gt;next = sp-&gt;reflist;
+  r-&gt;filename = filename;
+  r-&gt;lineno = lineno;
+  r-&gt;flags = flags;
+  sp-&gt;reflist = r;
+}</pre><p>Next is <code class="literal">addref</code>, the routine
+        called from inside the scanner to add a reference to a particular
+        word; it’s implemented as a linked list of reference structures
+        chained from the symbol. In order to make the report a little shorter,
+        it doesn’t add a reference if the symbol already has a reference to
+        the same line number and filename. Note that in this routine, we don’t
+        make a copy of the filename, because we know that the caller handed us
+        a string that won’t change. We don’t copy the word either, since
+        <code class="literal">lookup</code> will handle that if needed.
+        Each reference has a <code class="literal">flags</code> value
+        that isn’t used here but will be when we reuse this code in the next
+        example.</p><a id="I_programlisting2_d1e2959"/><pre class="programlisting">/* print the references
+ * sort the table alphabetically
+ * then flip each entry's reflist to get it into forward order
+ * and print it out 
+ */
+
+/* aux function for sorting */
+static int
+symcompare(const void *xa, const void *xb)
+{
+  const struct symbol *a = xa;
+  const struct symbol *b = xb;
+
+  if(!a-&gt;name) {
+    if(!b-&gt;name) return 0;      /* both empty */
+    return 1;                   /* put empties at the end */
+  }
+  if(!b-&gt;name) return -1;
+  return strcmp(a-&gt;name, b-&gt;name);
+}
+
+void
+printrefs()
+{
+  struct symbol *sp;
+
+  qsort(symtab, NHASH, sizeof(struct symbol), symcompare); /* sort the symbol table */
+
+  for(sp = symtab; sp-&gt;name &amp;&amp; sp &lt; symtab+NHASH; sp++) {
+    char *prevfn = NULL;        /* last printed filename, to skip dups */
+
+    /* reverse the list of references */
+    struct ref *rp = sp-&gt;reflist;
+    struct ref *rpp = 0;        /* previous ref */
+    struct ref *rpn;    /* next ref */
+
+    do {
+      rpn = rp-&gt;next;
+      rp-&gt;next = rpp;
+      rpp = rp;
+      rp = rpn;
+    } while(rp);
+
+    /* now print the word and its references */
+    printf("%10s", sp-&gt;name);
+    for(rp = rpp; rp; rp = rp-&gt;next) {
+      if(rp-&gt;filename == prevfn) {
+        printf(" %d", rp-&gt;lineno);
+      } else {
+        printf(" %s:%d", rp-&gt;filename, rp-&gt;lineno);
+        prevfn = rp-&gt;filename;
+      }
+    }
+    printf("\n");
+  }
+}</pre><p>The final routines sort and print the symbol table. The symbol
+        table is created in an order that depends on the hash function, which
+        is not one that is useful to human readers, so we sort the symbol
+        table alphabetically using the standard <code class="literal">qsort</code> function. Since the symbol table
+        probably won’t be full, the sort function puts unused symbol entries
+        after used ones, so the sorted entries will end up at the front of the
+        table.</p><p>Then <code class="literal">printrefs</code> runs down the
+        table and prints out the references to each word. The references are
+        in a linked list, but since each reference was pushed onto the front
+        of the list, it is in reverse order. So, we make a pass over the list
+        to flip the links and put it in forward order, and we then print it
+        out.<sup>[<a id="id480560" href="#ftn.id480560" class="footnote">9</a>]</sup> To make the concordance somewhat more readable, we print
+        the filename only if it’s different from the one in the previous
+        entry. We just compare the pointer to the filename, on the reasonable
+        assumption that all entries for the same file will point to the same
+        copy of the filename.<a id="I_indexterm2_d1e2976" class="indexterm"/><a id="I_indexterm2_d1e2977" class="indexterm"/><a id="I_indexterm2_d1e2978" class="indexterm"/><a id="I_indexterm2_d1e2979" class="indexterm"/></p></div></div><div class="sect1" title="C Language Cross-Reference"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e2980"/>C Language Cross-Reference</h1></div></div></div><p><a id="index-536D418JA2H" class="indexterm"/><a id="index-312P633VF5R" class="indexterm"/><a id="index-701R764IW8N" class="indexterm"/><a id="index-461P122DM7T" class="indexterm"/>The final example in this chapter takes all the techniques
+      we’ve learned so far and uses them in one program, a fairly realistic C
+      language cross-referencer (<a class="xref" href="ch02.xhtml#cxref" title="Example 2-5. C cross-referencer">Example 2-5</a>). It uses nested
+      input files to handle <code class="literal">#include</code>
+      statements, start states to handle includes and comments, a lexical hack
+      to track when a mention of a symbol is a definition rather than a
+      reference, and a symbol table to keep track of it all.</p><div class="example"><a id="cxref"/><p class="title">Example 2-5. C cross-referencer</p><div class="example-contents"><pre class="programlisting">/* fb2-5 C cross-ref */
+%option noyywrap nodefault yylineno
+
+%x COMMENT
+%x IFILE
+
+/* some complex named patterns */
+/* Universal Character Name */
+UCN     (\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8})
+/* float exponent */
+EXP     ([Ee][-+]?[0-9]+)
+/* integer length */
+ILEN    ([Uu](L|l|LL|ll)?|(L|l|LL|ll)[Uu]?)</pre></div></div><p>The options here are the same as for the concordance, except that
+      there’s no case folding, since C treats upper- and lowercase text
+      differently. The two exclusive start states are <code class="literal">COMMENT</code>, used to skip text inside C comments,
+      and <code class="literal">IFILE</code>, used in <code class="literal">#include</code>.</p><p>Next come three named patterns, for use later in the rule section.
+      There’s a style of flex programming that names every tiny subpattern,
+      for example, <code class="literal">DIGIT</code> for <code class="literal">[0-9]</code>. I don’t find that useful, but I do find
+      it useful to name patterns that are both fairly complex and used inside
+      other larger patterns. The first pattern matches a universal character
+      name, which is a cumbersome way of putting non-ASCII characters into
+      strings and identifiers. A UCN is <code class="literal">\u</code>
+      followed by four hex digits or else <code class="literal">\U</code> followed by eight hex digits. The second
+      pattern is for the exponent of a floating-point number, the letter
+      <code class="literal">E</code> in upper- or lowercase, an optional
+      sign, and a string of digits. The third pattern matches the length and
+      type suffix on an integer constant, which is an optional <code class="literal">U</code> for unsigned or an optional <code class="literal">L</code> or <code class="literal">LL</code> for
+      length, in either order, each in either upper- or lowercase. Each
+      pattern is enclosed in parentheses to avoid an old lex/flex
+      incompatibility: When flex interpolates a named pattern, it acts as
+      though the pattern was enclosed in parens, but lex didn’t, leading to
+      some very obscure bugs.</p><a id="I_programlisting2_d1e3051"/><pre class="programlisting">/* the symbol table */
+%{
+  struct symbol {               /* a variable name */
+    struct ref *reflist;
+    char *name;
+  };
+
+  struct ref {
+    struct ref *next;
+    char *filename;
+    int flags;                  /* 01 - definition */
+    int lineno;
+  };
+
+  /* simple symtab of fixed size */
+  #define NHASH 9997
+  struct symbol symtab[NHASH];
+
+  struct symbol *lookup(char*);
+  void addref(int, char*, char*, int);
+
+  char *curfilename;            /* name of current input file */
+
+/* include file stack */  
+  struct bufstack {
+    struct bufstack *prev;      /* previous entry */
+    YY_BUFFER_STATE bs;         /* saved buffer */
+    int lineno;                 /* saved line number in this file */
+    char *filename;             /* name of this file */
+    FILE *f;                    /* current file */
+  } *curbs;
+
+  int newfile(char *fn);
+  int popfile(void);
+
+  int defining;                 /* names are probably definitions */
+
+%}</pre><p>The rest of the front section should look familiar. The symbol
+      table is the same as the one in the previous example. The file stack is
+      the same as in <a class="xref" href="ch02.xhtml#includeskel" title="Example 2-3. Skeleton for include files">Example 2-3</a>.</p><p>Last is a new variable, <code class="literal">defining</code>, which is set when a mention of a
+      name is likely to be a definition rather than a reference.</p><p>Next comes the rules section, which is much longer than any rules
+      section we’ve seen before; this one is more typical of practical flex
+      programs. Many of the token-matching rules are long and complicated but
+      were actually quite easy to write by transliterating the BNF
+      descriptions in the C standard. Although flex can’t handle general BNF
+      (you need bison for that), the tokens were deliberately designed to be
+      matched by regular expressions, so the transliterations all work.</p><a id="I_programlisting2_d1e3064"/><pre class="programlisting">%%
+ /* comments */
+"/*"                   { BEGIN(COMMENT); }
+&lt;COMMENT&gt;"*/"          { BEGIN(INITIAL); }
+&lt;COMMENT&gt;([^*]|\n)+|.
+&lt;COMMENT&gt;&lt;&lt;EOF&gt;&gt;       { printf("%s:%d: Unterminated comment\n",
+			 curfilename, yylineno); return 0; }
+
+ /* C++ comment, a common extension */
+"//".*\n</pre><p>An exclusive start state makes it easy to match C comments. The
+      first rule starts the <code class="literal">COMMENT</code> state
+      when it sees <code class="literal">/*</code>, and the second rule
+      switches back to the normal <code class="literal">INITIAL</code> state on <code class="literal">*/</code>. The third rule matches everything in
+      between. Although the complexity of patterns doesn’t affect the speed of
+      a flex scanner, it is definitely faster to match one big pattern than
+      several little ones. So, this rule could have just been <code class="literal">.|\n</code>, but the <code class="literal">([^*]|\n)+</code> can match a long string of text at
+      once. Note that it has to exclude <code class="literal">*</code>
+      so that the second rule can match <code class="literal">*/</code>.
+      The <code class="literal">&lt;COMMENT&gt;&lt;&lt;EOF&gt;&gt;</code> rule
+      catches and reports unterminated comments. Next is a bonus rule that
+      matches C++-style comments, a common extension to C compilers.</p><div class="sidebar"><a id="I_sidebar2_d1e3097"/><p class="title">Patterns for C Comments</p><p><a id="I_indexterm2_d1e3101" class="indexterm"/><a id="I_indexterm2_d1e3106" class="indexterm"/>Although it’s possible to match C comments with a single
+        flex pattern, it’s generally not a great idea to do so. For reference,
+        here’s the pattern:</p><a id="I_programlisting2_d1e3112"/><pre class="programlisting">/\*([^*]|\*+[^/*])*\*+/</pre><p>It matches the two characters that begin a comment, <code class="literal">/\*</code>; then a sequence of nonstars or strings
+        of stars followed by something other than a star or slash, <code class="literal">([^*]|\*+[^/*])*</code>; followed by at least one
+        star and a closing slash, <code class="literal">\*+/</code>.</p><p>There are two reasons to prefer the approach with multiple
+        patterns and a start state. One is that comments can potentially be
+        very long, if one comments out a couple of pages of code, but a flex
+        token is limited to the size of the input buffer, typically 16K. (This
+        is the kind of bug that is likely to be missed in testing.) The other
+        is that it’s much easier to catch and diagnose unclosed comments. It’d
+        be possible to use a modified version of the previous pattern to match
+        unclosed comments, but they’d be even more likely to run afoul of the
+        16K limit.</p></div><a id="I_programlisting2_d1e3127"/><pre class="programlisting"> /* declaration keywords */
+_Bool |
+_Complex |
+_Imaginary |
+auto |
+char |
+const |
+double |
+enum |
+extern |
+float |
+inline |
+int |
+long |
+register |
+restrict |
+short |
+signed |
+static |
+struct |
+typedef |
+union |
+unsigned |
+void |
+volatile { defining = 1; }
+
+ /* keywords */
+break
+case
+continue
+default
+do
+else
+for
+goto
+if
+return
+sizeof
+switch
+while</pre><p>Next are patterns to match all of the C keywords<a id="I_indexterm2_d1e3131" class="indexterm"/><a id="I_indexterm2_d1e3136" class="indexterm"/>. The keywords that introduce a definition or declaration
+      set the <code class="literal">defining</code> flag; the other
+      keywords are just ignored.</p><p>Another way to handle keywords is to put them into the symbol
+      table with a flag saying they’re keywords, treat them as ordinary
+      symbols in the scanner, and recognize them via the symbol table lookup.
+      This is basically a space versus time trade-off. Putting them into the
+      scanner makes the scanner bigger but recognizes the keywords without an
+      extra lookup. On modern computers the size of the scanner tables is
+      rarely an issue, so it is easier to put them in the scanner; even with
+      all the keywords, the tables in this program are less than 18K
+      bytes.</p><a id="I_programlisting2_d1e3147"/><pre class="programlisting"> /* constants */
+
+ /* integers */
+0[0-7]*{ILEN}?
+[1-9][0-9]*{ILEN}?
+0[Xx][0-9a-fA-F]+{ILEN}?
+
+ /* decimal float */
+([0-9]*\.[0-9]+|[0-9]+\.){EXP}?[flFL]?
+[0-9]+{EXP}[flFL]?
+
+ /* hex float */
+0[Xx]([0-9a-fA-F]*\.[0-9a-fA-F]+|[0-9a-fA-F]+\.?)[Pp][-+]?[0-9]+[flFL]?</pre><p>Next come the patterns for numbers. The syntax for C numbers
+      <a id="I_indexterm2_d1e3151" class="indexterm"/><a id="I_indexterm2_d1e3154" class="indexterm"/>is surprisingly complicated, but the named <code class="literal">ILEN</code> and <code class="literal">EXP</code> subpatterns make the rules manageable.
+      There’s one pattern for each form of integer, octal, decimal, and hex,
+      each with an optional unsigned and/or integer prefix. (This could have
+      been done as one larger pattern, but it seems easier to read this way,
+      and of course it’s the same speed.)</p><p>Decimal floating-point numbers are very similar to the Fortran
+      example earlier in the chapter. The first pattern matches a number that
+      includes a decimal point and has an optional exponent. The second
+      matches a number that doesn’t have a decimal point, in which case the
+      exponent is mandatory to make it floating point. (Without the exponent,
+      it’d just be an integer.)</p><p>Finally comes the hex form of a floating-point number, with a
+      binary exponent separated by <code class="literal">P</code> rather
+      than <code class="literal">E</code>, so it can’t use the <code class="literal">EXP</code> pattern.</p><a id="I_programlisting2_d1e3179"/><pre class="programlisting"> /* char const */
+\'([^'\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+|{UCN})+\'
+
+ /* string literal */
+L?\"([^"\\]|\\['"?\\abfnrtv]|\\[0-7]{1,3}|\\[Xx][0-9a-fA-F]+|{UCN})*\"</pre><p>Next come very messy patterns for character <a id="I_indexterm2_d1e3183" class="indexterm"/>and string literals.<a id="I_indexterm2_d1e3189" class="indexterm"/> A character literal is a single quote followed by one or
+      more of an ordinary character other than a quote or a backslash, a
+      single character backslash escape such as <code class="literal">\n</code>, an octal escape with up to three octal
+      digits, a hex escape with an arbitrary number of hex digits, or a UCN,
+      all followed by a close quote. A string literal is the same syntax,
+      except that it’s enclosed in double quotes, has an optional prefix
+      <code class="literal">L</code> to indicate a wide string, and
+      doesn’t have to contain any characters. (Note the <code class="literal">+</code> at the end of the character constant and the
+      <code class="literal">*</code> at the end of the string.)</p><a id="I_programlisting2_d1e3208"/><pre class="programlisting"> /* punctuators */
+"{"|"&lt;%"|";"         { defining = 0; }
+
+"["|"]"|"("|")"|"{"|"}"|"."|"-&gt;"
+"++"|"--"|"&amp;"|"*"|"+"|"-"|"~"|"!"
+"/"|"%"|"&lt;&lt;"|"&gt;&gt;"|"&lt;"|"&gt;"|"&lt;="|"&gt;="|"=="|"!="|"^"|"|"|"&amp;&amp;"|"||"
+"?"|":"|";"|"..."
+"="|"*="|"/="|"%="|"+="|"-="|"&lt;&lt;="|"&gt;&gt;="|"&amp;="|"^="|"|="
+","|"#"|"##"
+"&lt;:"|":&gt;"|"%&gt;"|"%:"|"%:%:"</pre><p>C calls all of the operators and punctuation
+      <span class="emphasis"><em>punctuators</em></span><a id="I_indexterm2_d1e3215" class="indexterm"/>. For our purposes, we separately treat three that usually
+      indicate the end of the names in a variable or function definition, and
+      we ignore the rest.</p><a id="I_programlisting2_d1e3221"/><pre class="programlisting"> /* identifier */
+([_a-zA-Z]|{UCN})([_a-zA-Z0-9]|{UCN})* {
+                         addref(yylineno, curfilename, yytext, defining); }
+
+ /* whitespace */
+[ \t\n]+
+ /* continued line */
+\\$</pre><p>The C syntax of an identifier is a letter, underscore, or UCN,
+      optionally followed by more letters, underscores, UCNs, and digits. When
+      we see an identifier, we add a reference to it to the symbol
+      table.</p><p>Two more patterns match and ignore whitespace and a backslash at
+      the end of the line.</p><a id="I_programlisting2_d1e3227"/><pre class="programlisting"> /* some preprocessor stuff */
+"#"" "*if.*\n
+"#"" "*else.*\n
+"#"" "*endif.*\n
+"#"" "*define.*\n
+"#"" "*line.*\n
+
+ /* recognize an include */
+^"#"[ \t]*include[ \t]*[\"&lt;] { BEGIN IFILE; }
+&lt;IFILE&gt;[^&gt;\"]+  { 
+                       { int c;
+			 while((c = input()) &amp;&amp; c != '\n') ;
+		       }
+		       newfile(strdup(yytext));
+		       BEGIN INITIAL;
+                }
+
+&lt;IFILE&gt;.|\n     { fprintf(stderr, "%s:%d bad include line\n",
+			  curfilename, yylineno);
+                  BEGIN INITIAL;
+                }
+
+&lt;&lt;EOF&gt;&gt;         { if(!popfile()) yyterminate(); }</pre><p>There’s no totally satisfactory solution to handling preprocessor
+      commands <a id="I_indexterm2_d1e3231" class="indexterm"/><a id="I_indexterm2_d1e3236" class="indexterm"/><a id="I_indexterm2_d1e3241" class="indexterm"/>in a cross-referencer. One possibility would be to run the
+      source program through the preprocessor first, but that would mean the
+      cross-reference wouldn’t see any of the symbols handled by the
+      preprocessor, just the code it expanded to. We take a very simple
+      approach here and just ignore all preprocessor commands other than
+      <code class="literal">#include</code>. (A reasonable alternative
+      would be to read whatever follows <code class="literal">#define</code> and <code class="literal">#if</code> and add that to the cross-reference.) The
+      code to handle include files is nearly the same as the example earlier
+      in this chapter, slightly modified to handle C’s include syntax. One
+      pattern matches <code class="literal">#include</code> up to the
+      quote or <code class="literal">&lt;</code> that precedes the
+      filename, and then it switches to <code class="literal">IFILE</code> state. The next pattern collects the
+      file name, skips the rest of the line, and switches to the new file.
+      It’s a little sloppy and doesn’t try to ensure that the punctuation
+      before and after the filename matches. The next two patterns complain if
+      there’s no filename and return to the previous file at the end of each
+      included one.</p><a id="I_programlisting2_d1e3266"/><pre class="programlisting"> /* invalid character */
+.               { printf("%s:%d: Mystery character '%s'\n",
+			 curfilename, yylineno, yytext);
+                }
+%%</pre><p>The final pattern is a simple <code class="literal">.</code>
+      to catch anything that none of the previous patterns did. Since the
+      patterns cover every token that can appear in a valid C program, this
+      pattern shouldn’t ever match.</p><p>The contents of the code section are very similar to code we’ve
+      already seen. The first two routines, <code class="literal">symhash</code> and <code class="literal">lookup</code>, are identical to the versions in the
+      previous example and aren’t shown again here. The version of <code class="literal">addref</code> is the same as in the earlier include
+      example. This version of <code class="literal">printrefs</code> is
+      slightly different. It has a line to print a <code class="literal">*</code> for each reference that’s flagged as being a
+      definition.</p><a id="I_programlisting2_d1e3290"/><pre class="programlisting">void
+printrefs()
+{
+  struct symbol *sp;
+
+  qsort(symtab, NHASH, sizeof(struct symbol), symcompare); /* sort the symbol table */
+
+  for(sp = symtab; sp-&gt;name &amp;&amp; sp &lt; symtab+NHASH; sp++) {
+    char *prevfn = NULL;	/* last printed filename, to skip dups */
+
+    /* reverse the list of references */
+    struct ref *rp = sp-&gt;reflist;
+    struct ref *rpp = 0;	/* previous ref */
+    struct ref *rpn;	/* next ref */
+
+    do {
+      rpn = rp-&gt;next;
+      rp-&gt;next = rpp;
+      rpp = rp;
+      rp = rpn;
+    } while(rp);
+
+    /* now print the word and its references */
+    printf("%10s", sp-&gt;name);
+    for(rp = rpp; rp; rp = rp-&gt;next) {
+      if(rp-&gt;filename == prevfn) {
+	printf(" %d", rp-&gt;lineno);
+      } else {
+	printf(" %s:%d", rp-&gt;filename, rp-&gt;lineno);
+	prevfn = rp-&gt;filename;
+      }
+      if(rp-&gt;flags &amp; 01) printf("*");
+    }
+    printf("\n");
+  }
+}</pre><p>The versions of <code class="literal">newfile</code> and
+      <code class="literal">popfile</code> are the same as the ones
+      earlier in this chapter, so they aren’t repeated here. In this program,
+      if <code class="literal">newfile</code> can’t open a file, it just
+      prints an error message, returning 1 if it opened the file and 0 if it
+      didn’t, and the include code in the rules section just goes on to the
+      next line. This wouldn’t be a good idea in a regular compiler. For a
+      cross-referencer, it has the reasonable effect of processing include files in the same directory that
+      are specific to the current program, while skipping library files in
+      other directories.</p><p>Finally, the main program just calls <code class="literal">newfile</code> and, if it succeeds, <code class="literal">yylex</code> for each file.</p><a id="I_programlisting2_d1e3315"/><pre class="programlisting">int
+main(argc, argv)
+int argc;
+char **argv;
+{
+  int i;
+
+  if(argc &lt; 2) {
+    fprintf(stderr, "need filename\n");
+    return 1;
+  }
+  for(i = 1; i &lt; argc; i++) {
+    if(newfile(argv[i]))
+      yylex();
+  }
+
+  printrefs();
+  return 0;
+}</pre><p>This concludes our first realistically large flex program. It has
+      a fairly complex set of patterns, has somewhat complex file I/O, and
+      does something with the text it reads.<a id="I_indexterm2_d1e3319" class="indexterm"/><a id="I_indexterm2_d1e3320" class="indexterm"/><a id="I_indexterm2_d1e3321" class="indexterm"/><a id="I_indexterm2_d1e3322" class="indexterm"/></p></div><div class="sect1" title="Exercises"><div class="titlepage"><div><div><h1 class="title"><a id="I_sect12_d1e3323"/>Exercises</h1></div></div></div><div class="orderedlist"><ol class="orderedlist"><li class="listitem"><p><a class="xref" href="ch02.xhtml#includeskel" title="Example 2-3. Skeleton for include files">Example 2-3</a> matches characters one at a
+          time. Why doesn’t it match them a line at a time with a pattern like
+          <code class="literal">^.*\n</code>? Suggest a pattern or
+          combination of patterns that would match larger chunks of text,
+          keeping in mind the reason <code class="literal">^.*</code>
+          won’t work.</p></li><li class="listitem"><p>The concordance program treats upper- and lowercase text
+          separately. Modify it to handle them together. You can do this
+          without making extra copies of the words. In <code class="literal">symhash()</code>, use <code class="literal">tolower</code> to hash lowercase versions of the
+          characters, and use <code class="literal">strcasecmp()</code>
+          to compare words.</p></li><li class="listitem"><p>The symbol table routine in the concordance and
+          cross-referencer programs uses a fixed-size symbol table and dies if
+          it fills up. Modify the routine so it doesn’t do that. The two
+          standard techniques to allow variable-sized hash tables are
+          <span class="emphasis"><em>chaining</em></span> and <span class="emphasis"><em>rehashing</em></span>.
+          Chaining turns the hash table into a table of pointers to a list of
+          symbol entries. Lookups run down the chain to find the symbol, and
+          if it’s not found, allocate a new entry with <code class="literal">malloc()</code> and add it to the chain.
+          Rehashing creates an initial fixed-size symbol table, again using
+          <code class="literal">malloc()</code>. When the symbol table
+          fills up, create a new larger symbol table and copy all the entries
+          into it, using the hash
+          function to decide where each entry goes in the new table.
+          Both techniques work, but one would make it a lot messier to produce
+          the cross-reference. Which one? Why?<a id="I_indexterm2_d1e3368" class="indexterm"/></p></li></ol></div></div><div class="footnotes"><br/><hr/><div class="footnote"><p><sup>[<a id="ftn.id460291" href="#id460291" class="para">4</a>] </sup>There’s one exception: If there are any <code class="literal">/</code> operators at all in a flex program,
+            the whole scanner is slightly slower because of the added logic to
+            handle backing up over the input that is matched but not consumed
+            by trailing context. But in practice such scanners are usually
+            still plenty fast.</p></div><div class="footnote"><p><sup>[<a id="ftn.id480731" href="#id480731" class="para">5</a>] </sup>There’s a separate issue for interactive scanners related to
+            whether the scanning process itself needs to peek ahead at the
+            character after the one being processed, but we’ll save that for
+            later in this chapter. Fortunately, flex generally does the right
+            thing in that case, too.</p></div><div class="footnote"><p><sup>[<a id="ftn.id487701" href="#id487701" class="para">6</a>] </sup>If the previous <code class="literal">yyin</code> was
+            read all the way to EOF, <code class="literal">YY_NEW_FILE</code> isn’t strictly necessary,
+            but it’s good to use anyway for defensive programming. This is
+            particularly the case if a scanner or parse error might return
+            from the scanner or parser without reading the whole file.</p></div><div class="footnote"><p><sup>[<a id="ftn.id455257" href="#id455257" class="para">7</a>] </sup>It returns the value <code class="literal">YY_NULL</code>, defined as 0, which a bison
+          parser interprets as the end of input.</p></div><div class="footnote"><p><sup>[<a id="ftn.id500220" href="#id500220" class="para">8</a>] </sup>Or to put it another way, the error diagnostics are left as an
+          exercise for the reader.</p></div><div class="footnote"><p><sup>[<a id="ftn.id480560" href="#id480560" class="para">9</a>] </sup>This trick of building the list in the wrong order and then
+            reversing it is a handy one that we’ll see again when building
+            parse trees. It turns out to be quite efficient, since the
+            reversal step takes just one pass over the list and requires no
+            extra space in each individual entry.</p></div></div></div></div></body>
+</html>
